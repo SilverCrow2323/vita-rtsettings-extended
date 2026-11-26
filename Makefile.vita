@@ -6,7 +6,7 @@ RANLIB := $(PREFIX)ranlib
 CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters -Isource/custom-assets
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/plugin_help.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_assets.o build-vita/custom_warning_adapter.o build-vita/vita_asset_fs.o build-vita/asset_manifest.o build-vita/bluetooth_controllers.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/plugin_help.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_assets.o build-vita/custom_warning_adapter.o build-vita/vita_asset_fs.o build-vita/asset_manifest.o build-vita/bluetooth_controllers.o build-vita/repatch_manager.o build-vita/adrenaline_config.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -79,6 +79,12 @@ build-vita/asset_manifest.o: source/custom-assets/asset_manifest.c include/asset
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/bluetooth_controllers.o: settings-ui/bluetooth_controllers.c settings-ui/bluetooth_controllers.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/repatch_manager.o: settings-ui/repatch_manager.c settings-ui/repatch_manager.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/adrenaline_config.o: settings-ui/adrenaline_config.c settings-ui/adrenaline_config.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)

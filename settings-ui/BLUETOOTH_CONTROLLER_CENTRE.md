@@ -71,3 +71,19 @@ It accepts observations supplied by a future backend. It does not scan Bluetooth
 - [8BitVita](https://github.com/shadowknight1620/8BitVita) — 8BitDo model list and MiniVitaTV compatibility.
 
 Upstream capabilities are research inputs, not guarantees for every Vita firmware, controller revision or installed plugin combination. Project support status will be recorded separately from upstream claims.
+
+
+## Device classification and unknown-controller learning
+
+The model now distinguishes device category from controller make/model: controller, audio, computer, phone, tablet, keyboard, mouse, printer, remote, other and unknown. A backend may provide the Bluetooth Class of Device and service-derived capabilities; the UI may let the user override an uncertain classification without changing the reported raw evidence.
+
+Unknown controllers can use Input Learning. The portable recorder stores observed event kind, raw code, first and last values, label and observation count for buttons, axes, triggers, touch, gyro, accelerometer, hat and unknown events. It does not create guessed controls. A real Vita input adapter must expose the events before the recorder can capture them.
+
+
+## Discovery and manual classification
+
+The backend may classify devices from the Bluetooth Class of Device (CoD). The host model includes a conservative CoD classifier for computer, phone, audio, controller/joystick, remote, keyboard, mouse and printer. The original CoD is retained in each device record. Service Discovery Protocol (SDP) results and service-derived capabilities can refine this classification when the Vita backend exposes them.
+
+Users can override the category per device. The snapshot records whether a category came from CoD inference or a manual override, while preserving the original CoD and raw capabilities for diagnostics. A category override changes only the UI classification; it does not install a driver or change Bluetooth services.
+
+The device inventory capacity is bounded independently of the Vita's active connection limit, so a discovery scan can list more remembered/discovered entries than can be connected simultaneously.

@@ -212,6 +212,24 @@ The first host-tested milestone is a renderer-neutral controller inventory and e
 
 See [Bluetooth Controller Centre](settings-ui/BLUETOOTH_CONTROLLER_CENTRE.md) for the driver matrix, safety rules and implementation roadmap.
 
+## Bluetooth Device & Controller Control Centre
+
+The Bluetooth module now models all discovered device classes separately from controller models: controllers, audio devices, computers, phones, tablets, keyboards, mice, printers, remotes, other and unknown. It preserves the Bluetooth Class of Device supplied by a future backend, reported service capabilities and optional battery data. Users will be able to override a classification when discovery evidence is incomplete.
+
+For unknown controllers, the portable **Input Learning** session records observed button, axis, trigger, touch, gyro, accelerometer, hat and unknown input events. It captures raw code, first/last value and observation count. It never invents inputs that the driver does not expose. Vita-side Bluetooth scanning, SDP interrogation, live input hooks and pairing actions remain backend work.
+
+## RePatch & ReAddcont Manager
+
+The integrated module provides separate Game Patches and DLC / Add-on Patches inventories, recognizes active and `DIS`-suffixed disabled folders, and provides guarded enable/disable transitions. It validates folder IDs, prevents destination collisions and verifies the rename result. The filesystem adapter must provide an atomic no-clobber rename; the current host model does not yet touch the Vita filesystem.
+
+See [RePatch Manager](settings-ui/REPATCH_MANAGER.md).
+
+## Adrenaline Control Centre
+
+The planned native Settings page brings together Adrenaline's own PS-button Quick Menu settings, PSP VSH menu and Recovery settings. The catalogue distinguishes Quick Menu, VSH, Recovery and restart-required settings, with profiles and diagnostics. Actual writes will be exposed only through a verified Adrenaline configuration or plugin adapter; settings that remain internal to the Adrenaline UI will open or defer to the original interface rather than pretending to be writable.
+
+See [Adrenaline Control Centre](settings-ui/ADRENALINE_CONTROL_CENTRE.md).
+
 ## Storage & Devices snapshot model
 
 The first Storage & Devices core now converts platform-reported observations into a bounded, renderer-neutral snapshot: SD2Vita, Sony Memory Card, internal and USB device kinds; mount state; mount point; total/free capacity; read-only state; free-space percentage; and duplicate mount-point warnings. Invalid capacity data and duplicate stable IDs are rejected. The model never probes, mounts, formats or changes storage itself. The Vita device-enumeration adapter and YAMT mapping detection remain pending. See [Storage & Devices model](settings-ui/STORAGE_DEVICES.md).
@@ -706,6 +724,9 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)
 - [Tai Saver feature documentation](tai-saver/README.md)
+- [Bluetooth Controller Centre](settings-ui/BLUETOOTH_CONTROLLER_CENTRE.md)
+- [RePatch & ReAddcont Manager](settings-ui/REPATCH_MANAGER.md)
+- [Adrenaline Control Centre](settings-ui/ADRENALINE_CONTROL_CENTRE.md)
 
 ---
 
