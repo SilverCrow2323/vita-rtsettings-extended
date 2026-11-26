@@ -24,6 +24,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Connectivity service lifecycle](#connectivity-service-lifecycle)
 - [Plugin Control Centre model](#plugin-control-centre-model)
 - [Storage & Devices snapshot model](#storage--devices-snapshot-model)
+- [Bluetooth & Controller Control Centre](#bluetooth--controller-control-centre)
 - [Vita filesystem bridge for Custom Assets](#vita-filesystem-bridge-for-custom-assets)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
@@ -84,6 +85,7 @@ Settings
 │   └── Quick Menu Customization
 ├── Advanced Options                         [new Rt category]
 │   ├── Connectivity Options
+│   ├── Bluetooth & Controllers
 │   ├── Plugin Feature Settings
 │   ├── Runtime Configuration
 │   ├── Boot Configuration
@@ -199,6 +201,16 @@ A host-testable controller now exposes the profile list, profile actions, create
 ## Safe module controls
 
 Module adapters can declare only controls they genuinely support: toggles, finite selectors, stepped sliders and bounded numeric inputs. The shared contract validates option uniqueness, numeric ranges and steps, read-only status, backend read values and write requests. Unknown plugin settings are never guessed or edited. See [Module Control Contract](settings-ui/MODULE_CONTROL_CONTRACT.md).
+
+## Bluetooth & Controller Control Centre
+
+A dedicated controller manager is planned under **Connectivity → Bluetooth & Controllers**. It will unify controller inventory, provider health, pairing guidance, capability reporting, input testing and reVita profile access.
+
+The curated provider strategy prefers **VitaControl** as the broad controller driver candidate (DualShock 3/4, DualSense/Edge, Xbox One and Switch Pro), with **reVita** as an optional remapping/profile companion. MiniVitaTV remains a separate PS-TV compatibility and local-multiplayer mode. VitaControl, MiniVitaTV, ds34vita, ds3vita and ds4vita are mutually exclusive driver providers; the manager must never stack them or silently switch drivers.
+
+The first host-tested milestone is a renderer-neutral controller inventory and exclusive-driver conflict validator in `settings-ui/bluetooth_controllers.c`. It validates controller IDs, model/state/provider, capability flags and optional battery values, and reports connected/paired/unavailable/error counts. This model consumes backend observations only: it does not scan Bluetooth, pair/unpair devices, alter taiHEN configuration or claim live hardware support.
+
+See [Bluetooth Controller Centre](settings-ui/BLUETOOTH_CONTROLLER_CENTRE.md) for the driver matrix, safety rules and implementation roadmap.
 
 ## Storage & Devices snapshot model
 
@@ -623,7 +635,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Safe module-control descriptor contract | Implemented; host-tested |
 | Conflict-aware service lifecycle manager | Implemented; host-tested |
 | Plugin inventory, compatibility engine and read-only Control Centre model | Implemented; host-tested |
-| Storage & Devices snapshot model | Implemented; host-tested |
+| Storage & Devices snapshot model | Implemented; host-tested |\n| Bluetooth controller inventory and exclusive driver-stack validator | Implemented; host-tested; Vita discovery, pairing and input backends pending |
 | Wi-Fi Turbo typed adapter contract | Implemented; mock-transport host-tested; Vita transport pending |
 | Plugin catalogue, schema and initial source research | Implemented; research shortlist only |
 | Boot Animation / Boot Splash controls | Research/specification; implementation pending |
