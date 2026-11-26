@@ -118,6 +118,32 @@ rta_result rta_asset_verify_reader(rta_asset_read_fn reader, void *context, cons
                                    const char *expected_sha256, uint64_t expected_size);
 
 typedef struct {
+    const char *id;
+    const char *title;
+    const char *source_path;
+    const char *owner;
+    const char *format;
+    const char *expected_sha256;
+    rta_asset_type type;
+    uint32_t width;
+    uint32_t height;
+    uint32_t duration_ms;
+    uint32_t sample_rate_hz;
+    uint32_t channels;
+    int compatible;
+    int protected_asset;
+} rta_asset_import_spec;
+
+typedef struct {
+    void *context;
+    int (*copy_to_staging)(void *context, const char *source_path, const char *staging_path);
+    int (*commit_staged)(void *context, const char *staging_path, const char *destination_path);
+    int (*remove_path)(void *context, const char *path);
+    rta_asset_read_fn read_file;
+    int (*copy_atomic)(void *context, const char *source_path, const char *destination_path);
+} rta_asset_file_backend;
+
+typedef struct {
     void *context;
     int (*activate)(void *context, rta_asset_type type, const char *path);
     int (*verify_active)(void *context, rta_asset_type type, const char *path);
@@ -132,6 +158,13 @@ rta_result rta_asset_registry_build(const rta_asset_observation *observations,
 
 /* Validate metadata and type-specific conservative size/format constraints. */
 rta_result rta_asset_validate(const rta_asset_observation *observation);
+
+/* Import via stage -> streaming SHA-256 -> metadata validation -> atomic commit. */
+rta_result rta_asset_import(rta_asset_registry *registry, const rta_asset_import_spec *spec,
+                            const rta_asset_file_backend *backend, char imported_id[RTA_ID_MAX + 1]);
+/* Export only after re-hashing the managed asset and comparing its stored digest. */
+rta_result rta_asset_export(const rta_asset_registry *registry, const char *asset_id,
+                            const char *destination_path, const rta_asset_file_backend *backend);
 
 /* Activate a verified compatible asset with rollback to the previous asset/default. */
 rta_result rta_asset_activate(rta_asset_registry *registry,
