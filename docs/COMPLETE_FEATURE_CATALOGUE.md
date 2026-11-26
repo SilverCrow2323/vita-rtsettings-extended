@@ -46,13 +46,13 @@ The UI must not expose raw plugin filenames as the primary user experience. It s
 - Detect overlapping shell patches and restore the previous state after failed writes.
 
 ### Custom Assets Manager
-- Central index of imported boot images, animations, sounds, warning presets and future supported assets.
+- **Implemented portable foundation:** bounded central asset registry, stable IDs, owner/path/format/size/dimensions/duration/audio metadata, SHA-256 verification state, compatibility, active/backup/orphan state and duplicate detection.
 - Track asset ID, type, path, source, author/license metadata when known, hash, format, dimensions/duration, compatibility, active consumer and backup state.
-- Validate before activation; stage new assets and switch only after validation.
+- Validate before activation; the host-tested core rejects unsafe paths, traversal, invalid formats, unsupported sizes and unverified activation.
 - Detect duplicate and orphaned assets.
 - Delete only assets owned by Rt or explicitly selected by the user; never clean up unknown third-party files automatically.
-- Export/import asset bundles with manifests and checksums.
-- Keep a last-known-good asset and rollback journal.
+- Export/import asset bundles with manifests and checksums (**platform file-copy/hash adapter pending**).
+- Transactional activation through a backend contract: verify the new active state and restore the previous asset or engine default on failure.
 
 ## Quick Menu
 
@@ -185,7 +185,7 @@ The UI must not expose raw plugin filenames as the primary user experience. It s
 - Service/boot status and recovery guidance.
 - Exportable diagnostic bundle with privacy-aware path handling.
 
-## Plugin and version selection policy
+## Custom Assets Manager implementation status\n\nThe portable C99 registry and activation/rollback boundary are implemented in `include/custom_assets.h` and `source/custom-assets/custom_assets.c`. Host tests cover validation, duplicate detection, path traversal, audio constraints, ownership, protected backups, activation read-back, rollback and rollback failure. This does not yet implement Vita filesystem import/export, hash calculation, format conversion, CBSM/bootanim/BootSound/Custom Warning backends, or the native Settings page.\n\n## Plugin and version selection policy
 
 1. Discover candidates from AutoPlugin II, VitaHomebrewDB, GameBrew, PSX-Place and community release threads.
 2. Verify each candidate against the original author's repository, release notes, tags and binary assets.
