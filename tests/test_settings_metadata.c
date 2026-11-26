@@ -27,7 +27,7 @@ int main(void){
  rtp_preferences_init(&p);rtp_metadata_init(&c);
  assert(rtp_metadata_register_tai_saver(&c,&p)==RTP_META_OK);
  assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
- e=rtp_metadata_find(&c,"tai-saver");assert(e&&e->kind==0); /* Metadata deliberately stores no duplicate kind field. */
+ e=rtp_metadata_find(&c,"tai-saver");assert(e&&rtp_preferences_find(&p,"tai-saver")->kind==RTP_ENTRY_CATEGORY);
  e=rtp_metadata_find(&c,"tai-saver-backup-now");assert(e&&strcmp(e->category_id,"tai-saver-protection")==0&&e->flags&RTP_META_FLAG_REQUIRES_BACKEND);
  e=rtp_metadata_find(&c,"tai-saver-last-result");assert(e&&(e->flags&RTP_META_FLAG_READ_ONLY));
  e=rtp_metadata_find(&c,"tai-saver-known-good");assert(e&&strstr(e->description,"Never auto-rotated")!=NULL);
