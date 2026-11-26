@@ -23,6 +23,8 @@
           "width": {"type": "integer", "minimum": 0},
           "height": {"type": "integer", "minimum": 0},
           "duration_ms": {"type": "integer", "minimum": 0},
+          "sample_rate_hz": {"type": "integer", "minimum": 0, "maximum": 48000},
+          "channels": {"type": "integer", "minimum": 0, "maximum": 2},
           "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
           "state": {"enum": ["available", "active", "backup", "orphaned", "incompatible", "invalid"]},
           "managed": {"type": "boolean"},
