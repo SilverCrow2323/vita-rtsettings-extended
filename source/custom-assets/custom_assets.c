@@ -44,6 +44,28 @@ static int valid_path(const char *path) {
     return 1;
 }
 
+static int valid_format(rta_asset_type type, const char *format) {
+    if (!format) return 0;
+    switch (type) {
+        case RTA_TYPE_BOOT_SPLASH:
+            return strcmp(format, "png") == 0 || strcmp(format, "bmp") == 0 ||
+                   strcmp(format, "rgba") == 0 || strcmp(format, "raw") == 0 ||
+                   strcmp(format, "gz") == 0 || strcmp(format, "cbs-img") == 0;
+        case RTA_TYPE_BOOT_ANIMATION:
+            return strcmp(format, "rcf") == 0 || strcmp(format, "cbs-img") == 0 ||
+                   strcmp(format, "img") == 0;
+        case RTA_TYPE_BOOT_SOUND:
+            return strcmp(format, "wav") == 0;
+        case RTA_TYPE_STARTUP_WARNING:
+            return strcmp(format, "utf-16le") == 0 || strcmp(format, "txt-utf16le") == 0;
+        case RTA_TYPE_INTERFACE_THEME:
+            return strcmp(format, "png") == 0 || strcmp(format, "bmp") == 0 ||
+                   strcmp(format, "jpg") == 0 || strcmp(format, "jpeg") == 0;
+        default:
+            return 1;
+    }
+}
+
 static int valid_hash(const char *hash) {
     size_t i;
     if (!hash || strlen(hash) != RTA_SHA256_HEX) return 0;
@@ -58,7 +80,7 @@ rta_result rta_asset_validate(const rta_asset_observation *o) {
         strlen(o->title) > RTA_TITLE_MAX || !valid_path(o->path) ||
         !o->owner || !o->owner[0] || strlen(o->owner) > RTA_OWNER_MAX ||
         !o->format || !o->format[0] || strlen(o->format) > RTA_FORMAT_MAX ||
-        o->type < RTA_TYPE_BOOT_SPLASH || o->type > RTA_TYPE_OTHER ||
+        o->type < RTA_TYPE_BOOT_SPLASH || o->type > RTA_TYPE_OTHER || !valid_format(o->type, o->format) ||
         o->state < RTA_STATE_AVAILABLE || o->state > RTA_STATE_INVALID ||
         !o->size_bytes) return RTA_ERR_INVALID_ASSET;
 
@@ -73,7 +95,8 @@ rta_result rta_asset_validate(const rta_asset_observation *o) {
     if (o->size_bytes > max_size) return RTA_ERR_INVALID_ASSET;
     if ((o->type == RTA_TYPE_BOOT_SPLASH || o->type == RTA_TYPE_BOOT_ANIMATION) &&
         (!o->width || !o->height)) return RTA_ERR_INVALID_ASSET;
-    if (o->type == RTA_TYPE_BOOT_SOUND && !o->duration_ms) return RTA_ERR_INVALID_ASSET;
+    if (o->type == RTA_TYPE_BOOT_SOUND && (!o->duration_ms || !o->sample_rate_hz ||
+        o->sample_rate_hz > 48000U || !o->channels || o->channels > 2U)) return RTA_ERR_INVALID_ASSET;
     if (o->hash_verified && !valid_hash(o->sha256)) return RTA_ERR_INVALID_ASSET;
     if (o->sha256 && o->sha256[0] && !valid_hash(o->sha256)) return RTA_ERR_INVALID_ASSET;
     if (o->managed && !o->owner[0]) return RTA_ERR_INVALID_ASSET;
@@ -89,6 +112,7 @@ static void copy_observation(const rta_asset_observation *o, rta_asset *a) {
     (void)copy_text(a->sha256, sizeof(a->sha256), o->sha256, 0);
     a->type = o->type; a->state = o->state; a->size_bytes = o->size_bytes;
     a->width = o->width; a->height = o->height; a->duration_ms = o->duration_ms;
+    a->sample_rate_hz = o->sample_rate_hz; a->channels = o->channels;
     a->managed = o->managed ? 1 : 0; a->compatible = o->compatible ? 1 : 0;
     a->hash_verified = o->hash_verified ? 1 : 0;
     a->protected_asset = o->protected_asset ? 1 : 0;
@@ -124,6 +148,24 @@ rta_result rta_asset_registry_build(const rta_asset_observation *observations,
                 out->assets[i].type == out->assets[j].type) out->active_conflict_count++;
     }
     return RTA_OK;
+}
+
+static void refresh_counts(rta_asset_registry *registry) {
+    size_t i, j;
+    registry->active_count = registry->backup_count = registry->orphaned_count = 0;
+    registry->incompatible_count = registry->unverified_count = registry->active_conflict_count = 0;
+    for (i = 0; i < registry->count; ++i) {
+        const rta_asset *a = &registry->assets[i];
+        if (a->state == RTA_STATE_ACTIVE) registry->active_count++;
+        if (a->state == RTA_STATE_BACKUP) registry->backup_count++;
+        if (a->state == RTA_STATE_ORPHANED) registry->orphaned_count++;
+        if (a->state == RTA_STATE_INCOMPATIBLE) registry->incompatible_count++;
+        if (!a->hash_verified) registry->unverified_count++;
+        if (a->state != RTA_STATE_ACTIVE) continue;
+        for (j = i + 1; j < registry->count; ++j)
+            if (registry->assets[j].state == RTA_STATE_ACTIVE &&
+                registry->assets[j].type == a->type) registry->active_conflict_count++;
+    }
 }
 
 static int find_asset(const rta_asset_registry *registry, const char *id) {
@@ -165,17 +207,7 @@ rta_result rta_asset_activate(rta_asset_registry *registry, const char *asset_id
     }
     if (previous_index >= 0) registry->assets[previous_index].state = RTA_STATE_AVAILABLE;
     target->state = RTA_STATE_ACTIVE;
-    registry->active_count = 0;
-    for (i = 0; i < registry->count; ++i)
-        if (registry->assets[i].state == RTA_STATE_ACTIVE) registry->active_count++;
-    registry->active_conflict_count = 0;
-    for (i = 0; i < registry->count; ++i) {
-        size_t j;
-        if (registry->assets[i].state != RTA_STATE_ACTIVE) continue;
-        for (j = i + 1; j < registry->count; ++j)
-            if (registry->assets[j].state == RTA_STATE_ACTIVE &&
-                registry->assets[i].type == registry->assets[j].type) registry->active_conflict_count++;
-    }
+    refresh_counts(registry);
     return RTA_OK;
 }
 
@@ -201,7 +233,8 @@ rta_result rta_asset_remove(rta_asset_registry *registry, const char *asset_id,
                     (registry->count - (size_t)index - 1) * sizeof(registry->assets[0]));
         memset(&registry->assets[registry->count - 1], 0, sizeof(registry->assets[0]));
         registry->count--;
-        if (was_unverified && registry->unverified_count) registry->unverified_count--;
+        (void)was_unverified;
+        refresh_counts(registry);
     }
     return RTA_OK;
 }
