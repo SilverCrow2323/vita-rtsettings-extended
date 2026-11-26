@@ -22,6 +22,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Layout Profile Manager](#layout-profile-manager)
 - [Safe module controls](#safe-module-controls)
 - [Connectivity service lifecycle](#connectivity-service-lifecycle)
+- [Plugin Control Centre model](#plugin-control-centre-model)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -190,6 +191,12 @@ A host-testable controller now exposes the profile list, profile actions, create
 ## Safe module controls
 
 Module adapters can declare only controls they genuinely support: toggles, finite selectors, stepped sliders and bounded numeric inputs. The shared contract validates option uniqueness, numeric ranges and steps, read-only status, backend read values and write requests. Unknown plugin settings are never guessed or edited. See [Module Control Contract](settings-ui/MODULE_CONTROL_CONTRACT.md).
+
+## Plugin Control Centre model
+
+The first read-only Control Centre projection now combines the taiHEN inventory, explicit adapter registry and compatibility engine. Each detected entry is classified as Unknown, Disabled, Detected, Configurable, Blocked or Review; the snapshot preserves path/section/source-line details, duplicate counts and compatibility findings. Unknown plugins remain visible but never receive guessed controls. Blocked/review states override adapter availability.
+
+This is a portable model over caller-supplied config text, not yet a Vita filesystem scanner, config editor or native Settings page. See [Plugin Control Centre model](settings-ui/PLUGIN_CONTROL_CENTRE.md).
 
 ## Connectivity service lifecycle
 
@@ -539,7 +546,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Native Preferences renderer, profile picker and Sony menu integration | Pending |
 | System Tools application registry and launch shortcuts | Project target; implementation pending |
 | Native Sony menu injection / extension points | Research and compatibility work pending |
-| Plugin Control Centre and adapter contract | Project target; implementation pending |
+| Plugin inventory, compatibility engine and read-only Control Centre model | Implemented; host-testable |
 | USB persistent connection controls | Project target; implementation pending |
 | FTP always-on service integration | Project target; implementation pending |
 | USB streaming integration | Project target; backend compatibility work pending |
