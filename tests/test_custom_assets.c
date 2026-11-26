@@ -5,6 +5,18 @@
 #include <stdint.h>
 
 typedef struct { int activate_calls, verify_calls, restore_calls, remove_calls; int activate_fail, verify_fail, restore_fail, remove_fail; char active_path[RTA_PATH_MAX+1]; } fake_backend;
+typedef struct { char path[8][RTA_PATH_MAX+1]; unsigned char bytes[8][4096]; size_t size[8]; int used[8]; int fail_copy,fail_commit,corrupt_copy; } asset_fs;
+static int fs_find(asset_fs *f,const char *path){int i;for(i=0;i<8;i++)if(f->used[i]&&strcmp(f->path[i],path)==0)return i;return -1;}
+static int fs_alloc(asset_fs *f,const char *path){int i=fs_find(f,path),j;if(i>=0)return i;for(j=0;j<8;j++)if(!f->used[j]){f->used[j]=1;strcpy(f->path[j],path);return j;}return -1;}
+static int asset_read(void *ctx,const char *path,uint64_t offset,unsigned char *buffer,size_t cap,size_t *readn){
+ asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,path);size_t n;*readn=0;if(i<0)return -1;if(offset>=f->size[i])return 0;
+ n=f->size[i]-(size_t)offset;if(n>cap)n=cap;memcpy(buffer,f->bytes[i]+(size_t)offset,n);*readn=n;return 1;
+}
+static int fs_copy(asset_fs *f,const char *src,const char *dst){int a=fs_find(f,src),b;if(a<0)return -1;b=fs_alloc(f,dst);if(b<0)return -1;f->size[b]=f->size[a];memcpy(f->bytes[b],f->bytes[a],f->size[a]);if(f->corrupt_copy&&f->size[b])f->bytes[b][0]^=1;return 0;}
+static int copy_stage(void *ctx,const char *src,const char *stage){asset_fs *f=(asset_fs*)ctx;return f->fail_copy?-1:fs_copy(f,src,stage);}
+static int commit_stage(void *ctx,const char *stage,const char *dest){asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,stage);if(f->fail_commit||i<0)return -1;if(fs_copy(f,stage,dest)!=0)return -1;f->used[i]=0;return 0;}
+static int fs_remove(void *ctx,const char *path){asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,path);if(i<0)return -1;f->used[i]=0;return 0;}
+static int fs_copy_atomic(void *ctx,const char *src,const char *dest){return fs_copy((asset_fs*)ctx,src,dest);}
 static int activate(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->activate_calls++;if(f->activate_fail)return -1;strcpy(f->active_path,path);return 0;}
 static int verify_active(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;(void)path;f->verify_calls++;return f->verify_fail?-1:0;}
 static int restore(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->restore_calls++;if(f->restore_fail)return -1;if(path)strcpy(f->active_path,path);else f->active_path[0]='\0';return 0;}
@@ -81,6 +93,32 @@ int main(void){
   assert(rta_asset_verify_reader(memory_read,&mem,"ur0:data/test.bin",digest,4)==RTA_ERR_INTEGRITY);
   mem.fail=1;assert(rta_asset_hash_reader(memory_read,&mem,"ur0:data/test.bin",digest,&size)==RTA_ERR_BACKEND);
   assert(rta_asset_hash_reader(memory_read,&mem,"host:/bad",digest,&size)==RTA_ERR_ARGUMENT);
+ }
+ {
+  asset_fs fs; rta_asset_file_backend fb; rta_asset_registry imported; char id[RTA_ID_MAX+1];
+  static const unsigned char abc[]={'a','b','c'};
+  rta_asset_import_spec spec;
+  memset(&fs,0,sizeof(fs));memset(&fb,0,sizeof(fb));memset(&imported,0,sizeof(imported));
+  fb.context=&fs;fb.copy_to_staging=copy_stage;fb.commit_staged=commit_stage;fb.remove_path=fs_remove;fb.read_file=asset_read;fb.copy_atomic=fs_copy_atomic;
+  {int source=fs_alloc(&fs,"ux0:downloads/splash.png");assert(source>=0);memcpy(fs.bytes[source],abc,3);fs.size[source]=3;}
+  memset(&spec,0,sizeof(spec));spec.id="imported-splash";spec.title="Imported Splash";spec.source_path="ux0:downloads/splash.png";spec.owner="rt-settings";spec.format="png";spec.expected_sha256="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";spec.type=RTA_TYPE_BOOT_SPLASH;spec.width=960;spec.height=544;spec.compatible=1;
+  assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_OK);
+  assert(strcmp(id,"imported-splash")==0&&imported.count==1&&imported.assets[0].managed&&imported.assets[0].hash_verified);
+  assert(strcmp(imported.assets[0].source,spec.source_path)==0);
+  assert(rta_asset_export(&imported,id,"ux0:exports/splash.png",&fb)==RTA_OK);
+  assert(fs_find(&fs,"ux0:exports/splash.png")>=0);
+  assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_ERR_DUPLICATE_ID);
+  spec.id="bad-integrity";spec.expected_sha256=HASH;
+  assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_ERR_INTEGRITY&&imported.count==1);
+  assert(fs_find(&fs,"ur0:data/rt/assets/.bad-integrity.stage")<0);
+  spec.id="failed-copy";spec.expected_sha256=NULL;fs.fail_copy=1;
+  assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_ERR_BACKEND&&imported.count==1);
+  fs.fail_copy=0;fs.fail_commit=1;spec.id="failed-commit";
+  assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_ERR_BACKEND&&imported.count==1);
+  fs.fail_commit=0;spec.id="verified-export";assert(rta_asset_import(&imported,&spec,&fb,id)==RTA_OK);
+  fs.corrupt_copy=1;
+  assert(rta_asset_export(&imported,id,"ux0:exports/corrupt.png",&fb)==RTA_ERR_INTEGRITY);
+  assert(fs_find(&fs,"ux0:exports/corrupt.png")<0);
  }
  puts("Custom Assets Manager tests passed.");return 0;
 }
