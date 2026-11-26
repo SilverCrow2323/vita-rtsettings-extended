@@ -182,6 +182,10 @@ See the [curated catalogue](docs/PLUGIN_CATALOGUE.md), [machine-readable JSON](d
 
 The first host-testable inventory core now parses supplied taiHEN `config.txt` text, tracks active and commented-out plugin entries, sections, source lines and duplicate paths, and maps recognized filenames to catalogue IDs. A separate adapter registry marks a plugin configurable only when an explicit adapter descriptor is registered; unknown or unsupported plugins remain inventory-only. This layer does not access the Vita filesystem or modify configuration. See [Plugin Inventory](docs/PLUGIN_INVENTORY.md). Version detection, dependency/conflict resolution and transactional config editing remain separate follow-up work.
 
+## Plugin compatibility and conflict engine
+
+The new host-testable compatibility engine evaluates explicit dependency and conflict rules before future install/enable operations. It blocks known mutually exclusive providers (including YAMT vs StorageMgr, vitastream vs known USB video drivers, FTP for Vita vs FTP Everywhere, Caffeine vs NoSleep, and overlapping performance/remapping managers), and emits review-level warnings for shared display-LUT and Bluetooth-audio hooks. FTP for Vita and Caffeine also require QuickMenuReborn. It reports findings only: it never edits `config.txt`, chooses a plugin to remove, or treats unrecognized plugins as compatible by assumption. See [Plugin Compatibility](docs/PLUGIN_COMPATIBILITY.md).
+
 ## System Tools and application shortcuts
 
 **System Tools** is a curated application-launch section inside Settings—not a replacement for the LiveArea and not an attempt to duplicate every homebrew bubble.

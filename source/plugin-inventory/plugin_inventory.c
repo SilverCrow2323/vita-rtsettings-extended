@@ -8,6 +8,7 @@ static int plugin_suffix(const char *s){size_t n=strlen(s);return (n>=6&&strcmp(
 static void identify(rt_pi_entry *e){const char *base=strrchr(e->path,'/');char name[RT_PI_PATH_MAX+1];size_t i;base=base?base+1:e->path;if(!copy(name,sizeof(name),base))return;for(i=0;name[i];++i)name[i]=(char)tolower((unsigned char)name[i]);
 #define MATCH(file,id) if(strcmp(name,file)==0){copy(e->plugin_id,sizeof(e->plugin_id),id);e->known=1;return;}
  MATCH("wifi_turbo.skprx","wifi-turbo")
+ MATCH("wifiturbo_kernel.skprx","wifi-turbo")
  MATCH("vitastream.skprx","vitastream")
  MATCH("storageturbo_kernel.skprx","turbo-storage")
  MATCH("storageturbo.suprx","turbo-storage")
@@ -17,7 +18,9 @@ static void identify(rt_pi_entry *e){const char *base=strrchr(e->path,'/');char 
  MATCH("vitabright.skprx","vitabright-ex")
  MATCH("psvshellplus_kernel.skprx","psvshell-plus")
  MATCH("psvshellplus_shell.suprx","psvshell-plus")
- MATCH("revita.skprx","revita-extended")
+ MATCH("revita.skprx","revita-original")
+ MATCH("revita_extended.skprx","revita-extended")
+ MATCH("revita-extended.skprx","revita-extended")
  MATCH("ftpforvita.suprx","ftp-for-vita")
  MATCH("caffeine.suprx","caffeine-for-vita")
  MATCH("livearea_nolimits.suprx","livearea-nolimits")
@@ -28,6 +31,13 @@ static void identify(rt_pi_entry *e){const char *base=strrchr(e->path,'/');char 
  MATCH("yamt_helper.skprx","yamt")
  MATCH("storagemgr.skprx","storagemgr")
  MATCH("quickmenureborn.suprx","quickmenureborn")
+ MATCH("udcd_uvc.skprx","udcd-uvc")
+ MATCH("ftpeverywhere.suprx","ftp-everywhere")
+ MATCH("ftpeverywhere.skprx","ftp-everywhere")
+ MATCH("nosleep.skprx","nosleep")
+ MATCH("nosleep.suprx","nosleep")
+ MATCH("lolicon.skprx","lolicon")
+ MATCH("nopowerlimits.skprx","nopowerlimits")
 #undef MATCH
 }
 void rt_pi_inventory_init(rt_pi_inventory *v){if(v)memset(v,0,sizeof(*v));}
