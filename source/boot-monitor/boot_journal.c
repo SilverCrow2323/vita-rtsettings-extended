@@ -70,7 +70,7 @@ static int state_is_pending(tbj_state state) {
 static int transition_allowed(tbj_state from, tbj_state to) {
     if (from == TBJ_STATE_STARTED)
         return to == TBJ_STATE_WAITING_FOR_STORAGE || to == TBJ_STATE_BACKUP_RUNNING ||
-               to == TBJ_STATE_BACKUP_VERIFIED || to == TBJ_STATE_SKIPPED_DISABLED ||
+               to == TBJ_STATE_SKIPPED_DISABLED ||
                to == TBJ_STATE_FAILED_STORAGE_TIMEOUT || to == TBJ_STATE_FAILED_BACKUP;
     if (from == TBJ_STATE_WAITING_FOR_STORAGE)
         return to == TBJ_STATE_BACKUP_RUNNING || to == TBJ_STATE_FAILED_STORAGE_TIMEOUT ||
@@ -197,7 +197,11 @@ static ts_result read_record_path(const char *path, tbj_record *out) {
             fclose(file); return TS_ERR_MANIFEST;
         }
     }
-    if (ferror(file) || fclose(file) != 0) return TS_ERR_IO;
+    {
+        int had_error = ferror(file);
+        int close_error = fclose(file);
+        if (had_error || close_error != 0) return TS_ERR_IO;
+    }
     if (seen != 255U) return TS_ERR_MANIFEST;
     if (record.state == TBJ_STATE_BACKUP_VERIFIED && !record.snapshot_id[0]) return TS_ERR_MANIFEST;
     *out = record;
@@ -248,9 +252,15 @@ ts_result ts_boot_journal_begin(const char *storage_root, const char *boot_id,
         }
         if (snprintf(filename, sizeof(filename), "%s.ini", previous.boot_id) >= (int)sizeof(filename) ||
             join_path(event_path, sizeof(event_path), events_dir, filename) != 0) return TS_ERR_ARGUMENT;
-        if (access(event_path, F_OK) == 0) return TS_ERR_EXISTS;
-        result = write_record(event_path, &previous);
-        if (result != TS_OK) return result;
+        if (access(event_path, F_OK) == 0) {
+            tbj_record archived;
+            result = read_record_path(event_path, &archived);
+            if (result != TS_OK || strcmp(archived.boot_id, previous.boot_id) != 0 ||
+                archived.state != previous.state) return TS_ERR_EXISTS;
+        } else {
+            result = write_record(event_path, &previous);
+            if (result != TS_OK) return result;
+        }
         if (previous_out) *previous_out = previous;
     } else if (result != TS_ERR_NOT_FOUND) {
         return result;
@@ -274,6 +284,7 @@ ts_result ts_boot_journal_update(const char *storage_root, const char *boot_id,
     ts_result result;
     if (!valid_boot_id(boot_id) || !safe_token(timestamp, TBJ_TIMESTAMP_MAX, 0) ||
         !ts_boot_state_name(next_state) || !safe_token(snapshot_id ? snapshot_id : "", sizeof(record.snapshot_id), 1) ||
+        (snapshot_id && *snapshot_id && !valid_boot_id(snapshot_id)) ||
         !safe_token(error ? error : "", sizeof(record.error), 1)) return TS_ERR_ARGUMENT;
     if (next_state == TBJ_STATE_BACKUP_VERIFIED && (!snapshot_id || !*snapshot_id)) return TS_ERR_ARGUMENT;
     if ((next_state == TBJ_STATE_FAILED_BACKUP || next_state == TBJ_STATE_FAILED_STORAGE_TIMEOUT) &&
