@@ -66,5 +66,5 @@ int rta_vita_asset_file_exists(const char *path) {
     if (!safe_vita_path(path)) return -1;
     memset(&st, 0, sizeof(st));
     if (sceIoGetstat(path, &st) == 0) return 1;
-    return 0;
+    return -1;
 }
