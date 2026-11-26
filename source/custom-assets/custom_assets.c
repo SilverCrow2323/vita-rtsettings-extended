@@ -267,7 +267,7 @@ rta_result rta_asset_remove(rta_asset_registry *registry, const char *asset_id,
     {
         char path[RTA_PATH_MAX + 1];
         memcpy(path, asset->path, sizeof(path));
-        path[sizeof(path) - 1] = '\\0';
+        path[sizeof(path) - 1] = '\0';
         if (backend->remove(backend->context, path) != 0) return RTA_ERR_BACKEND;
         if ((size_t)index + 1 < registry->count)
             memmove(&registry->assets[index], &registry->assets[index + 1],
