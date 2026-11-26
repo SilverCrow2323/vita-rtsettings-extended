@@ -621,7 +621,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Boot Animation / Boot Splash controls | Research/specification; implementation pending |
 | Boot Sound controls | Research/specification; implementation pending |
 | Custom Startup Warning controls | Research/specification; implementation pending |
-| Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host-test integration pending CI |
+| Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host regression and sanitizer coverage added |
 | Asset import/export, filesystem hashing and platform adapters | Pending; backend-specific work required |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
 | Interface Customization | Project target; implementation pending |
@@ -676,6 +676,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
 - [Custom Assets Manager Core](settings-ui/CUSTOM_ASSETS_MANAGER.md)
+- [Boot Appearance Adapter Decisions](docs/BOOT_APPEARANCE_ADAPTERS.md)
 - [Appearance Asset Manifest Schema](schemas/appearance-assets.schema.json)
 - [Managed Appearance Asset Catalogue](data/appearance-assets.json)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
