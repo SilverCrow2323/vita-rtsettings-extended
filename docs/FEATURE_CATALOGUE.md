@@ -5,6 +5,7 @@ This is the maintained inventory of user-facing entries for Rt:Settings Extended
 | Entry | Purpose | Status |
 |---|---|---|
 | Preferences | Visibility, ordering, reset and layout profiles | Core implemented; native renderer pending |
+| Settings UI Metadata | User-facing titles, descriptions, icon keys and module ownership | Core implemented; native renderer pending |
 | Tai Saver | Backup, retention, verification and recovery for `ur0:tai` | Host core implemented; Vita integration pending |
 | Boot Journal | Startup lifecycle and recovery events | Host core implemented; Vita integration pending |
 | Framework & Modules | Install, update, repair and remove modules | Installer contract documented; installer pending |

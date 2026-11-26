@@ -3,10 +3,10 @@ CC := $(PREFIX)gcc
 AR := $(PREFIX)ar
 RANLIB := $(PREFIX)ranlib
 
-CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui
+CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -31,6 +31,9 @@ build-vita/layout_profiles.o: source/layout-profiles/layout_profiles.c include/l
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/preferences_ui.o: settings-ui/preferences_ui.c settings-ui/preferences_ui.h include/preferences.h include/layout_profiles.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/settings_metadata.o: settings-ui/metadata/settings_metadata.c settings-ui/metadata/settings_metadata.h include/preferences.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)
