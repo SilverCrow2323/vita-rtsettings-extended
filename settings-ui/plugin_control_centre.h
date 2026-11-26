@@ -7,11 +7,12 @@
 extern "C" {
 #endif
 #define RTP_PLUGIN_CENTRE_MAX RT_PI_MAX_ENTRIES
+struct rtp_plugin_help_catalogue;
 typedef enum { RTP_PC_ROW_UNKNOWN=0, RTP_PC_ROW_DISABLED=1, RTP_PC_ROW_DETECTED=2, RTP_PC_ROW_CONFIGURABLE=3, RTP_PC_ROW_BLOCKED=4, RTP_PC_ROW_REVIEW=5 } rtp_plugin_row_state;
 typedef struct {
  char path[RT_PI_PATH_MAX+1], section[RT_PI_SECTION_MAX+1], plugin_id[RT_PI_PLUGIN_ID_MAX+1], adapter_id[RT_PI_ADAPTER_ID_MAX+1];
  unsigned int line_number, occurrence, duplicate_count;
- int enabled, known;
+ int enabled, known, has_help;
  rtp_plugin_row_state state;
 } rtp_plugin_centre_row;
 typedef struct {
@@ -24,6 +25,9 @@ typedef enum { RTP_PC_OK=0, RTP_PC_INVALID_ARGUMENT=-1, RTP_PC_CAPACITY=-2, RTP_
 /* Builds a read-only view. Compatibility is evaluated only from known enabled entries. */
 int rtp_plugin_centre_build(const rt_pi_inventory *inventory, const rt_pi_adapter_registry *adapters, rtp_plugin_centre_snapshot *snapshot);
 const char *rtp_plugin_centre_state_name(rtp_plugin_row_state state);
+/* Attaches ? affordances only to rows with a verified help record. */
+void rtp_plugin_centre_bind_help(rtp_plugin_centre_snapshot *snapshot,
+                                 const struct rtp_plugin_help_catalogue *help);
 #ifdef __cplusplus
 }
 #endif
