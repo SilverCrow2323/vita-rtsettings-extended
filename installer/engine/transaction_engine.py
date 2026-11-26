@@ -122,15 +122,16 @@ class InstallerEngine:
         try:
             if not stat.S_ISREG(os.fstat(fd).st_mode):
                 raise TransactionError("installer transaction lock is not a regular file")
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            yield
-        except OSError as exc:
-            raise TransactionError(f"cannot acquire installer transaction lock: {exc}") from exc
-        finally:
             try:
-                fcntl.flock(fd, fcntl.LOCK_UN)
+                fcntl.flock(fd, fcntl.LOCK_EX)
+            except OSError as exc:
+                raise TransactionError(f"cannot acquire installer transaction lock: {exc}") from exc
+            try:
+                yield
             finally:
-                os.close(fd)
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
     def _target(self, relative: str) -> Path:
         rel = _safe_relative(relative)

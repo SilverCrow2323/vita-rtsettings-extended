@@ -213,6 +213,20 @@ class InstallerTransactionTests(unittest.TestCase):
         transactions = list((self.root / ".rtse/transactions").glob("*/journal.json"))
         self.assertEqual(len(transactions), 1)
 
+
+    def test_refuses_symlinked_transaction_lock(self):
+        engine = InstallerEngine(self.root)
+        outside = self.base / "lock-target"
+        outside.write_bytes(b"untouched")
+        (self.root / ".rtse/installer.lock").symlink_to(outside)
+        plan = self.make_plan("install", "1.0.0", [
+            ("settings/demo/config.ini", b"no install"),
+        ])
+        with self.assertRaises(TransactionError):
+            engine.apply(plan)
+        self.assertEqual(outside.read_bytes(), b"untouched")
+        self.assertFalse((self.root / "settings/demo/config.ini").exists())
+
     def test_rejects_path_traversal_in_module_plan(self):
         engine = InstallerEngine(self.root)
         plan = self.make_plan("install", "1.0.0", [
