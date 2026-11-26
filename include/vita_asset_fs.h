@@ -21,7 +21,7 @@ int rta_vita_asset_read(void *context, const char *path, uint64_t offset,
 /* Creates ur0:data/rt/assets, accepting an existing directory at each level. */
 int rta_vita_asset_ensure_directory(void);
 
-/* Returns 1 when a file exists, 0 when absent, and -1 for other errors. */
+/* Returns 1 when present; -1 when absence or an I/O failure cannot be distinguished. */
 int rta_vita_asset_file_exists(const char *path);
 
 #ifdef __cplusplus
