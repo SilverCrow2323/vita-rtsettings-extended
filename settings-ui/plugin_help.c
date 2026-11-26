@@ -79,7 +79,7 @@ rtp_plugin_help_result rtp_plugin_help_register_builtin(rtp_plugin_help_catalogu
         "Firmware support must be checked against the installed plugin build. The adapter's host tests validate file-format and safety behavior, not live plugin execution on a Vita.",
         "No universal conflict list is established. Multiple override files can affect which warning text wins; the adapter reports the detected source instead of silently editing lower-priority files.",
         "Plugin author: TheOfficialFloW. Adapter implementation and regression tests: Rt:Settings Extended contributors. Respect upstream project attribution.",
-        "Upstream license; verify the exact revision before redistribution.",
+        "Upstream license; verify revision before redistribution.",
         "https://github.com/TheOfficialFloW/VitaTweaks",
         "https://github.com/TheOfficialFloW/VitaTweaks",
         "Source project identified; exact installed plugin version and physical-console behavior are not verified by this adapter."
@@ -93,7 +93,7 @@ rtp_plugin_help_result rtp_plugin_help_register_builtin(rtp_plugin_help_catalogu
         "Exact firmware and plugin-version matrix is not pinned in this build. Confirm compatibility against the upstream release installed on the console.",
         "Remote commands may change wireless behavior and connectivity. Network reachability, firewall rules and plugin-side command support can affect results.",
         "Upstream plugin authors retain original credits. Rt:Settings Extended provides the client-side adapter contract and tests.",
-        "Upstream license; verify terms against the exact source revision.",
+        "Upstream license; verify exact source terms.",
         "https://github.com/SilverCrow2323",
         "https://github.com/SilverCrow2323",
         "Adapter API is present; upstream release/version mapping and live Vita network integration remain unverified."
