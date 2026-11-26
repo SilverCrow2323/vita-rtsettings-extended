@@ -23,6 +23,17 @@ typedef struct {
      */
     int (*replace_atomic)(void *context, const char *path,
                           const unsigned char *data, size_t length);
+    /* exists: 1 present, 0 absent, -1 backend error. */
+    int (*exists)(void *context, const char *path);
+    /*
+     * Single crash-consistent pair transaction. When preserve_previous is
+     * true, publish the old primary as backup and data as the new primary.
+     * Otherwise leave backup untouched. On failure the old pair is recoverable.
+     */
+    int (*replace_with_backup_atomic)(void *context, const char *primary_path,
+                                      const char *backup_path,
+                                      const unsigned char *data, size_t length,
+                                      int preserve_previous);
 } rta_asset_manifest_io;
 
 /* Binary, versioned, little-endian manifest codec with SHA-256 integrity. */
@@ -48,6 +59,15 @@ rta_result rta_asset_manifest_load_recover(const rta_asset_manifest_io *io,
                                            unsigned char *scratch, size_t capacity,
                                            rta_asset_registry *registry,
                                            int *used_backup);
+/* Two bounded buffers are required. The backend must implement a genuinely
+ * crash-consistent pair transaction; the core never emulates atomicity. */
+rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
+                                          const rta_asset_manifest_io *io,
+                                          const char *primary_path,
+                                          const char *backup_path,
+                                          unsigned char *scratch,
+                                          unsigned char *previous_scratch,
+                                          size_t capacity);
 
 #ifdef __cplusplus
 }

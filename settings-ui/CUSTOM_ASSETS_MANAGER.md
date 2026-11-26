@@ -55,3 +55,27 @@ Host regression tests simulate a corrupted primary and a valid backup. This
 primitive does not create or rotate backups itself: the platform persistence
 backend must preserve the previous manifest before replacing the primary. Vita
 backup rotation and crash-recovery integration remain pending.
+
+
+## Validated backup rotation
+
+The portable manifest API now exposes `rta_asset_manifest_save_rotate`. It
+encodes the candidate manifest, checks whether the primary exists, reads and
+fully decodes the previous primary, and asks the platform backend to perform a
+single crash-consistent primary/backup replacement. Only a valid previous
+primary is eligible to become the backup. A missing or invalid primary is
+replaced without touching an existing backup, preventing a corrupt file from
+poisoning the last known-good copy.
+
+After the backend transaction, the core reads back and validates the new
+primary. When a previous primary was preserved, it also verifies the backup's
+length, SHA-256 digest and manifest decoding. Backend failure is reported
+without pretending the core can roll back a partially completed filesystem
+operation.
+
+The backend contract is deliberately strict: `replace_with_backup_atomic`
+must make the pair update crash-consistent as one operation, or reject it.
+A sequence of ordinary `rename`, `remove` or `write` calls does not satisfy
+this contract. The host fake backend exercises successful rotation, injected
+transaction failure and readback verification. No Vita implementation of this
+pair-transaction callback exists yet.

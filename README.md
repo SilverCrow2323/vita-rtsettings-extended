@@ -631,6 +631,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Custom Warning UTF-16LE adapter (read, validate, write, verify, rollback) | Implemented; host regression coverage added; Vita plugin/filesystem integration pending |
 | Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host regression and sanitizer coverage added |
 | Custom Assets Manager staged import, SHA-256 verification and atomic export API | Implemented; host-tested; Vita write backend and manifest persistence pending |
+| Custom Assets manifest codec, integrity-checked persistence, startup fallback and validated backup rotation contract | Implemented; host-tested; crash-consistent Vita pair backend pending |
 | Vita Custom Assets filesystem bridge (bounded reads, path checks, owned directory bootstrap) | Implemented in Vita target source; cross-build and device validation pending |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
 | Interface Customization | Project target; implementation pending |

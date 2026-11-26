@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE], backup[RTA_MANIFEST_MAX_SIZE]; size_t length, backup_length; int fail_write, fail_read, corrupt_write; } mem_store;
+typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE], backup[RTA_MANIFEST_MAX_SIZE]; size_t length, backup_length; int fail_write, fail_read, corrupt_write, fail_exists, fail_pair; } mem_store;
 static int store_read(void *ctx,const char *path,unsigned char *out,size_t cap,size_t *len) {
     mem_store *m=(mem_store *)ctx; const unsigned char *src; size_t n;
     if (m->fail_read) return -1;
@@ -21,6 +21,24 @@ static int store_write(void *ctx,const char *path,const unsigned char *data,size
     if (m->corrupt_write && *stored>20) dst[20]^=0x20;
     return 0;
 }
+static int store_exists(void *ctx,const char *path) {
+    mem_store *m=(mem_store *)ctx;
+    if (m->fail_exists) return -1;
+    return strcmp(path,"manifest.bak")==0 ? (m->backup_length>0) : (m->length>0);
+}
+static int store_pair_replace(void *ctx,const char *primary,const char *backup,
+                              const unsigned char *data,size_t len,int preserve) {
+    mem_store *m=(mem_store *)ctx;
+    (void)primary; (void)backup;
+    if (m->fail_pair || len>sizeof(m->data)) return -1;
+    /* Model a backend-provided indivisible pair transaction. */
+    if (preserve) {
+        memcpy(m->backup,m->data,m->length);
+        m->backup_length=m->length;
+    }
+    memcpy(m->data,data,len); m->length=len;
+    return 0;
+}
 static void make_registry(rta_asset_registry *r) {
     rta_asset_observation o; memset(&o,0,sizeof(o));
     o.id="boot-splash-1"; o.title="Night sky"; o.path="ur0:data/rt/assets/night.png";
@@ -34,6 +52,7 @@ int main(void) {
     rta_asset_registry source, decoded, untouched;
     unsigned char buffer[RTA_MANIFEST_MAX_SIZE], corrupted[RTA_MANIFEST_MAX_SIZE];
     size_t length=0; mem_store memory; rta_asset_manifest_io io;
+    unsigned char previous[RTA_MANIFEST_MAX_SIZE];
     make_registry(&source); memset(&untouched,0x5A,sizeof(untouched)); decoded=untouched;
     assert(rta_asset_manifest_encode(&source,buffer,sizeof(buffer),&length)==RTA_OK);
     assert(length>44 && memcmp(buffer,"RTAM",4)==0);
@@ -60,6 +79,7 @@ int main(void) {
         assert(!decoded.assets[0].hash_verified && decoded.assets[0].sha256[0]=='\0');
     }
     memset(&memory,0,sizeof(memory)); io.context=&memory; io.read=store_read; io.replace_atomic=store_write;
+    io.exists=store_exists; io.replace_with_backup_atomic=store_pair_replace;
     assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_OK);
     /* A backend that reports success but stores altered bytes must be caught. */
     memory.corrupt_write=1;
@@ -95,6 +115,29 @@ int main(void) {
         assert(rta_asset_manifest_load_recover(&io,"same","same",buffer,
                sizeof(buffer),&decoded,&used_backup)==RTA_ERR_ARGUMENT);
     }
-    puts("Asset manifest codec, persistence and recovery tests passed.");
+    /* Rotation preserves only a fully validated old primary. */
+    {
+        rta_asset_registry newer=source;
+        strcpy(newer.assets[0].title,"Aurora");
+        assert(rta_asset_manifest_save_rotate(&source,&io,"manifest","manifest.bak",
+               buffer,previous,sizeof(buffer))==RTA_OK);
+        assert(rta_asset_manifest_save_rotate(&newer,&io,"manifest","manifest.bak",
+               buffer,previous,sizeof(buffer))==RTA_OK);
+        assert(rta_asset_manifest_load(&io,"manifest.bak",buffer,sizeof(buffer),&decoded)==RTA_OK);
+        assert(strcmp(decoded.assets[0].title,"Night sky")==0);
+        assert(rta_asset_manifest_load(&io,"manifest",buffer,sizeof(buffer),&decoded)==RTA_OK);
+        assert(strcmp(decoded.assets[0].title,"Aurora")==0);
+        memory.fail_pair=1;
+        assert(rta_asset_manifest_save_rotate(&source,&io,"manifest","manifest.bak",
+               buffer,previous,sizeof(buffer))==RTA_ERR_BACKEND);
+        memory.fail_pair=0;
+        assert(rta_asset_manifest_load(&io,"manifest",buffer,sizeof(buffer),&decoded)==RTA_OK);
+        assert(strcmp(decoded.assets[0].title,"Aurora")==0);
+        memory.fail_exists=1;
+        assert(rta_asset_manifest_save_rotate(&source,&io,"manifest","manifest.bak",
+               buffer,previous,sizeof(buffer))==RTA_ERR_BACKEND);
+        memory.fail_exists=0;
+    }
+    puts("Asset manifest codec, persistence, recovery and backup rotation tests passed.");
     return 0;
 }

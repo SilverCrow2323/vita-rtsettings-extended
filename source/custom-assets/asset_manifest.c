@@ -284,3 +284,85 @@ rta_result rta_asset_manifest_load_recover(const rta_asset_manifest_io *io,
     }
     return primary_result;
 }
+
+
+rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
+                                          const rta_asset_manifest_io *io,
+                                          const char *primary_path,
+                                          const char *backup_path,
+                                          unsigned char *scratch,
+                                          unsigned char *previous_scratch,
+                                          size_t capacity) {
+    rta_asset_registry previous_registry;
+    size_t new_length = 0, previous_length = 0, read_length = 0;
+    int primary_exists, preserve_previous = 0;
+    unsigned char new_digest[RTA_MANIFEST_DIGEST_SIZE];
+    unsigned char previous_digest[RTA_MANIFEST_DIGEST_SIZE];
+    unsigned char actual_digest[RTA_MANIFEST_DIGEST_SIZE];
+    ts_sha256_ctx hash;
+    rta_result result;
+
+    if (!registry || !io || !io->read || !io->exists ||
+        !io->replace_with_backup_atomic || !primary_path || !backup_path ||
+        !scratch || !previous_scratch || scratch == previous_scratch ||
+        strcmp(primary_path, backup_path) == 0 ||
+        capacity < RTA_MANIFEST_MAX_SIZE)
+        return RTA_ERR_ARGUMENT;
+
+    result = rta_asset_manifest_encode(registry, scratch, capacity, &new_length);
+    if (result != RTA_OK) return result;
+    ts_sha256_init(&hash);
+    ts_sha256_update(&hash, scratch, new_length);
+    ts_sha256_final(&hash, new_digest);
+
+    primary_exists = io->exists(io->context, primary_path);
+    if (primary_exists < 0) return RTA_ERR_BACKEND;
+    if (primary_exists > 0) {
+        if (io->read(io->context, primary_path, previous_scratch,
+                     capacity, &previous_length) != 0)
+            return RTA_ERR_BACKEND;
+        if (previous_length > capacity) return RTA_ERR_CAPACITY;
+        /* Only a fully decoded primary is eligible to replace the backup. */
+        preserve_previous =
+            rta_asset_manifest_decode(previous_scratch, previous_length,
+                                      &previous_registry) == RTA_OK;
+        if (preserve_previous) {
+            ts_sha256_init(&hash);
+            ts_sha256_update(&hash, previous_scratch, previous_length);
+            ts_sha256_final(&hash, previous_digest);
+        }
+    }
+
+    if (io->replace_with_backup_atomic(io->context, primary_path, backup_path,
+                                       scratch, new_length,
+                                       preserve_previous) != 0)
+        return RTA_ERR_BACKEND;
+
+    /* Verify the newly committed primary, including its manifest structure. */
+    read_length = 0;
+    if (io->read(io->context, primary_path, scratch, capacity, &read_length) != 0)
+        return RTA_ERR_BACKEND;
+    if (read_length != new_length) return RTA_ERR_INTEGRITY;
+    ts_sha256_init(&hash);
+    ts_sha256_update(&hash, scratch, read_length);
+    ts_sha256_final(&hash, actual_digest);
+    if (memcmp(new_digest, actual_digest, sizeof(new_digest)) != 0 ||
+        rta_asset_manifest_decode(scratch, read_length, &previous_registry) != RTA_OK)
+        return RTA_ERR_INTEGRITY;
+
+    if (preserve_previous) {
+        read_length = 0;
+        if (io->read(io->context, backup_path, previous_scratch,
+                     capacity, &read_length) != 0)
+            return RTA_ERR_BACKEND;
+        if (read_length != previous_length) return RTA_ERR_INTEGRITY;
+        ts_sha256_init(&hash);
+        ts_sha256_update(&hash, previous_scratch, read_length);
+        ts_sha256_final(&hash, actual_digest);
+        if (memcmp(previous_digest, actual_digest, sizeof(previous_digest)) != 0 ||
+            rta_asset_manifest_decode(previous_scratch, read_length,
+                                      &previous_registry) != RTA_OK)
+            return RTA_ERR_INTEGRITY;
+    }
+    return RTA_OK;
+}
