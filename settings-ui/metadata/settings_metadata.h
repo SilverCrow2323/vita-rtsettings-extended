@@ -19,7 +19,7 @@ typedef struct { rtp_metadata_entry entries[RTP_META_MAX_ENTRIES]; size_t count;
 void rtp_metadata_init(rtp_metadata_catalogue *catalogue);
 int rtp_metadata_register(rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences,const rtp_metadata_descriptor *descriptor);
 const rtp_metadata_entry *rtp_metadata_find(const rtp_metadata_catalogue *catalogue,const char *entry_id);
-int rtp_metadata_validate(const rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences);
+int rtp_metadata_validate(const rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences);\n/* Registers the Appearance & Customization and Quick Menu Settings entries. */\nint rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
 #ifdef __cplusplus
 }
 #endif
