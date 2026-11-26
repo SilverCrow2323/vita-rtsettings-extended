@@ -34,7 +34,8 @@ void rt_pi_inventory_init(rt_pi_inventory *v){if(v)memset(v,0,sizeof(*v));}
 static int section_line(const char *s,char *section,size_t cap){size_t n=strlen(s);if(s[0]=='*'){if(n<2||n>=cap)return -1;return copy(section,cap,s)?1:-1;}if(s[0]=='['||(n&&s[n-1]==']'))return -1;return 0;}
 int rt_pi_parse(const char *text,size_t length,rt_pi_inventory *out){
  size_t pos=0;unsigned int line=0;char section[RT_PI_SECTION_MAX+1]="";
- if(!text||!out)return RT_PI_INVALID;rt_pi_inventory_init(out);
+ if(!text||!out)return RT_PI_INVALID;
+ rt_pi_inventory_init(out);
  while(pos<length){char buf[512],path[RT_PI_PATH_MAX+1];size_t n=0;int disabled=0,sec;char *p,*end;++line;
   while(pos<length&&text[pos]!='\n'){if(n+1<sizeof(buf))buf[n++]=text[pos];else {out->malformed_lines++;while(pos<length&&text[pos]!='\n')++pos;break;}++pos;}
   if(pos<length&&text[pos]=='\n')++pos;buf[n]='\0';if(n&&buf[n-1]=='\r')buf[--n]='\0';trim(buf);if(!buf[0]){out->ignored_lines++;continue;}
@@ -46,7 +47,8 @@ int rt_pi_parse(const char *text,size_t length,rt_pi_inventory *out){
   if(!plugin_suffix(path)){out->ignored_lines++;continue;}
   if(out->count>=RT_PI_MAX_ENTRIES)return RT_PI_CAPACITY;
   {rt_pi_entry *e=&out->entries[out->count];size_t i;memset(e,0,sizeof(*e));if(!copy(e->path,sizeof(e->path),path)||!copy(e->section,sizeof(e->section),section))return RT_PI_TEXT_TOO_LONG;e->line_number=line;e->enabled=!disabled;e->occurrence=1;
-   for(i=0;i<out->count;++i)if(strcmp(out->entries[i].path,e->path)==0){e->occurrence++;out->entries[i].duplicate_count++;}e->duplicate_count=e->occurrence;identify(e);out->count++;}
+   for(i=0;i<out->count;++i){if(strcmp(out->entries[i].path,e->path)==0){e->occurrence++;out->entries[i].duplicate_count++;}}
+   e->duplicate_count=e->occurrence;identify(e);out->count++;}
  }
  return RT_PI_OK;
 }

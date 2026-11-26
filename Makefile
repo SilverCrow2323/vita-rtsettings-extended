@@ -17,6 +17,7 @@ UI_TEST_BINARY := build/test_preferences_ui
 METADATA_TEST_BINARY := build/test_settings_metadata
 PLUGIN_INVENTORY_TEST_BINARY := build/test_plugin_inventory
 SANITIZER_BINARY := build/test_tai_saver_san
+PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 
 .PHONY: all test sanitize clean
 all: $(LIBRARY)
@@ -85,8 +86,12 @@ test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TE
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
 
-sanitize: $(SANITIZER_BINARY)
+$(PLUGIN_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_plugin_inventory.c include/plugin_inventory.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_plugin_inventory.c -o $@ $(LDFLAGS)
+
+sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 
 clean:
 	rm -rf build
