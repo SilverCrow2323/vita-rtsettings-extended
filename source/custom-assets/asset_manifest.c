@@ -39,7 +39,7 @@ static uint64_t get_u64(const unsigned char *p) {
     *pos += length;
     return 1;
 }
-static int write_string(unsigned char *out, size_t cap, size_t *pos,
+static int write_bytes(unsigned char *out, size_t cap, size_t *pos,\n                       const void *data, size_t length) {\n    if (*pos > cap || length > cap - *pos) return 0;\n    if (length) memcpy(out + *pos, data, length);\n    *pos += length;\n    return 1;\n}\nstatic int write_string(unsigned char *out, size_t cap, size_t *pos,
                         const char *value, size_t max_length) {
     size_t n = value ? strlen(value) : 0;
     unsigned char length[2];
