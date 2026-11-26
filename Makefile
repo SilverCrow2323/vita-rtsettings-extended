@@ -25,6 +25,8 @@ SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
 WIFI_TURBO_SANITIZER_BINARY := build/test_wifi_turbo_adapter_san
+PROFILE_MANAGER_SANITIZER_BINARY := build/test_profile_manager_san
+MODULE_CONTROLS_SANITIZER_BINARY := build/test_module_controls_san
 
 .PHONY: all test sanitize clean
 all: $(LIBRARY)
@@ -137,11 +139,19 @@ $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_plugin_comp
 $(WIFI_TURBO_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_wifi_turbo_adapter.c include/wifi_turbo_adapter.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_wifi_turbo_adapter.c -o $@ $(LDFLAGS)
 
-sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY)
+$(PROFILE_MANAGER_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_profile_manager.c settings-ui/profile_manager.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_profile_manager.c -o $@ $(LDFLAGS)
+
+$(MODULE_CONTROLS_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_module_controls.c settings-ui/module_controls.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_module_controls.c -o $@ $(LDFLAGS)
+
+sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(WIFI_TURBO_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(PROFILE_MANAGER_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(MODULE_CONTROLS_SANITIZER_BINARY)
 
 clean:
 	rm -rf build
