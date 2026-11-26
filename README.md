@@ -30,6 +30,8 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Plugin adapter framework](#plugin-adapter-framework)
 - [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
+- [Appearance and Quick Menu customization](#appearance-and-quick-menu-customization)
+- [Plugin selection and Settings presentation policy](#plugin-selection-and-settings-presentation-policy)
 - [Plugin Control Centre](#plugin-control-centre)
 - [Connectivity, USB, FTP and streaming](#connectivity-usb-ftp-and-streaming)
 - [Expandable installer and modular sections](#expandable-installer-and-modular-sections)
@@ -75,6 +77,12 @@ Settings
 │   └── Supported display, graphics and audio extensions
 ├── System
 │   └── Supported system and startup extensions
+├── Appearance & Customization               [new Rt category]
+│   ├── Boot Animation / Boot Splash
+│   ├── Boot Sound
+│   ├── Startup Warning
+│   ├── Interface & Asset Manager
+│   └── Quick Menu Customization
 ├── Advanced Options                         [new Rt category]
 │   ├── Connectivity Options
 │   ├── Plugin Feature Settings
@@ -253,88 +261,151 @@ System Tools entries are shortcuts, not plugin toggles. Removing a shortcut from
 
 ## Feature catalogue
 
-The following catalogue describes the intended scope. It will be delivered incrementally as tested modules and adapters.
+This is the complete product scope for Rt:Settings Extended. Entries below describe the intended user-facing Settings experience, not a claim that every backend or native page already exists. The implementation status table and roadmap near the end of this README remain authoritative.
+
+### Appearance & Customization
+
+A dedicated, Sony-style Settings category for startup presentation and shell appearance. The goal is to manage the user's assets centrally rather than expose unrelated plugin configuration files.
+
+- **Boot Animation** — enable/disable a supported boot animation, choose an installed animation, preview it where technically possible, inspect format/resolution requirements and restore the original.
+- **Boot Splash / Custom Boot Logo** — manage compatible boot splash images, convert or validate assets where a safe converter is available, preview the selected image and restore the default. The original Sony boot logo may remain visible if the underlying plugin cannot replace it.
+- **Boot Sound** — enable/disable a supported startup jingle, select a sound file, validate WAV format, sample rate, channel count and file-size limits, preview playback when safe, and restore the default sound.
+- **Custom Startup Warning** — choose or edit a supported warning message, select from installed presets, preview the result and restore the original warning. Editing is exposed only for versions with a documented and safely writable configuration.
+- **Interface Customization** — supported shell appearance options such as status-bar elements, visual indicators, supported color/theme values and other plugin-backed presentation controls. No arbitrary system-resource patching.
+- **Custom Assets Manager** — one central library for boot images, animations, sounds, warning presets and other supported assets. It will track ownership, source, format, dimensions, compatibility, checksums, active use and backup/restore state; detect duplicates and orphaned assets; and avoid deleting files not owned by Rt.
+- **Asset import/export** — import from supported storage locations, validate before activation, keep the currently working asset as a rollback point, and export selected assets with metadata.
+- **Per-feature fallback** — if a plugin or asset is missing/incompatible, show the feature as unavailable with an explanation instead of displaying non-functional controls.
+
+### Quick Menu
+
+A dedicated Settings page for supported Quick Menu frameworks and add-ons. This is not a promise that every Quick Menu plugin exposes a Settings API.
+
+- **Quick Menu framework status** — detect supported frameworks, installed version, load state, required files and dependencies.
+- **Layout and widget management** — list detected widgets/add-ons, enable or disable only through a verified mechanism, change order or visibility where the framework supports it.
+- **Quick shortcuts** — configure supported shortcuts and launch actions with duplicate detection and safe target validation.
+- **Behavior** — supported display, invocation, timeout and interaction options, only when documented by the installed version.
+- **Plugin-specific options** — expose each add-on's own settings through a dedicated adapter; never infer fields from filenames or undocumented config.
+- **Variant handling** — compare QuickMenuReborn, QuickLauncher and compatible add-ons; retain alternatives only where their feature set, compatibility or device support differs materially.
+- **Conflict checks** — detect overlapping Quick Menu replacements, shell hooks and add-ons requiring a specific framework version.
 
 ### Connectivity
 
-- **USB Connection — Always On preference:** an option to keep the USB connection service available/automatically enabled where the Vita's USB mode and installed system components permit it. The page will show connection state and explain when a cable, host or reboot is required.
-- **FTP Server — Always On:** automatically start the FTP service when its supported backend is available, with configurable port, access state, startup behavior and clear running/stopped status.
-- Manual start/stop controls for supported services.
-- Startup behavior and service health indicators.
-- Explicit warnings when a service is unavailable because its required plugin/application is not installed.
+- **USB Connection** — persistent preference to make the supported USB connection mode available automatically when the console, cable, host and backend permit it; show actual connection state and host requirements.
+- **FTP Server** — start/stop, actual running state, supported port settings, startup preference, access information and backend health.
+- **FTP alternatives** — distinguish VitaShell FTP, FTP for Vita / QuickMenuReborn add-on and FTP Everywhere. Keep more than one implementation only when their use cases differ; prevent simultaneous port/provider conflicts.
+- **Wi-Fi extensions** — adapter-backed controls for Wi-Fi Turbo, including status, Keep Wi-Fi on, HUD, auto-reconnect, Smart Mesh Roaming and supported reconnect actions. Potentially disruptive power/HT40 operations require explicit confirmation.
+- **Service lifecycle** — start, stop, refresh, auto-start preference, error reporting and reboot-required state for each supported service.
 
-“Always On” is a persistent preference, not a promise that a physical USB link can exist without a cable or that an FTP server can operate when the console is powered off. Services must start only when their backend and system state allow it.
+“Always On” is a persistent startup preference, not a promise that a physical USB link exists without a cable or that an FTP server runs while the console is powered off.
 
 ### USB Streaming
 
-A dedicated page for supported USB streaming backends:
-
-- Enable/disable USB streaming.
-- Show backend/plugin detection and compatibility.
-- Display connection and streaming state.
-- Configure supported backend options, such as video mode or transport settings, only when exposed by that backend.
-- Start/stop streaming and show errors.
-- Explain host-side requirements and reboot requirements.
-
-USB streaming must be treated separately from ordinary USB connection mode and FTP. Their drivers and plugin dependencies can conflict or be mutually exclusive on some configurations; the framework must detect known conflicts and never activate incompatible modes together without an explicit, informed user decision.
+- Detect supported USB video/audio streaming backends and their exact versions.
+- Display compatibility, dependencies, active state, host-side requirements and connection status.
+- Start/stop streaming and report real backend errors.
+- Expose only options declared by the selected backend.
+- Compare vitastream, VitaUSBStream and other UVC implementations; select one default and retain alternatives only when they provide meaningful compatibility or feature differences.
+- Detect mutually exclusive USB/UVC kernel drivers and refuse unsafe simultaneous activation.
 
 ### Plugin Control Centre
 
-A central place to inspect and manage configurable plugins:
-
-- Scan known taiHEN plugin locations and identify installed plugin entries.
-- Group plugins by category and load location where possible.
-- Show plugin name, path, version and detected status when metadata is available.
-- Expose settings for plugins that provide a supported configuration adapter.
-- Provide per-plugin enable/disable controls only where the framework can safely manage the relevant configuration.
-- Offer profiles, such as a daily-use profile, streaming profile or troubleshooting profile, once profile switching is implemented safely.
-- Validate configuration changes, show a preview and preserve a restorable backup.
-- Detect missing files, duplicate entries and known conflicts where reliable rules exist.
-- Keep diagnostic information for unsupported or unrecognized plugins.
-
-**Important technical limit:** there is no universal safe way to invent settings for an arbitrary plugin. A plugin's adjustable options can be exposed only if its configuration format, API or a dedicated adapter is understood. Unknown plugins will still be listed when detectable, but will not receive fabricated sliders or switches. The framework must never guess undocumented values or silently rewrite plugin configuration.
+- Scan supported taiHEN plugin locations and parse active/commented entries, sections, duplicate paths and missing files.
+- Show human-readable plugin name, description, category, version, source, author, load location, compatibility and status.
+- Group plugins by function and load location.
+- Provide per-plugin settings only through a reviewed adapter with a declared schema, valid values, read/write methods, version checks and restore behavior.
+- Enable/disable entries only through transactional config editing with backup, preview, validation and rollback.
+- Detect dependencies, conflicts, duplicate providers, missing requirements and reboot needs.
+- Support named operational profiles (for example Daily, Streaming, Battery Saver and Troubleshooting) without confusing them with menu-layout profiles.
+- Keep unknown plugins visible in inventory and diagnostics, but never invent controls or modify them blindly.
 
 ### Storage & Devices
 
-Planned capabilities include:
-
-- Internal memory card and SD2Vita status.
-- Mounted storage devices, mount points and free-space information.
-- Storage health and configuration diagnostics where the platform exposes reliable data.
-- Safe access to Tai Saver archives and recovery data.
-- Device and USB connection information.
-- Warnings before operations that may affect storage availability.
+- Identify SD2Vita, Sony Memory Card, internal storage and supported USB devices.
+- Show mount state, mount point, total/free capacity, read-only status and storage mapping.
+- Detect duplicate mount points, missing devices, unexpected mappings and configuration inconsistencies.
+- Integrate with YAMT while preserving the user's existing storage setup.
+- Provide safe access to Tai Saver backups and recovery data.
+- Add storage health checks and guided diagnostics where the platform exposes reliable information.
+- Any mount/unmount, format or migration operation must be a separate, explicitly confirmed and recoverable workflow.
 
 ### System & Startup
 
-- Startup service status and lifecycle information.
-- Automatic service preferences.
-- Boot journal and startup diagnostics.
-- Module startup dependencies and ordering.
-- Recovery status after interrupted operations.
-- Clear reboot-required indicators.
+- Startup services, status, dependencies, ordering and supported autostart preferences.
+- Boot journal with startup events, failures, recovery markers and exportable diagnostics.
+- Boot configuration inspection with guarded edits and automatic pre-change backup.
+- Tai Saver startup backup policy, retention and restore workflow.
+- Recovery mode, safe-mode guidance and interrupted-operation recovery.
+- Clear distinction between immediate changes and changes requiring reboot.
 
 ### Display & Audio
 
-An extended home for supported display and audio options, including plugin-backed enhancements. Controls will be available only where a documented system API or supported plugin adapter exists.
+- OLED-aware brightness and display enhancements, including supported VitaBrightEX/LUT controls.
+- Supported color temperature, display filters and per-panel options, with unsafe OLED/LCD combinations hidden.
+- Supported audio enhancements, Bluetooth audio extensions and device status.
+- Audio routing, codec and quality options only when the installed backend exposes validated controls.
+- Conflict detection for overlapping display hooks, LUT providers and Bluetooth audio stacks.
 
 ### Power & Performance
 
-A home for supported power, performance and monitoring extensions. Plugin-specific overclocking or performance controls must respect hardware limits, backend capabilities and safe defaults. The framework must not expose arbitrary unsafe values.
+- Supported CPU/GPU clock profiles and monitoring.
+- Battery, temperature and power-state information where reliable APIs exist.
+- Sleep prevention / Caffeine controls with explicit battery-impact warnings.
+- Performance profiles and per-title controls only through compatible adapters.
+- Detect overlapping overclock managers and remappers; never load competing providers together.
+- Enforce adapter-declared hardware limits, safe defaults and confirmation for risky changes.
+
+### Network & Bluetooth
+
+- Wi-Fi status and supported Wi-Fi plugin controls.
+- Bluetooth device/stack status and supported audio add-ons.
+- Connection diagnostics and supported network tools.
+- TLS/certificate component status where relevant.
+- Clearly separate kernel plugins, user plugins, standalone VPK utilities and PSP/Adrenaline plugins.
+
+### System Tools
+
+- Detected shortcuts for VitaShell, file managers, application managers, system monitors and registered utilities.
+- Launch only through verified application IDs or supported launch adapters.
+- Do not install duplicate utilities or alter third-party app data.
+- A shortcut can be hidden or removed without uninstalling its target application.
+
+### Preferences & Profiles
+
+- Reorder Rt categories and supported entries.
+- Hide/show categories, rows, tools and widgets without changing their operational state.
+- Move eligible Rt-owned entries between compatible pages.
+- Save, rename, duplicate, update, apply and delete named menu layouts.
+- Provide reset-to-default and validated import/export.
+- Keep menu-layout profiles separate from plugin/service operational profiles.
+
+### Framework & Modules
+
+- Shared framework installed once, with independently installable Settings sections.
+- Install Selected / Install All, add later, update, repair, enable/disable and remove.
+- Dependency resolution, compatibility checks, free-space preflight and package integrity verification.
+- Transaction journal, staged writes, atomic config updates, rollback and recovery after interruption.
+- Preserve user data and unrelated files when disabling, repairing or removing modules.
 
 ### Tai Saver
 
-Backup, verification, comparison and recovery for `ur0:tai`. See [First implemented core: Tai Saver](#first-implemented-core-tai-saver).
+- Automatic ur0:tai snapshot at startup, with configurable retention (2/3/4/5/custom).
+- Separate archives for known-working configurations and failed/KO configurations kept for diagnosis.
+- Backup manifests, SHA-256 verification, snapshot comparison and change summaries.
+- Restore with a mandatory pre-restore safety snapshot.
+- Manual backup, pin/protect snapshots, export and retention cleanup.
+- Never classify a configuration as working solely because a file exists; health classification needs an explicit signal or user confirmation.
 
 ### System Information & Diagnostics
 
-- Firmware and system component information.
-- Installed framework and module versions.
-- Detected plugin/backend inventory.
-- Service status and diagnostic reports.
-- Compatibility checks and recovery guidance.
+- Firmware, model, storage, framework and module versions.
+- Plugin inventory, detected version/source and compatibility findings.
+- Service health, startup journal and recovery status.
+- Exportable diagnostic report with sensitive paths/data handled carefully.
+- Guided troubleshooting and safe recovery recommendations.
 
-The catalogue is intentionally broad. A feature becomes an installable module only after its implementation, dependencies, UI, safety rules and tests are ready.
+### Design rule for all features
+
+Every function must be presented as a normal Settings entry: a concise title, plain-language description, clear status, and only the controls supported by the installed backend. The feature catalogue is broad by design; a feature becomes installable only after its implementation, dependency metadata, adapter, UI, safety rules, regression tests and target validation are complete.
 
 ## Vita plugin research
 
