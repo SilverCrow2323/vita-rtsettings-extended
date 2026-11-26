@@ -677,7 +677,6 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
 - [Custom Assets Manager Core](settings-ui/CUSTOM_ASSETS_MANAGER.md)
-- [Boot Appearance Adapter Decisions](docs/BOOT_APPEARANCE_ADAPTERS.md)
 - [Appearance Asset Manifest Schema](schemas/appearance-assets.schema.json)
 - [Managed Appearance Asset Catalogue](data/appearance-assets.json)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
