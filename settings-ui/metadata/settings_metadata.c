@@ -55,7 +55,7 @@ int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_prefe
   {
    rtp_metadata_descriptor d;
    memset(&d,0,sizeof(d));d.entry_id=e->id;d.title=e->title;d.description=e->description;
-   d.category_id=(i==0||i==7)?"":e->category;d.icon_key=e->icon;d.module_id=e->module;d.flags=e->flags;
+   d.category_id=(i==0)?"":(i==7)?"appearance-customization":e->category;d.icon_key=e->icon;d.module_id=e->module;d.flags=e->flags;
    if(rtp_metadata_register(catalogue,preferences,&d)!=RTP_META_OK)return RTP_META_INVALID_ARGUMENT;
   }
  }
