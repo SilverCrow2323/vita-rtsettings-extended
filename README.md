@@ -14,6 +14,9 @@ This is not intended to be another standalone homebrew launcher or a small colle
 
 - [The overall vision](#the-overall-vision)
 - [The Settings experience](#the-settings-experience)
+- [Native integration and dedicated Settings categories](#native-integration-and-dedicated-settings-categories)
+- [Preferences and menu customization](#preferences-and-menu-customization)
+- [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
 - [Plugin Control Centre](#plugin-control-centre)
 - [Connectivity, USB, FTP and streaming](#connectivity-usb-ftp-and-streaming)
@@ -48,22 +51,43 @@ We will build this in layers. Sony-owned Settings pages will not be patched indi
 
 ## The Settings experience
 
-The planned top-level layout is an organized extension of the existing Settings application:
+The target is a native-feeling Settings experience: existing Sony categories remain familiar, compatible extensions are integrated in place where technically safe, and new Rt categories cover features that have no sensible Sony destination.
+
+The following is the logical information architecture. Exact placement and labels may vary slightly after firmware/API research:
 
 ```text
 Settings
-└── Rt:Settings Extended
+├── Network
+│   └── Supported connectivity extensions
+├── Sound & Display
+│   └── Supported display, graphics and audio extensions
+├── System
+│   └── Supported system and startup extensions
+├── Advanced Options                         [new Rt category]
+│   ├── Connectivity Options
+│   ├── Plugin Feature Settings
+│   ├── Runtime Configuration
+│   ├── Boot Configuration
+│   ├── Service Management
+│   ├── Compatibility Options
+│   └── Experimental Features
+├── System Tools                             [new Rt category]
+│   ├── VitaShell                            [only when detected]
+│   ├── File Explorer                        [only when detected]
+│   ├── Application Manager                  [only when detected]
+│   ├── System Monitor                       [only when detected]
+│   └── Other registered tools
+├── Preferences                              [new Rt category]
+│   ├── Menu Layout
+│   ├── Visibility
+│   ├── Ordering
+│   ├── Profiles
+│   └── Reset & Backup
+└── Rt:Settings Extended                     [framework and module hub]
     ├── Overview
     ├── Framework & Modules
     ├── Connectivity
-    │   ├── USB Connection
-    │   ├── FTP Server
-    │   └── USB Streaming
     ├── Plugin Control Centre
-    │   ├── Installed Plugins
-    │   ├── Plugin Settings
-    │   ├── Profiles
-    │   └── Compatibility & Diagnostics
     ├── Storage & Devices
     ├── System & Startup
     ├── Display & Audio
@@ -72,9 +96,98 @@ Settings
     └── System Information & Diagnostics
 ```
 
-This is the target information architecture. Sections will appear as functional pages only when the corresponding module and required backend are installed and compatible. The interface must distinguish **Available**, **Installed**, **Disabled**, **Incompatible**, **Service unavailable** and **Requires reboot** states.
+The diagram is a target layout, not a claim that every entry is already implemented or that every Sony page can be extended without reverse engineering. The framework should prefer placing a control in its natural existing Sony category when a stable, compatible integration point exists. Otherwise, it should create a clearly named Rt category rather than force an awkward placement.
+
+Sections and entries appear only when their module, application or backend is detected and compatible. The interface must distinguish **Available**, **Installed**, **Hidden**, **Disabled**, **Incompatible**, **Service unavailable** and **Requires reboot** states. Hidden is a presentation preference; Disabled is an operational state.
 
 Every page should use consistent controls, explanations, confirmation prompts, status indicators and error reporting. Long-running operations must run outside the Settings UI thread.
+
+## Native integration and dedicated Settings categories
+
+The project uses two complementary integration strategies.
+
+### Integrate into existing Sony categories
+
+Where the firmware exposes a reliable and maintainable extension point, Rt controls should appear beside the Sony settings they relate to. Examples include network-related options under Network, display and graphics options under Sound & Display, and supported startup/system options under System.
+
+This must be implemented conservatively. We will not blindly patch Sony resources, overwrite system files or assume that a menu hook is stable across firmware versions. Every integration point needs compatibility checks and a fallback.
+
+### Add professional Rt categories when no natural Sony location exists
+
+Some functions are broader utilities or advanced controls. They deserve their own entries in the main Settings list:
+
+- **Advanced Options** — specialist configuration that does not belong in a standard Sony page.
+- **System Tools** — launch points for useful installed system/homebrew utilities.
+- **Preferences** — customization of the Settings navigation and visibility.
+- **Rt:Settings Extended** — framework status, installed modules, diagnostics and the complete extension hub.
+
+These entries must follow the visual and interaction conventions of the native Settings application: restrained typography, consistent spacing, familiar list navigation, clear hierarchy, concise descriptions and predictable back navigation. Avoid flashy launcher-style tiles, unrelated visual themes or a separate homebrew dashboard aesthetic.
+
+## Preferences and menu customization
+
+**Preferences** gives the user control over the organization of the Settings application. It is a first-class module and one of the defining features of Rt:Settings Extended.
+
+The user should be able to customize both the main Settings list and the contents of supported categories.
+
+### Main menu layout
+
+- Reorder Rt-created categories in the Settings root.
+- Move eligible Rt entries between supported Rt categories.
+- Choose whether supported Rt categories appear in the main Settings list or under the Rt hub.
+- Hide or show individual Rt-created categories.
+- Restore the default layout at any time.
+
+### Individual menu entries
+
+- Hide or show individual settings rows and submenus.
+- Reorder entries inside supported Rt pages.
+- Move eligible Rt-owned entries between compatible Rt pages.
+- Restore an individual page to its default ordering.
+- Reset all menu visibility and ordering preferences.
+
+### Sony menu boundaries
+
+Sony-owned entries may be hidden, moved or reordered only when the firmware integration layer explicitly supports that operation and can restore the original state safely. The project must not promise arbitrary rearrangement of Sony's internal menus. If an entry cannot be modified safely, it remains in its original position and Preferences explains why.
+
+### Profiles and persistence
+
+- Save multiple layouts, for example **Default**, **Minimal**, **Advanced** and **Troubleshooting**.
+- Switch layouts without changing plugin activation, service state or application installation.
+- Persist preferences across reboots.
+- Export/import a validated preferences backup when that feature is implemented.
+- Provide **Reset to Defaults** and per-category reset actions.
+
+### Critical distinction: visibility is not functionality
+
+Hiding a menu item must never uninstall its module, disable its plugin, stop a service, change a system setting or delete user data. Showing a hidden item must not silently enable it. Preferences controls presentation only; operational settings remain owned by their respective modules.
+
+The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu.
+
+## System Tools and application shortcuts
+
+**System Tools** is a curated application-launch section inside Settings—not a replacement for the LiveArea and not an attempt to duplicate every homebrew bubble.
+
+It provides convenient access to useful utilities already installed on the console. Initial candidates include:
+
+- **VitaShell** — file management and supported USB/FTP workflows.
+- **File Explorer** — a dedicated file browser, if a compatible application is installed.
+- **Application Manager** — application and homebrew management, if available.
+- **System Monitor** — system information and monitoring tools, if available.
+- Additional utilities registered by compatible modules.
+
+### Detection and launch behavior
+
+- Detect applications using reliable identifiers, registered launch metadata or verified installation manifests.
+- Show only applications that are actually installed and recognized.
+- Display a clear unavailable state if a previously registered application has been removed.
+- Launch the selected application directly only where the Vita's supported launch mechanism permits it reliably.
+- If direct launch is not supported, provide a truthful fallback, such as opening the application's LiveArea or explaining the limitation.
+- Do not install duplicate copies of VitaShell or other utilities merely to populate this list.
+- Do not delete, modify or take ownership of third-party application data.
+- Allow compatible modules to register additional tools through a documented manifest.
+
+System Tools entries are shortcuts, not plugin toggles. Removing a shortcut from the list must not remove the application itself. Preferences may hide or reorder these shortcuts independently.
+
 
 ## Feature catalogue
 
@@ -238,7 +351,9 @@ The project consists of a shared framework, service backends, plugin adapters an
 
 ### Shared framework
 
-- Native Settings entry and navigation.
+- Native Settings entry and navigation, including safe Sony-page integration and dedicated Rt categories.
+- Preferences engine for stable-ID menu ordering, visibility, profiles and reset.
+- System Tools application registry, detection and launch adapters.
 - Module discovery and registration.
 - Service manager and lifecycle.
 - Plugin adapter registry.
@@ -359,6 +474,9 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Guarded restore with Pre-Restore safety snapshot | Implemented; host-tested |
 | Boot lifecycle journal | Implemented; host-tested |
 | Expandable installer and module architecture | Specified |
+| Preferences menu customization (ordering, visibility, profiles) | Project target; implementation pending |
+| System Tools application registry and launch shortcuts | Project target; implementation pending |
+| Native Sony menu injection / extension points | Research and compatibility work pending |
 | Plugin Control Centre and adapter contract | Project target; implementation pending |
 | USB persistent connection controls | Project target; implementation pending |
 | FTP always-on service integration | Project target; implementation pending |
@@ -374,16 +492,19 @@ A passing host CI run validates only the tests actually executed by that workflo
 ### Roadmap
 
 1. Finish storage safety and interrupted-staging recovery.
-2. Implement the shared service and plugin-adapter contracts.
-3. Implement the installer transaction engine and module selection UI.
-4. Validate the code with the VitaSDK toolchain.
-5. Build the Rt:Settings Extended root category and navigation.
-6. Integrate Tai Saver as the first working module.
-7. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
-8. Add USB streaming through a tested backend and conflict-aware service manager.
-9. Build the Plugin Control Centre and adapters for supported plugins.
-10. Add storage, system, display/audio, power and diagnostics modules incrementally.
-11. Test installation, update, rollback, service startup and removal on the target Vita.
+2. Define the Preferences menu registry, persistence format and safe layout transaction model.
+3. Define System Tools application detection and launch-adapter contracts.
+4. Implement the shared service and plugin-adapter contracts.
+5. Implement the installer transaction engine and module selection UI.
+6. Validate the code with the VitaSDK toolchain.
+7. Build the Rt:Settings Extended root category and navigation.
+8. Integrate Tai Saver as the first working module.
+9. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
+10. Add USB streaming through a tested backend and conflict-aware service manager.
+11. Build the Plugin Control Centre and adapters for supported plugins.
+12. Add storage, system, display/audio, power and diagnostics modules incrementally.
+13. Implement Sony-page integrations where verified extension points exist.
+14. Test installation, update, rollback, service startup and removal on the target Vita.
 
 ## Documentation
 
