@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rt:Settings Extended package manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "product_id": {
+      "type": "string",
+      "const": "rtsettings-extended"
+    },
+    "display_name": {
+      "type": "string",
+      "const": "Rt:Settings Extended"
+    },
+    "release_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([+-][A-Za-z0-9.-]+)?$"
+    },
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "minimum_firmware": {
+          "type": "string"
+        },
+        "maximum_firmware": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payload_root": {
+          "type": "string",
+          "const": "framework/payload"
+        }
+      },
+      "required": [
+        "version",
+        "minimum_firmware",
+        "payload_root"
+      ]
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]+$"
+          },
+          "manifest": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "default_selected": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "manifest",
+          "required",
+          "default_selected"
+        ]
+      }
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "format_version",
+    "product_id",
+    "display_name",
+    "release_version",
+    "framework",
+    "modules"
+  ]
+}

@@ -1,20 +1,16 @@
 # Rt:Settings Extended
 
-A modular extension for the native PlayStation Vita **Settings** application.
+A modular extension for the native PlayStation Vita **Settings** application. It adds integrated feature categories and pages; it is not a separate SPDW control panel.
 
-Rt:Settings Extended adds integrated feature categories and pages. It is not a separate SPDW control panel.
+## Expandable installer
 
-## Project goals
+Rt:Settings Extended is designed around one expandable installer. The framework is installed once; feature pages are independent modules that can be added in later releases. Users can choose modules during setup, add them later, update or repair them independently, and remove a module without deleting its user data.
 
-- Add native-feeling Settings pages with consistent navigation and terminology.
-- Keep each feature modular, independently configurable and safe to disable.
-- Prefer reversible operations, explicit status reporting and recovery paths.
-- Keep all user-facing interface text in English.
+The package and module contracts are defined in `installer/`. The Vita installer executable and on-device transaction engine are not yet built; see [Expandable Installer](docs/EXPANDABLE_INSTALLER.md).
 
 ## First feature: Tai Saver
 
-Tai Saver protects the configuration in `ur0:tai`.
-
+Tai Saver protects the configuration in `ur0:tai`:
 - Automatic snapshots with configurable retention (2, 3, 4, 5 or Custom).
 - Separate Automatic, Known-Good, Failed / KO and Pre-Restore archives.
 - Per-file SHA-256 hashes and JSON manifests.
@@ -24,7 +20,8 @@ Tai Saver protects the configuration in `ur0:tai`.
 
 ## Repository layout
 
-- `docs/` — architecture, boot integration and Settings integration contracts.
+- `installer/` — expandable package format, module manifests and installer contract.
+- `docs/` — architecture, boot integration, native Settings and installer contracts.
 - `include/` — public C interfaces.
 - `source/tai-saver/` — Tai Saver engine and SHA-256 implementation.
 - `source/boot-monitor/` — boot lifecycle journal.
@@ -40,19 +37,17 @@ make test
 make sanitize
 ```
 
-A VitaSDK static-library build recipe is provided in `Makefile.vita`. The Vita cross-build, boot adapter, native Settings registration, VPK packaging and physical-device validation are separate milestones. Do not interpret a successful host CI run as proof of Vita compatibility.
+A VitaSDK static-library build recipe is provided in `Makefile.vita`. The Vita cross-build, boot adapter, native Settings registration, installer VPK and physical-device validation are separate milestones. A successful host CI run is not proof of Vita compatibility.
 
 ## Current development status
 
-**Implemented and host-tested:** Tai Saver C core, SHA-256 manifests, snapshot verification, comparison, archive classification, Automatic-only retention, guarded restore with Pre-Restore snapshot, and the Boot Journal lifecycle state machine.
+**Implemented and host-tested:** Tai Saver C core, SHA-256 manifests, snapshot verification, comparison, archive classification, Automatic-only retention, guarded restore with Pre-Restore snapshot and Boot Journal lifecycle state handling.
 
-**Next:** stale-staging recovery, VitaSDK cross-build validation, boot lifecycle adapter, native Settings category/page and packaging.
+**Defined:** expandable package format, package/module JSON schemas, first Tai Saver module descriptor, module selection and transaction/rollback contract.
 
-See:
-- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
-- [Boot Integration](docs/BOOT_INTEGRATION.md)
-- [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
-- [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
+**Next:** installer transaction engine and Vita UI, boot lifecycle adapter, VitaSDK cross-build validation and native Settings category/page.
+
+See [Tai Saver Core](docs/TAI_SAVER_CORE.md), [Boot Integration](docs/BOOT_INTEGRATION.md), [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md), [Expandable Installer](docs/EXPANDABLE_INSTALLER.md), and [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md).
 
 ## Primary validation target
 
