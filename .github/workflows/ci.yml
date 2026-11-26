@@ -9,6 +9,7 @@ on:
     paths:
       - "include/**"
       - "source/**"
+      - "settings-ui/**"
       - "tests/**"
       - "tai-saver/**"
       - "Makefile"
