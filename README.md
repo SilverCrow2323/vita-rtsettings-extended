@@ -25,6 +25,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Plugin Control Centre model](#plugin-control-centre-model)
 - [Storage & Devices snapshot model](#storage--devices-snapshot-model)
 - [Bluetooth & Controller Control Centre](#bluetooth--controller-control-centre)
+- [Localization and language support](#localization-and-language-support)
 - [Vita filesystem bridge for Custom Assets](#vita-filesystem-bridge-for-custom-assets)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
@@ -43,6 +44,10 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Build and tests](#build-and-tests)
 - [Development status and roadmap](#development-status-and-roadmap)
 - [Documentation](#documentation)
+
+## Localization and language support
+
+All user-facing interface text is being moved to stable translation keys. The new bounded C99 localization registry supports module-owned translations, duplicate detection, locale-specific lookup, primary-language fallback, configured fallback locale and safe removal of a module's strings. English (`en-US`) is the source/fallback language; Italian (`it-IT`) is the first additional target. The current registry is host-tested. Vita system-language detection, language settings UI, resource-pack loading and automated coverage checks remain integration work. See [Localization architecture](settings-ui/LOCALIZATION.md).
 
 ## The overall vision
 

@@ -20,6 +20,8 @@ int main(void){
  assert(exists(&f,"ux0:/rePatch/PCSE00001"));
  strcpy(f.paths[f.count++],"ux0:/rePatch/PCSE00001DIS");
  assert(rtp_repatch_set_state(&s,"PCSE00001",RTP_REPATCH_DISABLED,RTP_REPATCH_GAME,"ux0:/rePatch",&io)==RTP_REPATCH_DESTINATION_EXISTS);
+ /* Remove the intentional collision so the next assertion reaches rename(). */
+ --f.count;
  f.fail_rename=1;
  assert(rtp_repatch_set_state(&s,"PCSE00001",RTP_REPATCH_DISABLED,RTP_REPATCH_GAME,"ux0:/rePatch",&io)==RTP_REPATCH_BACKEND_ERROR);
  {

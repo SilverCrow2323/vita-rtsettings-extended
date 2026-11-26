@@ -2,7 +2,29 @@
 
 ## Product direction
 
-A dedicated **Connectivity → Bluetooth & Controllers** page will unify controller inventory, driver health, supported capabilities, pairing guidance, compatibility checks and links to remapping profiles. It is an orchestration and diagnostics layer, not a replacement Bluetooth stack.
+Bluetooth is a first-class page inside the native Settings experience. Its advanced features stay nested inside Bluetooth; there is no separate top-level controller application.
+
+## Proposed menu hierarchy
+
+- **Bluetooth**
+  - Paired / discovered devices
+  - Add device (native Sony pairing assistant; pairing authority remains Sony Settings)
+  - Connected device details
+  - Controllers
+    - Controller inventory and provider status
+    - Input test
+    - Profiles and remapping (reVita adapter)
+    - **Advanced Settings**
+      - Device category override
+      - Unknown-controller input learning
+      - Raw event / capability inspection
+      - Provider and driver diagnostics
+      - Compatibility and conflict report
+  - Audio devices
+  - Other devices
+  - Bluetooth diagnostics
+
+The menu exposes only actions supported by the active backend. Unsupported actions are visibly unavailable with an explanation, not simulated.
 
 ## Curated driver strategy
 
@@ -26,7 +48,7 @@ The preferred default is **VitaControl + optional reVita**, subject to target-de
 - **Driver manager:** detect installed/active providers, detect duplicates/conflicts, show version/source/firmware notes, and guide a safe switch with backup + reboot + recovery instructions.
 - **Input test:** live buttons, analog axes, triggers, touchpad and motion only where a tested input backend exposes them.
 - **Profiles:** global and per-game profiles via reVita adapter; map buttons, sticks, touch zones, gyro, turbo and combos only where supported.
-- **Advanced diagnostics:** controller count, provider, plugin load order, taiHEN entries, duplicate providers, known app compatibility and last errors.
+- **Advanced settings:** manual device classification, input learning for unknown controllers, raw event inspection and detailed provider diagnostics.
 - **Privacy:** never display or log full Bluetooth MAC addresses by default. Battery and controller details remain unknown when the backend cannot read them.
 
 ## Safety and compatibility rules
@@ -45,45 +67,30 @@ The preferred default is **VitaControl + optional reVita**, subject to target-de
 - controller identity, model, state, provider, capabilities and optional battery;
 - aggregate connected/paired/unavailable/error counts;
 - validation for IDs, enum ranges and battery bounds;
-- exclusive driver-provider conflict validation.
+- exclusive driver-provider conflict validation;
+- category classification and user override with provenance;
+- input learning recorder for buttons, axes, triggers, touch, gyro, accelerometer, hat and unknown event kinds.
 
 It accepts observations supplied by a future backend. It does not scan Bluetooth devices, pair controllers or read Vita plugin state. Host tests exercise valid DS3/DS4/Xbox observations, unknown battery values, invalid input, duplicate IDs and mutually exclusive providers.
 
 ## Implementation roadmap
 
-1. **Completed in this milestone:** portable controller inventory model and exclusive-driver stack validator.
+1. **Completed:** portable controller inventory, exclusive-driver stack validator, conservative device classification, manual category override and input-learning data model.
 2. Vita inventory adapter: taiHEN config + installed plugin/version detection, without writes.
 3. VitaControl adapter: live controller list and capabilities only if upstream/public API permits; otherwise mark backend unavailable and link to native Settings.
 4. reVita adapter: profile inventory and safe configuration bridge, respecting reVita's own schema.
-5. Pairing assistant and controller input test, gated by tested APIs.
+5. Vita Bluetooth input adapter for live input capture; unknown devices remain read-only until this exists.
 6. Safe driver migration wizard with backup, conflict preflight, staged config update, rollback and explicit reboot.
 7. Physical validation on Vita 1000 OLED / 3.65 Ensō and per-controller compatibility matrix.
 
-
 ## Upstream references
 
-- [VitaControl](https://github.com/Hydr8gon/vitacontrol) — broad Bluetooth controller driver and supported-device list.
-- [MiniVitaTV](https://github.com/TheOfficialFloW/MiniVitaTV) — PS-TV compatibility mode and up-to-four DS3/DS4 local controllers; upstream README identifies it as beta.
-- [ds34vita](https://github.com/MERLev/ds34vita) — combined DS3/DS4 controller driver.
-- [reVita](https://github.com/MERLev/reVita) — input remapping, touch/gyro handling, profiles and external-controller integration.
-- [reVita external controller compatibility notes](https://github.com/MERLev/reVita/wiki/External-Controllers) — practical provider comparison and limitations.
-- [X1Vita](https://github.com/Ibrahim778/X1Vita) — Xbox One 1708 compatibility and limitations.
-- [8BitVita](https://github.com/shadowknight1620/8BitVita) — 8BitDo model list and MiniVitaTV compatibility.
+- [VitaControl](https://github.com/Hydr8gon/vitacontrol)
+- [MiniVitaTV](https://github.com/TheOfficialFloW/MiniVitaTV)
+- [ds34vita](https://github.com/MERLev/ds34vita)
+- [reVita](https://github.com/MERLev/reVita)
+- [reVita external controller compatibility notes](https://github.com/MERLev/reVita/wiki/External-Controllers)
+- [X1Vita](https://github.com/Ibrahim778/X1Vita)
+- [8BitVita](https://github.com/shadowknight1620/8BitVita)
 
-Upstream capabilities are research inputs, not guarantees for every Vita firmware, controller revision or installed plugin combination. Project support status will be recorded separately from upstream claims.
-
-
-## Device classification and unknown-controller learning
-
-The model now distinguishes device category from controller make/model: controller, audio, computer, phone, tablet, keyboard, mouse, printer, remote, other and unknown. A backend may provide the Bluetooth Class of Device and service-derived capabilities; the UI may let the user override an uncertain classification without changing the reported raw evidence.
-
-Unknown controllers can use Input Learning. The portable recorder stores observed event kind, raw code, first and last values, label and observation count for buttons, axes, triggers, touch, gyro, accelerometer, hat and unknown events. It does not create guessed controls. A real Vita input adapter must expose the events before the recorder can capture them.
-
-
-## Discovery and manual classification
-
-The backend may classify devices from the Bluetooth Class of Device (CoD). The host model includes a conservative CoD classifier for computer, phone, audio, controller/joystick, remote, keyboard, mouse and printer. The original CoD is retained in each device record. Service Discovery Protocol (SDP) results and service-derived capabilities can refine this classification when the Vita backend exposes them.
-
-Users can override the category per device. The snapshot records whether a category came from CoD inference or a manual override, while preserving the original CoD and raw capabilities for diagnostics. A category override changes only the UI classification; it does not install a driver or change Bluetooth services.
-
-The device inventory capacity is bounded independently of the Vita's active connection limit, so a discovery scan can list more remembered/discovered entries than can be connected simultaneously.
+Upstream capabilities are research inputs, not guarantees for every Vita firmware, controller revision or installed plugin combination.
