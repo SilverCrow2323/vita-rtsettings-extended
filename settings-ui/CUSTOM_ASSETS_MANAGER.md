@@ -6,7 +6,7 @@ A shared, bounded registry and transaction boundary for boot splash images, boot
 
 ## Implemented portable core
 
-- Registry snapshots with stable IDs, human-readable titles, owner, path, format, size, dimensions/duration, SHA-256, compatibility and ownership metadata.
+- Registry snapshots with stable IDs, human-readable titles, owner, source, path, format, size, dimensions/duration, audio sample rate/channels, SHA-256, compatibility and ownership metadata.
 - Duplicate ID/path detection and summary counts for active, backup, orphaned, incompatible and unverified assets.
 - Vita mount-path validation and traversal rejection.
 - Conservative size ceilings: boot sound 1 MiB, boot animation 108 MiB, splash/theme 32 MiB, warning 16 KiB and other assets 128 MiB.
@@ -29,7 +29,7 @@ The core updates its registry only after activation and read-back both succeed. 
 - No arbitrary file writes or deletes occur in the portable core.
 - No external path is accepted for activation: an asset must be Rt-managed, compatible and hash-verified.
 - Active assets cannot be deleted. Backup assets are protected. Orphaned assets are never deleted automatically.
-- The core does not calculate hashes itself; the import/filesystem adapter must hash the staged file and set `hash_verified` only after a successful read-back comparison.
+- Streaming SHA-256 hashing and verification are implemented through an injected bounded reader callback; the Vita filesystem adapter supplies the actual read implementation. The core never loads an entire asset into memory.
 - It does not convert formats. CBSM, vita-bootanim, CustomBootSplash and Vita-BootSound each need a specific adapter/converter and their own version/firmware capability checks.
 - No Vita filesystem or Sony Settings integration is claimed by this host-tested core.
 
