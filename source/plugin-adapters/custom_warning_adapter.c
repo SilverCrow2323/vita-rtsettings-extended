@@ -173,6 +173,7 @@ rtcw_result rtcw_read_state(const rtcw_backend *b, rtcw_state *out) {
     if (active != 1) return RTCW_ERR_BACKEND;
     for (i = 0; i < 2; ++i) {
         if (build_path(dir, sizeof(dir), mounts[i], "custom_warning") != RTCW_OK) return RTCW_ERR_CAPACITY;
+        memset(names, 0, sizeof(names));
         count = 0; listed = b->list_directory(b->context, dir, names, RTCW_MAX_PRESETS, &count);
         if (listed < 0 || count > RTCW_MAX_PRESETS) return RTCW_ERR_BACKEND;
         if (listed == 1 && count > 0) {
@@ -253,9 +254,10 @@ rtcw_result rtcw_write_message(const rtcw_backend *b, const char *utf8) {
 }
 
 rtcw_result rtcw_restore_original(const rtcw_backend *b, const char *path) {
-    if (!b || !b->restore_backup || !path ||
-        (strncmp(path, "ux0:tai/custom_warning", 22) != 0 &&
-         strncmp(path, "ur0:tai/custom_warning", 22) != 0)) return RTCW_ERR_ARGUMENT;
+    if (!b || !b->restore_backup || !path || strstr(path, "..")) return RTCW_ERR_ARGUMENT;
+    if ((strncmp(path, "ux0:tai/custom_warning", 22) != 0 &&
+         strncmp(path, "ur0:tai/custom_warning", 22) != 0) ||
+        (path[22] != '\0' && path[22] != '/' && path[22] != '.')) return RTCW_ERR_ARGUMENT;
     return b->restore_backup(b->context, path) == 0 ? RTCW_OK : RTCW_ERR_BACKEND;
 }
 
