@@ -6,7 +6,7 @@ RANLIB := $(PREFIX)ranlib
 CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters -Isource/custom-assets
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_warning_adapter.o build-vita/custom_assets.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_warning_adapter.o build-vita/custom_assets.o build-vita/custom_warning_adapter.o build-vita/vita_asset_fs.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -67,6 +67,9 @@ build-vita/custom_assets.o: source/custom-assets/custom_assets.c include/custom_
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/custom_warning_adapter.o: source/plugin-adapters/custom_warning_adapter.c include/custom_warning_adapter.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/vita_asset_fs.o: source/custom-assets/vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)
