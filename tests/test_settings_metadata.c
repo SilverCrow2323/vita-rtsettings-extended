@@ -1,9 +1,10 @@
 #include "settings_metadata.h"
+#include "settings_screen.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 int main(void){
- rtp_preferences p;rtp_metadata_catalogue c;rtp_metadata_descriptor d;const rtp_metadata_entry *e;
+ rtp_preferences p;rtp_preferences_ui ui;rtp_metadata_catalogue c;rtp_metadata_descriptor d;rtp_screen_page page;const rtp_metadata_entry *e;
  rtp_preferences_init(&p);rtp_metadata_init(&c);
  assert(rtp_preferences_register(&p,"connectivity","",RTP_ENTRY_CATEGORY,1,10)==RTP_PREFS_OK);
  assert(rtp_preferences_register(&p,"ftp-service","connectivity",RTP_ENTRY_SETTING,1,10)==RTP_PREFS_OK);
@@ -33,6 +34,19 @@ int main(void){
  e=rtp_metadata_find(&c,"tai-saver-known-good");assert(e&&strstr(e->description,"Never auto-rotated")!=NULL);
  assert(rtp_preferences_find(&p,"tai-saver-recovery")->kind==RTP_ENTRY_CATEGORY);
  assert(rtp_preferences_find(&p,"tai-saver-restore")->kind==RTP_ENTRY_ACTION);
- assert(rtp_preferences_find(&p,"tai-saver")->parent_id[0]=='\\0');
+ assert(rtp_preferences_find(&p,"tai-saver")->parent_id[0]=='\0');
+ rtp_preferences_ui_init(&ui);
+ assert(rtp_settings_screen_build(&ui,&p,&c,&page)==RTP_SCREEN_OK);
+ assert(page.row_count==1&&strcmp(page.rows[0].id,"tai-saver")==0);
+ assert(rtp_preferences_ui_enter(&ui,&p,"tai-saver")==RTP_UI_OK);
+ assert(rtp_settings_screen_build(&ui,&p,&c,&page)==RTP_SCREEN_OK);
+ assert(page.row_count==4&&strcmp(page.rows[0].id,"tai-saver-protection")==0);
+ assert(rtp_preferences_ui_enter(&ui,&p,"tai-saver-protection")==RTP_UI_OK);
+ assert(rtp_settings_screen_build(&ui,&p,&c,&page)==RTP_SCREEN_OK);
+ assert(page.row_count==3&&strcmp(page.rows[1].id,"tai-saver-backup-now")==0&&page.rows[1].kind==RTP_ENTRY_ACTION);
+ assert(rtp_preferences_ui_back(&ui)==RTP_UI_OK);
+ assert(rtp_preferences_ui_enter(&ui,&p,"tai-saver-archives")==RTP_UI_OK);
+ assert(rtp_settings_screen_build(&ui,&p,&c,&page)==RTP_SCREEN_OK);
+ assert(page.row_count==4&&strcmp(page.rows[1].id,"tai-saver-known-good")==0);
  puts("Settings metadata tests passed.");return 0;
 }
