@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void){
- const char cfg[]="# taiHEN config\\r\\n*KERNEL\\r\\nur0:tai/kubridge.skprx\\r\\nur0:tai/yamt_helper.skprx\\r\\n# ur0:tai/old_plugin.skprx\\r\\n*main\\r\\nur0:tai/ftpforvita.suprx\\r\\nur0:tai/ftpforvita.suprx\\r\\nnot-a-plugin\\r\\n[broken\\r\\n";
+ const char cfg[]="# taiHEN config\r\n*KERNEL\r\nur0:tai/kubridge.skprx\r\nur0:tai/yamt_helper.skprx\r\n# ur0:tai/old_plugin.skprx\r\n*main\r\nur0:tai/ftpforvita.suprx\r\nur0:tai/ftpforvita.suprx\r\nnot-a-plugin\r\n[broken\r\n";
  rt_pi_inventory inv;rt_pi_adapter_registry reg;const rt_pi_entry *e;
  assert(rt_pi_parse(cfg,sizeof(cfg)-1,&inv)==RT_PI_OK);
  assert(inv.count==5);assert(inv.ignored_lines>=2);assert(inv.malformed_lines==1);
