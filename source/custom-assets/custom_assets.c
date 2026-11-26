@@ -190,13 +190,19 @@ rta_result rta_asset_remove(rta_asset_registry *registry, const char *asset_id,
     if (!asset->managed || asset->state == RTA_STATE_ORPHANED ||
         asset->state == RTA_STATE_ACTIVE) return RTA_ERR_UNSAFE;
     if (asset->protected_asset || asset->state == RTA_STATE_BACKUP) return RTA_ERR_PROTECTED;
-    if (backend->remove(backend->context, asset->path) != 0) return RTA_ERR_BACKEND;
-    if ((size_t)index + 1 < registry->count)
-        memmove(&registry->assets[index], &registry->assets[index + 1],
-                (registry->count - (size_t)index - 1) * sizeof(registry->assets[0]));
-    memset(&registry->assets[registry->count - 1], 0, sizeof(registry->assets[0]));
-    registry->count--;
-    if (registry->unverified_count && !asset->hash_verified) registry->unverified_count--;
+    {
+        int was_unverified = !asset->hash_verified;
+        char path[RTA_PATH_MAX + 1];
+        memcpy(path, asset->path, sizeof(path));
+        path[sizeof(path) - 1] = '\\0';
+        if (backend->remove(backend->context, path) != 0) return RTA_ERR_BACKEND;
+        if ((size_t)index + 1 < registry->count)
+            memmove(&registry->assets[index], &registry->assets[index + 1],
+                    (registry->count - (size_t)index - 1) * sizeof(registry->assets[0]));
+        memset(&registry->assets[registry->count - 1], 0, sizeof(registry->assets[0]));
+        registry->count--;
+        if (was_unverified && registry->unverified_count) registry->unverified_count--;
+    }
     return RTA_OK;
 }
 
