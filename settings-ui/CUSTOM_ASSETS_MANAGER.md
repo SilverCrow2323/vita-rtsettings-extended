@@ -24,6 +24,10 @@ The platform layer supplies:
 
 The core updates its registry only after activation and read-back both succeed. If either fails, it invokes restore. A failed restore returns `RTA_ERR_ROLLBACK`; callers must display a recovery warning and retain the transaction journal.
 
+## Vita filesystem bridge
+
+A VitaSDK-specific, read-only bridge now provides the bounded reader used by the core's streaming SHA-256 API. It validates Vita device paths, rejects traversal/control characters, creates only the Rt-owned `ur0:data/rt/assets` directory tree, and checks that pre-existing path components are directories. It does not expose write, rename, delete or activation operations. The exact API and validation boundary are documented in [Vita Asset Filesystem Bridge](VITA_ASSET_FILESYSTEM_BACKEND.md).
+
 ## Safety and deliberate limits
 
 - No arbitrary file writes or deletes occur in the portable core.
@@ -31,7 +35,7 @@ The core updates its registry only after activation and read-back both succeed. 
 - Active assets cannot be deleted. Backup assets are protected. Orphaned assets are never deleted automatically.
 - Streaming SHA-256 hashing and verification are implemented through an injected bounded reader callback; the Vita filesystem adapter supplies the actual read implementation. The core never loads an entire asset into memory.
 - It does not convert formats. CBSM, vita-bootanim, CustomBootSplash and Vita-BootSound each need a specific adapter/converter and their own version/firmware capability checks.
-- No Vita filesystem or Sony Settings integration is claimed by this host-tested core.
+- The Vita bridge currently supports bounded reads and owned-directory bootstrap only. Staged writes, safe no-clobber commit, persistent manifest recovery and Sony Settings integration remain pending. A VitaSDK cross-build and physical-console test have not yet been completed.
 
 ## Tests
 
