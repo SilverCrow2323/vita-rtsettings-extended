@@ -76,6 +76,5 @@ operation.
 The backend contract is deliberately strict: `replace_with_backup_atomic`
 must make the pair update crash-consistent as one operation, or reject it.
 A sequence of ordinary `rename`, `remove` or `write` calls does not satisfy
-this contract. The host fake backend exercises successful rotation, injected
-transaction failure and readback verification. No Vita implementation of this
+this contract. The host fake backend exercises successful rotation, preservation of a distinct pre-existing backup when the primary is corrupt, injected transaction failure and readback verification. No Vita implementation of this
 pair-transaction callback exists yet.
