@@ -13,7 +13,7 @@ This document separates the underlying engines. Rt presents one Settings experie
 | vita-bootanim | Dedicated Enso boot animation using RCF | Community docs report v1.1 and testing on 3.65 | Retain as animation alternative if target tests or workflow justify it |
 | Custom Boot Splash | Static splash image | Upstream README and Brewology notes reviewed | Legacy alternative; do not stack with CBSM |
 | Vita-BootSound | WAV startup jingle | Latest tag 1.0 (2018); 3.65 audio caveat documented | Conditional only; no default enablement on 3.65 |
-| Custom Warning | Ensō startup warning text | Upstream README documents UTF-16LE + BOM file | Best first small text-file adapter after common asset import is complete |
+| Custom Warning | Ensō startup warning text | Upstream README documents UTF-16LE + BOM file | Portable UTF-16LE adapter implemented; connect to Vita filesystem/plugin detection and target-test |
 
 ## CBS-Manager
 
