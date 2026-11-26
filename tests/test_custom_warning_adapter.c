@@ -92,7 +92,7 @@ int main(void){
  assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_FIXED_FILE&&strcmp(state.mount,"ux0")==0);
  {int fixed=find_file(&fs,"ux0:tai/custom_warning.txt");assert(fixed>=0);fs.files[fixed].exists=0;}
  assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_PRESET_ROTATION&&strcmp(state.mount,"ur0")==0);
- fs.dir_ux0=0;fs.dir_ur0=0;fs.active=0;assert(rtcw_read_state(&b,&state)==RTCW_ERR_PLUGIN_DISABLED);
+ fs.dir_ux0=0;fs.dir_ur0=0;fs.active=0;assert(rtcw_read_state(&b,&state)==RTCW_ERR_PLUGIN_DISABLED);\n assert(rtcw_write_preset(&b,"ux0","hello.txt","blocked",0)==RTCW_ERR_PLUGIN_DISABLED);
  fs.active=1;fs.dir_ux0=0;fs.count_ux0=0;
  memset(fs.files,0,sizeof(fs.files));
  assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_DEFAULT);
