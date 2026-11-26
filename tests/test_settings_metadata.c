@@ -16,7 +16,7 @@ int main(void){
  rtp_metadata_init(&c);d.entry_id="ftp-service";d.category_id="not-a-category";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_INVALID_CATEGORY);
  d.category_id="connectivity";d.title="";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_INVALID_TEXT);
  d.title="FTP Server";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_OK);
- fprintf(stderr,"metadata validation=%d",rtp_metadata_validate(&c,&p));assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
+ fprintf(stderr,"metadata validation=%d id=%s module=%s title=%s nulls=%d,%d,%d,%d",rtp_metadata_validate(&c,&p),c.entries[0].entry_id,c.entries[0].module_id,c.entries[0].title,memchr(c.entries[0].title,0,sizeof(c.entries[0].title))!=0,memchr(c.entries[0].description,0,sizeof(c.entries[0].description))!=0,memchr(c.entries[0].category_id,0,sizeof(c.entries[0].category_id))!=0,memchr(c.entries[0].icon_key,0,sizeof(c.entries[0].icon_key))!=0);assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
  rtp_preferences_init(&p);rtp_metadata_init(&c);
  assert(rtp_metadata_register_appearance(&c,&p)==RTP_META_OK);
  assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
