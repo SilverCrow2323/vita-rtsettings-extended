@@ -26,7 +26,7 @@ The core updates its registry only after activation and read-back both succeed. 
 
 ## Vita filesystem bridge
 
-A VitaSDK-specific, read-only bridge now provides the bounded reader used by the core's streaming SHA-256 API. It validates Vita device paths, rejects traversal/control characters, creates only the Rt-owned `ur0:data/rt/assets` directory tree, and checks that pre-existing path components are directories. It does not expose write, rename, delete or activation operations. The exact API and validation boundary are documented in [Vita Asset Filesystem Bridge](VITA_ASSET_FILESYSTEM_BACKEND.md).
+A VitaSDK-specific, read-only bridge now provides the bounded reader used by the core's streaming SHA-256 API. It validates Vita device paths, rejects traversal/control characters, creates only the Rt-owned `ur0:data/rt/assets` directory tree, and checks that pre-existing path components are directories. It does not expose write, rename, delete or activation operations. A mocked VitaSDK harness compiles and tests the adapter source in host CI, including read offsets, EOF, invalid paths, close failures, directory creation, wrong-type paths and stat errors. The exact API and validation boundary are documented in [Vita Asset Filesystem Bridge](VITA_ASSET_FILESYSTEM_BACKEND.md).
 
 ## Safety and deliberate limits
 
