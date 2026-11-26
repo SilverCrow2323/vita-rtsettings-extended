@@ -16,6 +16,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [The Settings experience](#the-settings-experience)
 - [Native integration and dedicated Settings categories](#native-integration-and-dedicated-settings-categories)
 - [Preferences and menu customization](#preferences-and-menu-customization)
+- [Preferences registry implementation](#preferences-registry-implementation)
 - [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
 - [Plugin Control Centre](#plugin-control-centre)
@@ -161,7 +162,7 @@ Sony-owned entries may be hidden, moved or reordered only when the firmware inte
 
 Hiding a menu item must never uninstall its module, disable its plugin, stop a service, change a system setting or delete user data. Showing a hidden item must not silently enable it. Preferences controls presentation only; operational settings remain owned by their respective modules.
 
-The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu.
+The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The first host-testable registry core is now implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md). The native UI and Vita-specific persistence adapter remain pending.
 
 ## System Tools and application shortcuts
 
@@ -438,6 +439,7 @@ Other models, firmwares and storage configurations require independent testing. 
 ├── .github/workflows/       # Continuous integration
 ├── docs/                    # Architecture and integration contracts
 ├── include/                 # Public C interfaces
+│   └── preferences.h         # Stable-ID Settings menu registry API
 ├── installer/               # Package/module manifests and schemas
 ├── settings-ui/             # Settings page specifications
 ├── source/
@@ -474,7 +476,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Guarded restore with Pre-Restore safety snapshot | Implemented; host-tested |
 | Boot lifecycle journal | Implemented; host-tested |
 | Expandable installer and module architecture | Specified |
-| Preferences menu customization (ordering, visibility, profiles) | Project target; implementation pending |
+| Preferences registry (visibility, ordering, category moves, persistence) | Implemented; host-tested |
+| Preferences native UI, named profiles and Sony menu integration | Pending |
 | System Tools application registry and launch shortcuts | Project target; implementation pending |
 | Native Sony menu injection / extension points | Research and compatibility work pending |
 | Plugin Control Centre and adapter contract | Project target; implementation pending |
@@ -492,25 +495,27 @@ A passing host CI run validates only the tests actually executed by that workflo
 ### Roadmap
 
 1. Finish storage safety and interrupted-staging recovery.
-2. Define the Preferences menu registry, persistence format and safe layout transaction model.
-3. Define System Tools application detection and launch-adapter contracts.
-4. Implement the shared service and plugin-adapter contracts.
-5. Implement the installer transaction engine and module selection UI.
-6. Validate the code with the VitaSDK toolchain.
-7. Build the Rt:Settings Extended root category and navigation.
-8. Integrate Tai Saver as the first working module.
-9. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
-10. Add USB streaming through a tested backend and conflict-aware service manager.
-11. Build the Plugin Control Centre and adapters for supported plugins.
-12. Add storage, system, display/audio, power and diagnostics modules incrementally.
-13. Implement Sony-page integrations where verified extension points exist.
-14. Test installation, update, rollback, service startup and removal on the target Vita.
+2. Build the native Preferences page on the implemented menu registry.
+3. Add named layout profiles and safe import/export.
+4. Define System Tools application detection and launch-adapter contracts.
+5. Implement the shared service and plugin-adapter contracts.
+6. Implement the installer transaction engine and module selection UI.
+7. Validate the code with the VitaSDK toolchain.
+8. Build the Rt:Settings Extended root category and navigation.
+9. Integrate Tai Saver as the first working module.
+10. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
+11. Add USB streaming through a tested backend and conflict-aware service manager.
+12. Build the Plugin Control Centre and adapters for supported plugins.
+13. Add storage, system, display/audio, power and diagnostics modules incrementally.
+14. Implement Sony-page integrations where verified extension points exist.
+15. Test installation, update, rollback, service startup and removal on the target Vita.
 
 ## Documentation
 
 - [Expandable Installer and Module System](docs/EXPANDABLE_INSTALLER.md)
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
+- [Preferences Registry](docs/PREFERENCES_REGISTRY.md)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)
