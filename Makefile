@@ -23,7 +23,8 @@ PROFILE_MANAGER_TEST_BINARY := build/test_profile_manager
 MODULE_CONTROLS_TEST_BINARY := build/test_module_controls
 SERVICE_MANAGER_TEST_BINARY := build/test_service_manager
 PLUGIN_CENTRE_TEST_BINARY := build/test_plugin_control_centre
-STORAGE_TEST_BINARY := build/test_storage_devices\nASSET_TEST_BINARY := build/test_custom_assets
+STORAGE_TEST_BINARY := build/test_storage_devices
+ASSET_TEST_BINARY := build/test_custom_assets
 SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
@@ -32,7 +33,8 @@ PROFILE_MANAGER_SANITIZER_BINARY := build/test_profile_manager_san
 MODULE_CONTROLS_SANITIZER_BINARY := build/test_module_controls_san
 SERVICE_MANAGER_SANITIZER_BINARY := build/test_service_manager_san
 PLUGIN_CENTRE_SANITIZER_BINARY := build/test_plugin_control_centre_san
-STORAGE_SANITIZER_BINARY := build/test_storage_devices_san\nASSET_SANITIZER_BINARY := build/test_custom_assets_san
+STORAGE_SANITIZER_BINARY := build/test_storage_devices_san
+ASSET_SANITIZER_BINARY := build/test_custom_assets_san
 
 .PHONY: all test sanitize clean
 all: $(LIBRARY)
@@ -88,6 +90,9 @@ build/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings-ui/p
 build/storage_devices.o: settings-ui/storage_devices.c settings-ui/storage_devices.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/custom_assets.o: source/custom-assets/custom_assets.c include/custom_assets.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -137,7 +142,10 @@ $(PLUGIN_CENTRE_TEST_BINARY): tests/test_plugin_control_centre.c $(LIBRARY) sett
 $(STORAGE_TEST_BINARY): tests/test_storage_devices.c $(LIBRARY) settings-ui/storage_devices.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-$(ASSET_TEST_BINARY): tests/test_custom_assets.c $(LIBRARY) include/custom_assets.h\n\t$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)\n\ntest: $(ASSET_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY)
+$(ASSET_TEST_BINARY): tests/test_custom_assets.c $(LIBRARY) include/custom_assets.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(ASSET_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
@@ -153,6 +161,7 @@ $(ASSET_TEST_BINARY): tests/test_custom_assets.c $(LIBRARY) include/custom_asset
 	./$(SERVICE_MANAGER_TEST_BINARY)
 	./$(PLUGIN_CENTRE_TEST_BINARY)
 	./$(STORAGE_TEST_BINARY)
+	./$(ASSET_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
@@ -181,7 +190,10 @@ $(STORAGE_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_storage_devices.c settin
 $(SERVICE_MANAGER_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_service_manager.c settings-ui/service_manager.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_service_manager.c -o $@ $(LDFLAGS)
 
-$(ASSET_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_custom_assets.c include/custom_assets.h | build\n\t$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_custom_assets.c -o $@ $(LDFLAGS)\n\nsanitize: $(ASSET_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY)
+$(ASSET_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_custom_assets.c include/custom_assets.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_custom_assets.c -o $@ $(LDFLAGS)
+
+sanitize: $(ASSET_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
@@ -191,6 +203,7 @@ $(ASSET_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_custom_assets.c include/cu
 	ASAN_OPTIONS=detect_leaks=1 ./$(SERVICE_MANAGER_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_CENTRE_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(STORAGE_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(ASSET_SANITIZER_BINARY)
 
 clean:
 	rm -rf build
