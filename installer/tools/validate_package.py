@@ -5,6 +5,7 @@ import argparse, json, re, sys
 from pathlib import Path, PurePosixPath
 
 VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[+-][A-Za-z0-9.-]+)?$")
+FIRMWARE_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?$")
 FRAMEWORK_ID = "rtse-framework"
 
 class ManifestError(ValueError):
@@ -16,6 +17,12 @@ def version_tuple(value: str) -> tuple[int, int, int]:
         raise ManifestError(f"Invalid semantic version: {value!r}")
     return tuple(int(part) for part in match.groups())
 
+def firmware_tuple(value: str) -> tuple[int, int, int]:
+    match = FIRMWARE_RE.fullmatch(value or "")
+    if not match:
+        raise ManifestError(f"Invalid firmware version: {value!r}")
+    return tuple(int(part or 0) for part in match.groups())
+
 def safe_relative(value: str, label: str) -> str:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ManifestError(f"{label} must be a non-empty POSIX relative path")
@@ -24,15 +31,14 @@ def safe_relative(value: str, label: str) -> str:
         raise ManifestError(f"Unsafe {label}: {value!r}")
     return value.rstrip("/")
 
-def resolve_inside(base: Path, value: str, label: str, allow_parent: bool = False) -> Path:
+def resolve_inside(base: Path, value: str, label: str) -> Path:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ManifestError(f"{label} must be a non-empty relative path")
-    candidate = (base / value).resolve()
-    root = base.resolve()
-    if not allow_parent and (Path(value).is_absolute() or ".." in PurePosixPath(value).parts):
+    if Path(value).is_absolute() or ".." in PurePosixPath(value).parts:
         raise ManifestError(f"Unsafe {label}: {value!r}")
-    if not candidate.is_relative_to(root):
-        raise ManifestError(f"{label} escapes repository root: {value!r}")
+    candidate = (base / value).resolve()
+    if not candidate.is_relative_to(base.resolve()):
+        raise ManifestError(f"{label} escapes its allowed directory: {value!r}")
     return candidate
 
 def read_json(path: Path) -> dict:
@@ -58,7 +64,7 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
     if not isinstance(framework, dict):
         raise ManifestError("framework must be an object")
     version_tuple(framework.get("version", ""))
-    version_tuple(framework.get("minimum_firmware", ""))
+    firmware_tuple(framework.get("minimum_firmware", ""))
     if framework.get("payload_root") != "framework/payload":
         raise ManifestError("framework.payload_root must be framework/payload")
 
@@ -67,6 +73,7 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
         raise ManifestError("package must declare at least one module")
     modules: dict[str, dict] = {}
     manifest_paths: set[str] = set()
+    required_ids: set[str] = set()
     for entry in entries:
         if not isinstance(entry, dict):
             raise ManifestError("module entries must be objects")
@@ -75,6 +82,10 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
             raise ManifestError(f"Invalid module ID: {module_id!r}")
         if module_id in modules:
             raise ManifestError(f"Duplicate module ID: {module_id}")
+        if not isinstance(entry.get("required"), bool) or not isinstance(entry.get("default_selected"), bool):
+            raise ManifestError(f"{module_id} selection flags must be booleans")
+        if entry["required"]:
+            required_ids.add(module_id)
         manifest_rel = safe_relative(entry.get("manifest", ""), "module manifest")
         if manifest_rel in manifest_paths:
             raise ManifestError(f"Duplicate module manifest path: {manifest_rel}")
@@ -83,9 +94,12 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
         module = read_json(manifest_path)
         if module.get("manifest_version") != 1 or module.get("id") != module_id:
             raise ManifestError(f"Module identity/version mismatch for {module_id}")
+        for field in ("name", "description", "category"):
+            if not isinstance(module.get(field), str) or not module[field].strip():
+                raise ManifestError(f"{module_id}.{field} is required")
         version_tuple(module.get("version", ""))
         version_tuple(module.get("minimum_framework", ""))
-        version_tuple(module.get("minimum_firmware", ""))
+        firmware_tuple(module.get("minimum_firmware", ""))
         safe_relative(module.get("entry", ""), f"{module_id}.entry")
         safe_relative(module.get("payload_root", ""), f"{module_id}.payload_root")
         owned = module.get("owned_paths")
@@ -95,14 +109,18 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
         if len(set(normalized_owned)) != len(normalized_owned):
             raise ManifestError(f"{module_id} declares duplicate owned paths")
         data_paths = module.get("data_paths", [])
+        if not isinstance(data_paths, list):
+            raise ManifestError(f"{module_id}.data_paths must be an array")
         for data_path in data_paths:
             if not isinstance(data_path, str) or not data_path.startswith("ur0:") or ".." in PurePosixPath(data_path.replace(":", "/")).parts:
                 raise ManifestError(f"Unsafe user-data path in {module_id}: {data_path!r}")
         schema = module.get("settings_schema")
         if schema:
-            schema_path = resolve_inside(manifest_path.parent, schema, f"{module_id}.settings_schema", allow_parent=True)
-            if not schema_path.is_file():
-                raise ManifestError(f"Settings schema does not exist for {module_id}: {schema}")
+            if not isinstance(schema, str) or "\\" in schema:
+                raise ManifestError(f"Invalid settings schema path for {module_id}")
+            schema_path = (manifest_path.parent / schema).resolve()
+            if not schema_path.is_relative_to(repository_root.resolve()) or not schema_path.is_file():
+                raise ManifestError(f"Settings schema is missing or escapes repository for {module_id}: {schema}")
         uninstall = module.get("uninstall", {})
         if uninstall.get("remove_owned_files") is not True or uninstall.get("preserve_data_by_default") is not True:
             raise ManifestError(f"{module_id} must remove only owned files and preserve user data by default")
@@ -117,9 +135,9 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
             owners.append((module_id, path))
 
     requested = set(selected) if selected is not None else {
-        module_id for module_id, info in modules.items()
-        if info["entry"].get("required") or info["entry"].get("default_selected")
+        module_id for module_id, info in modules.items() if info["entry"]["default_selected"]
     }
+    requested |= required_ids
     unknown = requested - set(modules)
     if unknown:
         raise ManifestError("Unknown selected modules: " + ", ".join(sorted(unknown)))
@@ -142,7 +160,9 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
             if dep_id not in chosen:
                 chosen.add(dep_id)
                 pending.append(dep_id)
-        conflicts = set(module.get("conflicts", [])) & chosen
+
+    for module_id in chosen:
+        conflicts = set(modules[module_id]["manifest"].get("conflicts", [])) & chosen
         if conflicts:
             raise ManifestError(f"{module_id} conflicts with selected module(s): {', '.join(sorted(conflicts))}")
 
@@ -165,10 +185,6 @@ def validate_package(package_path: Path, selected: set[str] | None = None) -> di
     for module_id in sorted(chosen):
         visit(module_id)
 
-    for module_id in chosen:
-        conflicts = set(modules[module_id]["manifest"].get("conflicts", [])) & chosen
-        if conflicts:
-            raise ManifestError(f"{module_id} conflicts with selected module(s): {', '.join(sorted(conflicts))}")
     return {
         "product": package["display_name"],
         "release_version": package["release_version"],
