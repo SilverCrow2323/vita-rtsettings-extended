@@ -287,6 +287,11 @@ rta_result rta_asset_import(rta_asset_registry *registry, const rta_asset_import
         (void)backend->remove_path(backend->context, staging);
         return RTA_ERR_BACKEND;
     }
+    result = rta_asset_verify_reader(backend->read_file, backend->context, destination, digest, size);
+    if (result != RTA_OK) {
+        (void)backend->remove_path(backend->context, destination);
+        return result;
+    }
     registry->assets[registry->count++] = validated;
     refresh_counts(registry);
     strcpy(imported_id, spec->id);
@@ -310,8 +315,15 @@ rta_result rta_asset_export(const rta_asset_registry *registry, const char *asse
     result = rta_asset_verify_reader(backend->read_file, backend->context, asset->path,
                                      asset->sha256, asset->size_bytes);
     if (result != RTA_OK) return result;
-    return backend->copy_atomic(backend->context, asset->path, destination_path) == 0 ?
-           RTA_OK : RTA_ERR_BACKEND;
+    if (backend->copy_atomic(backend->context, asset->path, destination_path) != 0)
+        return RTA_ERR_BACKEND;
+    result = rta_asset_verify_reader(backend->read_file, backend->context, destination_path,
+                                     asset->sha256, asset->size_bytes);
+    if (result != RTA_OK) {
+        if (backend->remove_path) (void)backend->remove_path(backend->context, destination_path);
+        return result;
+    }
+    return RTA_OK;
 }
 
 rta_result rta_asset_activate(rta_asset_registry *registry, const char *asset_id,
