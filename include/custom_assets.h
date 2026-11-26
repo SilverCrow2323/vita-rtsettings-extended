@@ -13,6 +13,7 @@ extern "C" {
 #define RTA_TITLE_MAX 79
 #define RTA_PATH_MAX 255
 #define RTA_OWNER_MAX 47
+#define RTA_SOURCE_MAX 191
 #define RTA_FORMAT_MAX 15
 #define RTA_SHA256_HEX 64
 
@@ -39,6 +40,7 @@ typedef struct {
     const char *title;
     const char *path;
     const char *owner;
+    const char *source;
     const char *format;
     const char *sha256;
     rta_asset_type type;
@@ -60,6 +62,7 @@ typedef struct {
     char title[RTA_TITLE_MAX + 1];
     char path[RTA_PATH_MAX + 1];
     char owner[RTA_OWNER_MAX + 1];
+    char source[RTA_SOURCE_MAX + 1];
     char format[RTA_FORMAT_MAX + 1];
     char sha256[RTA_SHA256_HEX + 1];
     rta_asset_type type;
@@ -68,6 +71,8 @@ typedef struct {
     uint32_t width;
     uint32_t height;
     uint32_t duration_ms;
+    uint32_t sample_rate_hz;
+    uint32_t channels;
     int managed;
     int compatible;
     int hash_verified;
@@ -98,8 +103,19 @@ typedef enum {
     RTA_ERR_UNVERIFIED = -9,
     RTA_ERR_BACKEND = -10,
     RTA_ERR_ROLLBACK = -11,
-    RTA_ERR_PROTECTED = -12
+    RTA_ERR_PROTECTED = -12,
+    RTA_ERR_INTEGRITY = -13
 } rta_result;
+
+/* read callback: 1 = bytes returned, 0 = EOF, -1 = I/O error. */
+typedef int (*rta_asset_read_fn)(void *context, const char *path, uint64_t offset,
+                                 unsigned char *buffer, size_t capacity, size_t *bytes_read);
+
+/* Hashes a file incrementally through the platform reader; no whole-file allocation. */
+rta_result rta_asset_hash_reader(rta_asset_read_fn reader, void *context, const char *path,
+                                 char sha256_hex[65], uint64_t *size_bytes);
+rta_result rta_asset_verify_reader(rta_asset_read_fn reader, void *context, const char *path,
+                                   const char *expected_sha256, uint64_t expected_size);
 
 typedef struct {
     void *context;
