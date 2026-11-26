@@ -230,8 +230,14 @@ rtcw_result rtcw_write_preset(const rtcw_backend *b, const char *mount,
                               const char *name, const char *utf8, int add_if_missing) {
     char suffix[RTCW_PRESET_NAME_MAX + 32], path[RTCW_PATH_MAX + 1];
     unsigned char encoded[RTCW_MAX_FILE_BYTES]; size_t size = 0; int n;
+    rtcw_state state;
+    rtcw_result state_result;
     if (!b || !b->read_file || !safe_mount(mount) || !safe_name(name) || !utf8 ||
         (add_if_missing != 0 && add_if_missing != 1)) return RTCW_ERR_ARGUMENT;
+    state_result = rtcw_read_state(b, &state);
+    if (state_result != RTCW_OK) return state_result;
+    if (state.mode != RTCW_MODE_PRESET_ROTATION || strcmp(state.mount, mount) != 0)
+        return RTCW_ERR_MODE;
     n = snprintf(suffix, sizeof(suffix), "custom_warning/%s", name);
     if (n < 0 || (size_t)n >= sizeof(suffix)) return RTCW_ERR_CAPACITY;
     if (build_path(path, sizeof(path), mount, suffix) != RTCW_OK) return RTCW_ERR_CAPACITY;
