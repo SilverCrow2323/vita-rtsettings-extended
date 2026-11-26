@@ -1,191 +1,277 @@
 # Rt:Settings Extended
 
-**A modular expansion framework for the native PlayStation Vita Settings application.**
+**The definitive extended Settings environment for the PlayStation Vita.**
 
-Rt:Settings Extended is a project to extend the Vita's existing **Settings** application with additional, integrated configuration pages. Instead of creating one unrelated homebrew application for every utility, it provides a shared framework in Settings and lets each feature register its own page and services as an independent module.
+Rt:Settings Extended aims to turn the native Vita Settings application into a complete, expandable control centre: Sony system options, taiHEN plugin controls, connectivity services, USB/FTP tools, streaming options, storage management, diagnostics and safety utilities—organized in one consistent interface.
 
-The project is designed to grow over time: install only the sections you want, add new ones later, or install every available section in one go.
+This is not intended to be another standalone homebrew launcher or a small collection of unrelated tweaks. The goal is to make the Settings application the central place where users can inspect, configure and manage the capabilities installed on their Vita.
 
-> **Project status:** active development. The host-side Tai Saver engine, boot lifecycle journal and expandable package/module specifications are present. The native Settings integration, Vita installer application, startup adapter, VPK packaging and on-device validation are still in development. This repository does not yet provide a finished, installable Vita release.
+> **Development status:** active development. The Tai Saver host-side core and boot lifecycle journal have been implemented and host-tested. The complete Settings interface, plugin adapters, USB/FTP/streaming services, expandable installer UI, Vita startup integration, VPK packaging and physical-device validation are still under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
 
 ---
 
 ## Contents
 
-- [Vision and goals](#vision-and-goals)
-- [How it will look in Settings](#how-it-will-look-in-settings)
-- [Expandable installer](#expandable-installer)
-- [Module-based architecture](#module-based-architecture)
-- [First module: Tai Saver](#first-module-tai-saver)
-- [Planned framework behavior](#planned-framework-behavior)
-- [Safety principles](#safety-principles)
-- [Compatibility target](#compatibility-target)
+- [The overall vision](#the-overall-vision)
+- [The Settings experience](#the-settings-experience)
+- [Feature catalogue](#feature-catalogue)
+- [Plugin Control Centre](#plugin-control-centre)
+- [Connectivity, USB, FTP and streaming](#connectivity-usb-ftp-and-streaming)
+- [Expandable installer and modular sections](#expandable-installer-and-modular-sections)
+- [Module architecture](#module-architecture)
+- [First implemented core: Tai Saver](#first-implemented-core-tai-saver)
+- [Safety, compatibility and reliability](#safety-compatibility-and-reliability)
+- [Initial hardware target](#initial-hardware-target)
 - [Repository structure](#repository-structure)
 - [Build and tests](#build-and-tests)
 - [Development status and roadmap](#development-status-and-roadmap)
 - [Documentation](#documentation)
 
-## Vision and goals
+## The overall vision
 
-The goal is to make the native Vita Settings application extensible with a consistent collection of additional pages.
+The project aims to provide one coherent Settings environment for the whole console.
 
-The framework should:
+The extended Settings experience should bring together:
 
-- Add a dedicated **Rt:Settings Extended** entry inside the existing Settings application.
-- Provide a root page that lists the installed feature modules.
-- Give every module its own page, settings, version and service interface.
-- Allow modules to be installed, updated, repaired, disabled and removed independently.
-- Keep navigation and presentation consistent with the native Settings experience.
-- Keep all user-facing interface text and project documentation in English.
-- Perform long-running work in background workers so Settings remains responsive.
-- Make operations reversible wherever possible, with clear progress, errors and recovery paths.
-- Preserve user configuration and data when modules or the framework are updated or removed.
+- Native system settings and additional controls that are safe to expose.
+- A central manager for installed taiHEN plugins and their configurable options.
+- Persistent USB connection and FTP service preferences.
+- USB streaming controls and connection status.
+- Storage, SD2Vita and memory-card information and tools.
+- Startup behavior, backup, recovery and diagnostics.
+- Network, power, display, audio, input and system information extensions.
+- An expandable module installer so users can choose exactly which sections to install.
 
-Rt:Settings Extended is **not** intended to become a separate SPDW control panel or a replacement for the native Settings application. It is an extension of the existing Settings experience.
+The design principle is simple: **one Settings application, one consistent interface, many integrated capabilities.**
 
-## How it will look in Settings
+We will build this in layers. Sony-owned Settings pages will not be patched indiscriminately. The first integration target is our own Rt:Settings Extended category, with clear navigation to each installed section. Extending or injecting controls into Sony-owned pages is a separate reverse-engineering and compatibility task.
 
-The first target is a dedicated category containing the framework's installed sections:
+## The Settings experience
+
+The planned top-level layout is an organized extension of the existing Settings application:
 
 ```text
 Settings
 └── Rt:Settings Extended
-    ├── Framework
-    │   ├── Installed modules
-    │   ├── Module status and versions
-    │   └── Framework information
-    └── Tai Saver
-        ├── Automatic backup
-        ├── Backup archive
-        ├── Known-Good snapshots
-        ├── Failed / KO snapshots
-        ├── Compare and verify
-        └── Restore
+    ├── Overview
+    ├── Framework & Modules
+    ├── Connectivity
+    │   ├── USB Connection
+    │   ├── FTP Server
+    │   └── USB Streaming
+    ├── Plugin Control Centre
+    │   ├── Installed Plugins
+    │   ├── Plugin Settings
+    │   ├── Profiles
+    │   └── Compatibility & Diagnostics
+    ├── Storage & Devices
+    ├── System & Startup
+    ├── Display & Audio
+    ├── Power & Performance
+    ├── Tai Saver
+    └── System Information & Diagnostics
 ```
 
-This is an illustrative first layout, not a claim that the native page has already been implemented.
+This is the target information architecture. Sections will appear as functional pages only when the corresponding module and required backend are installed and compatible. The interface must distinguish **Available**, **Installed**, **Disabled**, **Incompatible**, **Service unavailable** and **Requires reboot** states.
 
-As the project grows, additional feature modules will appear as their own entries under **Rt:Settings Extended**. A section that is not installed should not appear as an active page. The framework may show available or missing modules in its module manager, but it must not expose non-functional controls.
+Every page should use consistent controls, explanations, confirmation prompts, status indicators and error reporting. Long-running operations must run outside the Settings UI thread.
 
-The initial integration will add our own category and pages. Placing individual controls directly inside Sony-owned Settings pages is a separate, compatibility-sensitive research task and is not required for the first release.
+## Feature catalogue
 
-## Expandable installer
+The following catalogue describes the intended scope. It will be delivered incrementally as tested modules and adapters.
 
-**One installer. Many independently installable Settings sections.**
+### Connectivity
 
-The project will use a single expandable installer package. The framework is the shared base; each feature is delivered as a module with its own manifest, version, dependencies, payload and data-preservation rules.
+- **USB Connection — Always On preference:** an option to keep the USB connection service available/automatically enabled where the Vita's USB mode and installed system components permit it. The page will show connection state and explain when a cable, host or reboot is required.
+- **FTP Server — Always On:** automatically start the FTP service when its supported backend is available, with configurable port, access state, startup behavior and clear running/stopped status.
+- Manual start/stop controls for supported services.
+- Startup behavior and service health indicators.
+- Explicit warnings when a service is unavailable because its required plugin/application is not installed.
 
-### The user can choose how to install
+“Always On” is a persistent preference, not a promise that a physical USB link can exist without a cable or that an FTP server can operate when the console is powered off. Services must start only when their backend and system state allow it.
 
-The installer will support both installation styles:
+### USB Streaming
 
-1. **Install selected sections:** choose one or more modules individually. For example, install Tai Saver now and leave other sections unchecked.
-2. **Install all available sections:** select every compatible module included in the current package with one action.
-3. **Add sections later:** run the same installer again and add modules that were not selected during the first installation.
-4. **Update independently:** update the framework or an individual module without reinstalling everything.
-5. **Repair:** restore missing or modified files owned by the framework or a selected module.
-6. **Disable or remove a module:** disable its Settings page/service, or remove its owned program files while preserving user data by default.
+A dedicated page for supported USB streaming backends:
 
-The shared framework is installed whenever it is needed by at least one module. It is not duplicated for every section. Required dependencies are selected automatically and cannot be unchecked. Incompatible modules or unresolved dependencies must be explained before installation.
+- Enable/disable USB streaming.
+- Show backend/plugin detection and compatibility.
+- Display connection and streaming state.
+- Configure supported backend options, such as video mode or transport settings, only when exposed by that backend.
+- Start/stop streaming and show errors.
+- Explain host-side requirements and reboot requirements.
 
-The installer will include a module-selection screen with actions such as **Select All** and **Deselect All**, plus a review screen showing exactly what will be installed, updated or removed. “Install all” means all compatible modules actually present in that installer package; future modules become available when a newer package/catalog includes them.
+USB streaming must be treated separately from ordinary USB connection mode and FTP. Their drivers and plugin dependencies can conflict or be mutually exclusive on some configurations; the framework must detect known conflicts and never activate incompatible modes together without an explicit, informed user decision.
 
-### Example of how the installer grows
+### Plugin Control Centre
 
-| Release | Available modules | User choice |
-|---|---|---|
-| First release | Tai Saver | Install Tai Saver, or the complete initial package |
-| Later release | Tai Saver + new Settings modules | Keep the current setup, add only the new section, or install all |
-| Future release | More modules | Choose any combination, or select all compatible modules |
+A central place to inspect and manage configurable plugins:
 
-You will not need a different installer for every new Settings section. A new module is added to the package/catalog with its descriptor and payload; the installer discovers it and presents it as another selectable option.
+- Scan known taiHEN plugin locations and identify installed plugin entries.
+- Group plugins by category and load location where possible.
+- Show plugin name, path, version and detected status when metadata is available.
+- Expose settings for plugins that provide a supported configuration adapter.
+- Provide per-plugin enable/disable controls only where the framework can safely manage the relevant configuration.
+- Offer profiles, such as a daily-use profile, streaming profile or troubleshooting profile, once profile switching is implemented safely.
+- Validate configuration changes, show a preview and preserve a restorable backup.
+- Detect missing files, duplicate entries and known conflicts where reliable rules exist.
+- Keep diagnostic information for unsupported or unrecognized plugins.
 
-### Installer safety
+**Important technical limit:** there is no universal safe way to invent settings for an arbitrary plugin. A plugin's adjustable options can be exposed only if its configuration format, API or a dedicated adapter is understood. Unknown plugins will still be listed when detectable, but will not receive fabricated sliders or switches. The framework must never guess undocumented values or silently rewrite plugin configuration.
 
-The installer is designed around a reviewable, recoverable transaction:
+### Storage & Devices
 
-- Validate package and module manifests.
-- Check firmware and framework compatibility, dependencies and conflicts.
-- Detect the current installation and identify only files owned by Rt:Settings Extended.
-- Show a change plan before writing anything.
-- Stage files and verify their hashes and available storage.
-- Back up files that are about to be replaced and record each operation in a transaction journal.
-- Commit the installed-module registry only after the payload operations succeed.
-- Roll back on failure; if rollback is incomplete, preserve the journal and backups and report that recovery is required.
+Planned capabilities include:
 
-It must never overwrite or delete files that are not declared as owned by the package. User archives and settings are data, not disposable installer payload.
+- Internal memory card and SD2Vita status.
+- Mounted storage devices, mount points and free-space information.
+- Storage health and configuration diagnostics where the platform exposes reliable data.
+- Safe access to Tai Saver archives and recovery data.
+- Device and USB connection information.
+- Warnings before operations that may affect storage availability.
 
-The package format and module descriptors are defined in `installer/`. The actual Vita installer UI and on-device transaction engine are not complete yet.
+### System & Startup
 
-## Module-based architecture
+- Startup service status and lifecycle information.
+- Automatic service preferences.
+- Boot journal and startup diagnostics.
+- Module startup dependencies and ordering.
+- Recovery status after interrupted operations.
+- Clear reboot-required indicators.
 
-The project is split into a shared framework and independent feature modules.
+### Display & Audio
+
+An extended home for supported display and audio options, including plugin-backed enhancements. Controls will be available only where a documented system API or supported plugin adapter exists.
+
+### Power & Performance
+
+A home for supported power, performance and monitoring extensions. Plugin-specific overclocking or performance controls must respect hardware limits, backend capabilities and safe defaults. The framework must not expose arbitrary unsafe values.
+
+### Tai Saver
+
+Backup, verification, comparison and recovery for `ur0:tai`. See [First implemented core: Tai Saver](#first-implemented-core-tai-saver).
+
+### System Information & Diagnostics
+
+- Firmware and system component information.
+- Installed framework and module versions.
+- Detected plugin/backend inventory.
+- Service status and diagnostic reports.
+- Compatibility checks and recovery guidance.
+
+The catalogue is intentionally broad. A feature becomes an installable module only after its implementation, dependencies, UI, safety rules and tests are ready.
+
+## Plugin Control Centre
+
+The Plugin Control Centre is a core pillar of the project, not an afterthought.
+
+The framework will use a registry of plugin adapters. Each adapter describes:
+
+- Which plugin or plugin family it supports.
+- How to detect the installed version and active state.
+- Which settings it can safely read and change.
+- Valid values and constraints for each setting.
+- Whether a change takes effect immediately or requires a reboot.
+- How to validate, back up and restore its configuration.
+- Known conflicts with other plugins or services.
+
+The UI can then generate the appropriate controls—switches, selectors, numeric fields or sliders—from validated metadata. A slider is shown only when the adapter defines a meaningful numeric range and safe step size.
+
+For plugins without an adapter, the manager provides inventory and diagnostic information rather than pretending to control them. New adapters can be distributed as framework updates or compatible modules.
+
+## Connectivity, USB, FTP and streaming
+
+These services need explicit lifecycle management rather than isolated toggles.
+
+Each service should expose a common status model:
+
+- Not installed
+- Available
+- Stopped
+- Starting
+- Running
+- Stopping
+- Error
+- Blocked by conflict
+- Requires reboot
+
+Persistent preferences such as **FTP Server: Start automatically** or **USB service: Keep enabled when available** are stored separately from live service state. If startup fails, the UI must show the failure and preserve the user's preference without falsely displaying the service as running.
+
+The service manager must coordinate shared resources and known conflicts. It must not start two mutually exclusive USB backends simultaneously.
+
+## Expandable installer and modular sections
+
+**One installer. Install one section at a time—or install everything available.**
+
+The framework is shared; each Settings section is a separate module. The installer will offer:
+
+1. **Install Selected** — choose individual modules.
+2. **Install All** — select every compatible module included in the package.
+3. **Add Later** — rerun the installer to add modules without reinstalling existing ones.
+4. **Update** — update the framework or selected modules independently.
+5. **Repair** — restore missing or modified files owned by the selected components.
+6. **Disable / Enable** — change module availability without deleting its user data.
+7. **Remove** — remove only the selected module's owned program files, preserving user data by default.
+
+The shared framework is installed once and reused by every module. Required dependencies are selected automatically. The installer must check firmware compatibility, module dependencies, known conflicts and available storage before changing the console.
+
+“Install All” means all compatible modules included in that installer package. New modules become available through a later package/catalog update; users can then add just the new section or choose Install All again.
+
+### Installer transaction safety
+
+- Validate the package and module manifests.
+- Detect the current installation and installed module versions.
+- Present an exact change plan before installation.
+- Stage payload files and verify their hashes.
+- Back up replaced framework/module-owned files.
+- Journal each transaction step.
+- Commit the installed-module registry only after the payload is successfully installed.
+- Roll back on failure and preserve recovery material if rollback is incomplete.
+- Never delete files outside the declared ownership list.
+- Preserve user settings, plugin configurations and Tai Saver archives unless the user explicitly authorizes a data deletion.
+
+See [Expandable Installer and Module System](docs/EXPANDABLE_INSTALLER.md).
+
+## Module architecture
+
+The project consists of a shared framework, service backends, plugin adapters and independent feature modules.
 
 ### Shared framework
 
-The framework is responsible for:
-
-- The Rt:Settings Extended root category and navigation.
+- Native Settings entry and navigation.
 - Module discovery and registration.
-- Module status, versions and compatibility checks.
-- Shared UI conventions and lifecycle management.
-- Common configuration and service interfaces.
-- Installer integration and recovery reporting.
+- Service manager and lifecycle.
+- Plugin adapter registry.
+- Shared configuration and UI conventions.
+- Compatibility and conflict detection.
+- Installer integration and transaction recovery.
+- Diagnostics and status reporting.
 
-### Feature modules
+### Modules and adapters
 
-Each module is responsible for its own:
+A module owns its page, settings schema, service integration, dependencies and declared files. Plugin adapters provide narrowly scoped, validated access to plugin-specific options.
 
-- Stable module ID and display metadata.
-- Settings page and page-specific behavior.
-- Settings schema and version migrations.
-- Service calls and feature logic.
-- Declared dependencies and conflicts.
-- Exact list of files it owns.
-- User-data locations and preservation rules.
+This distinction matters: a Settings page can group controls from several plugins, but the code that understands and changes each plugin's settings belongs in its adapter. That keeps the interface unified without coupling every page to undocumented plugin internals.
 
-A module must not silently edit another module's files or configuration. The framework owns navigation and module lifecycle; the module owns its feature behavior.
+## First implemented core: Tai Saver
 
-### Adding a new module
+Tai Saver is the first feature engine being developed. It protects the contents of `ur0:tai` using verifiable snapshots and safe archive management.
 
-The intended development flow is:
+Planned user-facing functions:
 
-1. Assign a stable module ID.
-2. Create its `module.json` descriptor.
-3. Implement its page and service using framework interfaces.
-4. Define its settings schema, dependencies and compatibility.
-5. Declare every package-owned path and every user-data path.
-6. Add tests for installation, update, failure recovery and removal.
-7. Add it to the package manifest.
+- Automatic backup at startup when enabled.
+- Manual backup.
+- Configurable automatic retention: 2, 3, 4, 5 or a custom number.
+- Separate **Automatic**, **Known-Good**, **Failed / KO** and **Pre-Restore** archives.
+- SHA-256 integrity verification.
+- File-level snapshot comparison.
+- Verified restore with a mandatory Pre-Restore safety snapshot.
+- Boot lifecycle journal for success, skipped, failed and interrupted runs.
+- Staging recovery so incomplete snapshots are never treated as valid archives.
 
-The same installer then offers it as a selectable section. See [Expandable Installer](docs/EXPANDABLE_INSTALLER.md).
+Automatic retention applies only to eligible Automatic snapshots. It must never silently delete Known-Good, Failed / KO or Pre-Restore archives.
 
-## First module: Tai Saver
-
-**Tai Saver** is the first planned user-facing feature. It protects the contents of `ur0:tai` by creating verifiable snapshots and providing safe archive management.
-
-### Planned features
-
-- Automatic backup during startup when enabled.
-- Manual backup on demand.
-- Configurable automatic retention: 2, 3, 4, 5 or a custom number of snapshots.
-- Separate archive classes:
-  - **Automatic** — routine snapshots managed by the retention policy.
-  - **Known-Good** — snapshots explicitly kept by the user as known working configurations.
-  - **Failed / KO** — snapshots retained for diagnostics when a configuration is known to be broken.
-  - **Pre-Restore** — safety snapshot created before restoring another archive.
-- SHA-256 hashes for files and archive integrity checks.
-- File-level comparison between snapshots.
-- Archive verification before restore.
-- Protected restore with a Pre-Restore snapshot and rollback path.
-- Boot lifecycle journal to record backup status, interruptions and failures.
-- Staging recovery so interrupted, incomplete work is not mistaken for a valid archive.
-
-Automatic retention must apply only to eligible Automatic snapshots. It must never silently delete Known-Good, Failed / KO or Pre-Restore material.
-
-### Tai Saver storage
-
-The initial data location is:
+Initial data location:
 
 ```text
 ur0:data/RtSettingsExtended/TaiSaver/
@@ -201,78 +287,58 @@ ur0:data/RtSettingsExtended/TaiSaver/
     └── events/
 ```
 
-The exact on-device layout may evolve as implementation progresses. The important rule is that user archives and settings remain separate from replaceable program files.
+The snapshot engine and boot journal have host-side implementations and tests. The Vita startup adapter and complete Settings page are still pending.
 
-### Startup backup behavior
+## Safety, compatibility and reliability
 
-When automatic backup is enabled, the eventual startup component should wait until storage is mounted and `ur0:tai` is accessible, then create and verify a snapshot in the background. It must not block the Settings interface or rewrite the live taiHEN configuration.
+- No silent edits to `ur0:tai/config.txt` or existing plugin entries.
+- No arbitrary controls for unknown plugins.
+- No writes outside explicitly owned paths.
+- No conflicting USB/streaming services started together.
+- No restore without archive verification and a Pre-Restore snapshot.
+- No automatic deletion of user archives or configuration.
+- No false “running” state when a service failed to start.
+- No blocking file operations on the Settings UI thread.
+- No unsupported firmware or hardware assumptions presented as verified compatibility.
+- Every risky operation has a preview, confirmation, journal and recovery path appropriate to its impact.
 
-A boot journal records states such as started, waiting for storage, backup running, verified, skipped, failed or interrupted. A successful backup does not automatically mean that the snapshot is Known-Good.
+Where a plugin change requires a reboot, the UI must say so before applying it. If a service cannot be safely stopped or restarted dynamically, the interface must not pretend otherwise.
 
-The host-testable journal exists; the actual Vita startup adapter and target-device timing validation remain pending.
+## Initial hardware target
 
-## Planned framework behavior
+First validation target:
 
-Beyond Tai Saver, the framework is intended to support additional Settings sections as independent modules. The exact feature list will be decided and implemented module by module; a future idea is not considered an available feature until its code, descriptor and tests exist.
+- PlayStation Vita 1000 (OLED)
+- Firmware 3.65
+- HENkaku Ensō
+- SD2Vita with YAMT
+- Existing Sony memory card
 
-The framework should provide a single place to:
-
-- See which modules are installed and their versions.
-- Check module status and compatibility.
-- Access each installed module's Settings page.
-- Understand when a module is unavailable, disabled or requires an update.
-- Manage the framework without disturbing unrelated Sony Settings.
-- Preserve module data across updates and optional removal.
-
-## Safety principles
-
-Safety is a core design requirement, especially because Tai Saver interacts with taiHEN configuration.
-
-- **No silent taiHEN edits.** Installation, update and removal must not silently rewrite `ur0:tai/config.txt` or change existing plugin entries.
-- **No unowned file operations.** The installer may touch only paths explicitly owned by the framework or selected module.
-- **Verify before restore.** An archive must pass a fresh integrity check before it can be restored.
-- **Pre-Restore is mandatory.** Restoring a snapshot first creates a safety copy of the current configuration.
-- **Preserve user data.** Updates and module removal preserve user archives and settings by default.
-- **Fail closed.** Unsupported firmware, malformed manifests or incomplete transactions must not result in a partial active installation.
-- **Keep evidence.** Failed or interrupted transactions retain their journal and recovery material.
-- **Do not block the UI.** Copying, hashing, verification and restore operations run outside the Settings UI thread.
-- **Do not claim success prematurely.** The interface reports success only after the operation and its verification have completed.
-
-If a future installation method requires a taiHEN plugin entry, it must show the exact proposed change, explain why it is needed, back up the original and request explicit user confirmation.
-
-## Compatibility target
-
-The first validation target is:
-
-- **Console:** PlayStation Vita 1000 (OLED)
-- **Firmware:** 3.65
-- **HENkaku Ensō:** installed
-- **Storage:** SD2Vita with YAMT, alongside the existing Sony memory card
-
-Other Vita models, firmware versions, storage setups and taiHEN configurations require separate compatibility testing. The target above is a development priority, not a claim that the current code has already been tested on hardware.
+Other models, firmwares and storage configurations require independent testing. This is the first development target, not a claim of completed hardware validation.
 
 ## Repository structure
 
 ```text
 .
 ├── .github/workflows/       # Continuous integration
-├── docs/                    # Architecture and implementation contracts
+├── docs/                    # Architecture and integration contracts
 ├── include/                 # Public C interfaces
-├── installer/               # Package and module manifests, schemas
-│   └── modules/tai-saver/   # First module descriptor
+├── installer/               # Package/module manifests and schemas
 ├── settings-ui/             # Settings page specifications
 ├── source/
-│   ├── tai-saver/            # Snapshot engine and SHA-256
+│   ├── tai-saver/           # Snapshot engine and SHA-256
 │   └── boot-monitor/         # Persistent boot lifecycle journal
-├── tai-saver/                # Feature specification and JSON schemas
-├── tests/                    # Host-side regression tests
-├── Makefile                  # Host build and tests
-└── Makefile.vita             # VitaSDK build recipe
+├── tai-saver/               # Feature specifications and schemas
+├── tests/                   # Host-side regression tests
+├── Makefile                 # Host build and tests
+└── Makefile.vita            # VitaSDK build recipe
 ```
+
+The repository layout will expand as the service manager, plugin adapters, Settings UI and installer are implemented.
 
 ## Build and tests
 
-The current C core can be built and tested on a desktop host:
+The current host-side C core can be built and tested with:
 
 ```sh
 make
@@ -280,52 +346,55 @@ make test
 make sanitize
 ```
 
-A VitaSDK static-library build recipe is provided in `Makefile.vita`. It is not yet evidence of a successful Vita cross-build. The VitaSDK toolchain build, native Settings registration, boot adapter, installer VPK and physical-device validation are separate milestones.
+A VitaSDK build recipe exists, but it is not yet evidence of a successful Vita cross-build. The native Settings integration, service backends, plugin adapters, installer VPK and physical-device tests are separate milestones.
 
-A successful host CI run proves only the host tests covered by that workflow. It does not prove that the plugin, Settings hooks or installer work on a physical Vita.
+A passing host CI run validates only the tests actually executed by that workflow. It does not prove that native Settings hooks or device-level USB/FTP/streaming behavior work on hardware.
 
 ## Development status and roadmap
 
-| Component | Status |
+| Area | Status |
 |---|---|
 | Tai Saver snapshot engine and SHA-256 manifests | Implemented; host-tested |
-| Snapshot verification and comparison | Implemented; host-tested |
-| Archive classification and Automatic-only retention | Implemented; host-tested |
+| Snapshot verification, comparison and archive retention | Implemented; host-tested |
 | Guarded restore with Pre-Restore safety snapshot | Implemented; host-tested |
-| Boot lifecycle journal and interrupted-run detection | Implemented; host-tested |
-| Expandable package/module format and JSON schemas | Defined |
-| First Tai Saver module descriptor | Defined |
-| Installer selection and transaction/rollback contract | Defined; Vita UI/engine pending |
+| Boot lifecycle journal | Implemented; host-tested |
+| Expandable installer and module architecture | Specified |
+| Plugin Control Centre and adapter contract | Project target; implementation pending |
+| USB persistent connection controls | Project target; implementation pending |
+| FTP always-on service integration | Project target; implementation pending |
+| USB streaming integration | Project target; backend compatibility work pending |
+| Storage, system, display, audio and power sections | Project target; implementation pending |
 | Staging recovery | Specified; implementation pending |
+| Installer transaction engine and VPK UI | Pending |
 | VitaSDK cross-build validation | Pending |
-| Vita startup adapter and real boot integration | Pending |
-| Native Rt:Settings Extended category and module pages | Pending |
-| Installer VPK and on-device install/update/remove | Pending |
-| Physical Vita testing | Pending |
+| Native Settings category and pages | Pending |
+| Vita startup/service integration | Pending |
+| Physical Vita validation | Pending |
 
 ### Roadmap
 
-1. Complete storage safety and interrupted-staging recovery.
-2. Implement and test the installer transaction engine on the host.
-3. Validate the code with the VitaSDK toolchain.
-4. Implement the Vita installer UI, including individual module selection and **Install All**.
-5. Implement the shared framework and native Settings category.
-6. Integrate Tai Saver as the first working Settings module.
-7. Implement and validate the startup backup adapter.
-8. Build VPK packages and test installation, updates, rollback and removal on the target Vita.
-9. Add future Settings modules without replacing the installer architecture.
+1. Finish storage safety and interrupted-staging recovery.
+2. Implement the shared service and plugin-adapter contracts.
+3. Implement the installer transaction engine and module selection UI.
+4. Validate the code with the VitaSDK toolchain.
+5. Build the Rt:Settings Extended root category and navigation.
+6. Integrate Tai Saver as the first working module.
+7. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
+8. Add USB streaming through a tested backend and conflict-aware service manager.
+9. Build the Plugin Control Centre and adapters for supported plugins.
+10. Add storage, system, display/audio, power and diagnostics modules incrementally.
+11. Test installation, update, rollback, service startup and removal on the target Vita.
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
+- [Expandable Installer and Module System](docs/EXPANDABLE_INSTALLER.md)
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
-- [Expandable Installer and Module System](docs/EXPANDABLE_INSTALLER.md)
+- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)
 - [Tai Saver feature documentation](tai-saver/README.md)
 
 ---
 
-**The long-term objective:** one stable Rt:Settings Extended framework inside Vita Settings, one expandable installer, and a growing collection of optional sections that users can install individually or all together—without sacrificing the safety of their existing system configuration or user data.
+**Long-term objective:** make Rt:Settings Extended the complete, modular Settings environment for the Vita—covering connectivity, USB, FTP, streaming, plugin configuration, storage, startup, system controls, backup and diagnostics—with one expandable installer and no compromise on safety.

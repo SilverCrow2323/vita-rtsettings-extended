@@ -2,102 +2,105 @@
 
 ## Product goal
 
-Rt:Settings Extended uses **one expandable installer** for the shared framework and every feature module. New Settings sections are delivered as modules, not as separate installers. The installer discovers the modules included in its package and presents the compatible ones to the user.
+Rt:Settings Extended uses one expandable installer for the shared framework, feature modules and compatible plugin/service adapters. The installer is designed to grow as new Settings sections are added.
 
-The user must be able to install one section at a time, choose any combination, or install all compatible sections in the current package.
+The user can install one section at a time, choose any combination, or install all compatible modules included in the current package.
 
-## User installation choices
+## Installation choices
 
-The installer UI is planned to offer:
-
-- **Install selected:** install only the checked modules.
-- **Select All:** check every compatible optional module in the current package.
+- **Install Selected:** install only the checked modules.
+- **Select All / Install All:** select every compatible optional module in this package.
 - **Deselect All:** clear optional selections.
-- **Add modules:** keep the existing framework and installed modules, then add selected new modules.
-- **Update:** update the framework, selected modules, or all installed modules.
-- **Repair:** restore missing or modified package-owned files.
-- **Disable module:** retain files and user data but stop registering its page/service.
-- **Remove module:** remove only that module's owned program files; preserve its user data by default.
-- **Uninstall framework:** remove the shared framework after dependent modules are handled; preserve user data unless the user explicitly chooses otherwise.
+- **Add Later:** add modules without reinstalling existing modules.
+- **Update:** update the shared framework or selected modules independently.
+- **Repair:** restore missing or modified files owned by selected components.
+- **Enable / Disable:** change module availability while preserving its data.
+- **Remove:** remove a module's owned program files; preserve user data by default.
 
-The shared framework is installed automatically whenever a selected module requires it. Required dependencies are selected automatically and cannot be unchecked. A module that is incompatible or has unresolved dependencies must be blocked with a clear explanation.
+The shared framework is installed once and reused. Required dependencies are selected automatically and cannot be unchecked. Incompatible modules and unresolved dependencies are blocked with an explanation.
 
-**Install All applies to all compatible modules shipped in the package being installed.** It does not imply downloading modules that are not present in that package. When a later release adds modules, rerunning the same installer (or its updated package) makes those modules available for individual selection or Install All.
+“Install All” means all compatible modules actually included in the package. When a later package adds modules, users can add only those new modules or choose Install All again.
 
-## Components
+## Planned module catalogue
 
-- **Package manifest:** product identity, release version, framework version, firmware compatibility and available module list.
-- **Module manifest:** stable ID, version, dependencies, conflicts, page entry, payload ownership, settings schema and data-preservation rules.
-- **Installer UI:** installation mode, module selection, Select All / Deselect All, compatibility warnings, change preview, progress and final report.
+The package format is designed to accommodate the full Rt:Settings Extended feature scope. Initial planned module groups include:
+
+| Module group | Planned sections |
+|---|---|
+| Connectivity | USB connection preference, FTP server auto-start, service status |
+| USB Streaming | Backend detection, enable/disable, streaming status and supported options |
+| Plugin Control Centre | Plugin inventory, supported plugin settings, profiles and diagnostics |
+| Storage & Devices | SD2Vita, memory card, mount status, free space and diagnostics |
+| System & Startup | Startup services, boot status, module lifecycle and recovery |
+| Display & Audio | Supported system and plugin-backed display/audio controls |
+| Power & Performance | Supported performance controls and monitoring |
+| Tai Saver | Automatic backups, retention, archive verification, comparison and restore |
+| System Information | Firmware, module versions, compatibility and diagnostic reports |
+
+The table is a roadmap, not a declaration that these modules are already implemented.
+
+## Plugin adapter packages
+
+Plugin settings are not safely interchangeable. An adapter must declare the exact plugin identity/version range and the settings it supports. It defines value types, allowed ranges, validation, apply behavior, reboot requirements and backup/restore behavior.
+
+The installer must not install a generic adapter that guesses unknown plugin configuration. An unrecognized plugin may be inventoried, but controls appear only when a compatible adapter is available.
+
+Adapters may be bundled with the framework or shipped as independently selectable compatible modules. Their dependencies and conflicts are declared in their manifests.
+
+## Package components
+
+- **Package manifest:** product identity, release version, supported framework versions and list of available modules.
+- **Module manifest:** stable ID, version, dependencies, conflicts, firmware compatibility, Settings page entry, payload ownership and data-preservation rules.
+- **Plugin adapter manifest:** supported plugin identity/version and validated settings schema.
+- **Installer UI:** selection, Select All, compatibility warnings, change preview, progress and result report.
 - **Transaction engine:** staging, hash verification, journaling, commit and rollback.
-- **Installed registry:** framework/module versions, enabled state and exact files owned by each component.
+- **Installed registry:** installed/enabled state, versions and exact files owned by each component.
 
-## Installation flow
+## Installation transaction
 
-1. Read and validate the package manifest and module descriptors.
-2. Detect an existing Rt:Settings Extended installation.
-3. Check firmware, framework compatibility, dependencies and conflicts.
-4. Present available modules and preselect required dependencies.
-5. Let the user select individual modules or choose Select All.
-6. Resolve dependencies and build a complete install/update/remove plan.
-7. Show the exact changes, storage requirements and warnings for confirmation.
-8. Stage payload files away from live destinations and verify their hashes.
-9. Journal the transaction and back up owned files that will be replaced.
-10. Commit the selected framework/module payloads.
-11. Write the installed-module registry last, after all required operations succeed.
-12. Report the result and retain recovery information if any step fails.
+1. Validate the package, manifests and payload hashes.
+2. Detect existing framework/modules and their versions.
+3. Check firmware, dependencies, conflicts and free storage.
+4. Present module selection and automatically select required dependencies.
+5. Resolve the requested selection into an exact install/update plan.
+6. Show changes, storage requirements, service impacts and reboot requirements.
+7. Stage payloads away from live destinations and verify them.
+8. Journal the transaction and back up owned files that will be replaced.
+9. Commit the selected framework, modules and adapters.
+10. Write the installed registry only after all required operations succeed.
+11. Report success or failure; preserve journal and recovery data if rollback is incomplete.
 
-No partial module installation should be reported as successful.
+No partial module installation may be reported as successful.
 
-## Package and module contracts
+## Update, repair, disable and removal
 
-Each module has a stable lowercase ID and a `module.json` descriptor. It declares:
+Updates replace only files owned by the selected component. Unchanged files should remain untouched. Repair restores missing or modified owned files.
 
-- display name and description;
-- module version and framework version range;
-- minimum/maximum firmware compatibility;
-- dependencies and conflicts;
-- Settings page entry identifier;
-- payload root and exact owned paths;
-- settings schema;
-- user-data paths and uninstall preservation behavior.
+Disabling a module must unregister its Settings page and stop its managed service where safe; it must not delete user configuration. Removal deletes only declared program files and preserves user data by default. Removing the shared framework requires dependent modules to be handled first.
 
-The package manifest lists the modules available in that release and marks required/default-selected modules. The framework itself is shared and is not copied once per module.
+## Service and plugin configuration safety
 
-The JSON schemas and first Tai Saver descriptor live in this directory.
+The installer and module manager must:
 
-## Adding future modules
+- Never silently rewrite `ur0:tai/config.txt` or existing plugin entries.
+- Never alter an unknown plugin's settings.
+- Show the exact proposed configuration change and require confirmation where a taiHEN entry is needed.
+- Preserve plugin configuration and user data on updates.
+- Detect known service conflicts, including mutually exclusive USB/streaming backends.
+- Clearly indicate when a service or configuration change requires a reboot.
 
-1. Create a stable module ID and `module.json`.
-2. Implement the module's Settings page and service integration.
-3. Add its payload and settings schema.
-4. Declare dependencies, conflicts, compatibility and exact owned paths.
-5. Add host tests for install, update, rollback, disable and removal.
-6. Add the module descriptor and payload to the package manifest.
+## Adding a new module
 
-The installer then lists the new module automatically. Existing users can install just that module or choose Install All. The installer itself does not need a bespoke rewrite for every new Settings section, provided the module uses the supported framework and manifest contracts.
+1. Assign a stable lowercase module ID.
+2. Add its descriptor and payload.
+3. Implement its Settings page and service/adapter integration.
+4. Declare compatibility, dependencies, conflicts and owned paths.
+5. Define settings migration and user-data preservation.
+6. Add tests for install, update, failure recovery, disable and removal.
+7. Include it in the package manifest.
 
-## Update and rollback
-
-Updates compare installed and incoming file hashes. Unchanged files are left alone. Replaced files are backed up to a transaction-specific directory. User data is not part of the replaceable payload.
-
-The journal records planned operations and completion state. On failure, operations are replayed backwards. If rollback is incomplete, preserve the journal and backups and report **Recovery Required**; never clean up evidence automatically.
-
-The installed registry is updated only after all selected operations succeed. It must accurately describe which modules are installed, enabled and which files are owned by each component.
-
-## First module: Tai Saver
-
-Tai Saver is the first module. Its Settings page and service depend on the shared framework. Its archive data lives under `ur0:data/RtSettingsExtended/TaiSaver/` and is preserved on update, module removal and framework uninstall unless the user explicitly chooses otherwise.
-
-## taiHEN safety and user data
-
-- Never silently edit `ur0:tai/config.txt` or change existing plugin entries.
-- If a future module needs a taiHEN entry, show the exact proposed line and require explicit confirmation. Back up the original first.
-- Never overwrite or delete files not declared as owned by the selected package/module.
-- Preserve settings and archives during updates and module removal.
-- Framework uninstall preserves Tai Saver archives by default.
-- If a transaction fails, preserve enough information to diagnose and recover it.
+The installer then offers it automatically as another selectable section. The installer does not need a bespoke rewrite for every new module, provided the module follows the supported contracts.
 
 ## Current implementation status
 
-The package format, package/module JSON schemas, first Tai Saver descriptor and installer behavior contract are defined. The installer UI, module-selection workflow, transaction engine, VitaSDK build, installable VPK and hardware validation are not yet complete. Do not treat the documented workflow as an already available on-device feature.
+The expandable module concept and documentation are defined, and the repository already contains the first Tai Saver descriptor/schema work. The complete installer UI, module-selection workflow, transaction engine, service manager, plugin adapter registry, VitaSDK build, installable VPK and on-device validation remain pending.
