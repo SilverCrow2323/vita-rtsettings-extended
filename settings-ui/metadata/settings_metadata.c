@@ -21,7 +21,7 @@ int rtp_metadata_register(rtp_metadata_catalogue *c,const rtp_preferences *p,con
 int rtp_metadata_validate(const rtp_metadata_catalogue *c,const rtp_preferences *p){
  size_t i,j;if(!c||!p||c->count>RTP_META_MAX_ENTRIES)return RTP_META_INVALID_ARGUMENT;
  for(i=0;i<c->count;++i){const rtp_metadata_entry *e=&c->entries[i];const rtp_menu_entry *m=rtp_preferences_find(p,e->entry_id);
-  if(!m||!valid_key(e->entry_id,1)||!valid_key(e->module_id,1)||!e->title[0]||!memchr(e->title,'\\0',sizeof(e->title))||!memchr(e->description,'\\0',sizeof(e->description))||!memchr(e->category_id,'\\0',sizeof(e->category_id))||!memchr(e->icon_key,'\\0',sizeof(e->icon_key)))return RTP_META_INVALID_TEXT;
+  if(!m||!valid_key(e->entry_id,1)||!valid_key(e->module_id,1)||!e->title[0]||!memchr(e->title,'\0',sizeof(e->title))||!memchr(e->description,'\0',sizeof(e->description))||!memchr(e->category_id,'\0',sizeof(e->category_id))||!memchr(e->icon_key,'\0',sizeof(e->icon_key)))return RTP_META_INVALID_TEXT;
   if(e->category_id[0]){const rtp_menu_entry *cat=rtp_preferences_find(p,e->category_id);if(!cat||cat->kind!=RTP_ENTRY_CATEGORY)return RTP_META_INVALID_CATEGORY;}
   for(j=i+1;j<c->count;++j)if(strcmp(e->entry_id,c->entries[j].entry_id)==0)return RTP_META_DUPLICATE_ID;
  }return RTP_META_OK;
