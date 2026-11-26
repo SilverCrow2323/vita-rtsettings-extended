@@ -15,7 +15,7 @@ static int asset_read(void *ctx,const char *path,uint64_t offset,unsigned char *
 static int fs_copy(asset_fs *f,const char *src,const char *dst){int a=fs_find(f,src),b;if(a<0)return -1;b=fs_alloc(f,dst);if(b<0)return -1;f->size[b]=f->size[a];memcpy(f->bytes[b],f->bytes[a],f->size[a]);if(f->corrupt_copy&&f->size[b])f->bytes[b][0]^=1;return 0;}
 static int copy_stage(void *ctx,const char *src,const char *stage){asset_fs *f=(asset_fs*)ctx;return f->fail_copy?-1:fs_copy(f,src,stage);}
 static int commit_stage(void *ctx,const char *stage,const char *dest){asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,stage);if(f->fail_commit||i<0)return -1;if(fs_copy(f,stage,dest)!=0)return -1;f->used[i]=0;return 0;}
-static int fs_remove(void *ctx,const char *path){asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,path);if(i<0)return -1;f->used[i]=0;return 0;}
+static int fs_remove(void *ctx,const char *path){asset_fs *f=(asset_fs*)ctx;int i=fs_find(f,path);if(i<0)return 0;f->used[i]=0;return 0;}
 static int fs_copy_atomic(void *ctx,const char *src,const char *dest){return fs_copy((asset_fs*)ctx,src,dest);}
 static int activate(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->activate_calls++;if(f->activate_fail)return -1;strcpy(f->active_path,path);return 0;}
 static int verify_active(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;(void)path;f->verify_calls++;return f->verify_fail?-1:0;}
