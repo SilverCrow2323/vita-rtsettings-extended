@@ -99,3 +99,32 @@ A first source-discovery pass has identified these upstream families. This is a 
 ## Next research pass
 
 Expand the curated dataset in batches by category (network/storage, Bluetooth/input, display/power, shell/game-specific), verify each record against author release assets and checksums, and add a separate PSP/Adrenaline catalogue. Keep the installer catalogue separate from the inventory of everything discovered.
+
+## Verified boot presentation candidates
+
+A second source pass compared the upstream repositories and current discoverable release information. These are candidates, not a declaration that the project has already validated their binaries on the target Vita.
+
+| Candidate | Verified upstream facts | Selection / adapter direction |
+|---|---|---|
+| [CBS-Manager](https://github.com/Yoti/CBS-Manager) | Upstream README supports a static image, an animation and a console-info animation. It installs CBSM into Ensō boot configuration and taiHEN config, then exposes **Settings → Theme & Background → Boot Screen**. Static and animated files use CBSM/CBANIM formats. It explicitly warns that the initial Sony boot logo cannot be hidden; 3.65-update365 users have a boot_config caveat. | **Preferred combined boot-screen candidate for further validation.** Build a CBSM-specific adapter and converter workflow; back up both boot_config and taiHEN config before install/update/remove. Exact latest binary/release provenance and 3.65-update365 handling remain to be checked. |
+| [vita-bootanim](https://github.com/SKGleba/VitaTools/tree/master/vita-bootanim/source) | Community documentation lists v1.1, reports testing on 3.65 and support on Ensō 3.60–3.73. Uses generated `boot.rcf` in `ur0:tai/`; max animation size is 108 MiB and L-trigger can skip faulty animations. | Keep as a dedicated animation alternative if its maintenance/format pipeline offers a benefit over CBSM. Do not install two boot animation engines simultaneously. |
+| [Custom Boot Splash](https://github.com/Mag-Aegis/VitaSplashDrop) | Static splash implementation; requires a converted image and boot_config insertion. Original Sony logo remains visible. | Legacy/static alternative only. Prefer CBSM if the same hardware/firmware validation passes; never stack both boot hooks. |
+| [Vita-BootSound](https://github.com/teakhanirons/Vita-BootSound) | Latest GitHub release found is 1.0 (2018). WAV-only, 1 MiB maximum, up to 48 kHz and two channels; documented possible System Music audio-hook issue above firmware 3.60. | Not a default recommendation for the 3.65 target. Keep conditional until an actual 3.65 audio test and conflict analysis pass. |
+| [Custom Warning](https://github.com/TheOfficialFloW/VitaTweaks) | Upstream README confirms the text is stored in `ux0:tai/custom_warning.txt` as Unicode Little Endian with BOM `FF FE`; empty BOM-only file suppresses text. The plugin replaces the Ensō epilepsy warning. | A concrete text adapter is possible: UTF-16LE+BOM validation, preview, backup/restore and safe atomic write. Verify exact plugin version and whether path can be redirected before supporting ur0/SD2Vita variants. |
+
+### Current version/source findings
+
+- [AutoPlugin II](https://github.com/ONElua/AutoPlugin2) latest release endpoint currently resolves to **2.20**, published 7 November 2026. Its changelog includes Wi-Fi Turbo 0.7.0 and LiveArea NoLimits 2.1.0, plus atomic `tai.sync()` writes and dependency-aware ioPlus uninstall. This is a useful catalogue cross-check, not the source of truth for each plugin's newest upstream release.
+- [QuickMenuReborn](https://github.com/Ibrahim778/QuickMenuReborn) latest release endpoint currently resolves to **V2.5**, published 16 May 2022. It remains a developer widget framework, not a general settings API. Its age means add-on-specific support and ABI assumptions must be checked carefully.
+- [CBS-Manager](https://github.com/Yoti/CBS-Manager) has no GitHub release returned by the repository's latest-release endpoint during this pass; treat its current branch/source as an untagged candidate, not a versioned stable package.
+- [Vita-BootSound](https://github.com/teakhanirons/Vita-BootSound) latest release endpoint resolves to 1.0. No newer tagged release was found in the repository release listing.
+
+### Consequences for Rt
+
+1. Use one shared asset registry and import/backup library.
+2. Keep separate adapters for CBSM, vita-bootanim, Custom Warning and BootSound; their formats, config locations and activation mechanisms differ.
+3. For CBSM, boot animation and boot splash are capabilities of the same engine, not independent plugins to stack.
+4. For BootSound, mark 3.65 compatibility as unverified and default to unavailable until a target test passes.
+5. For Custom Warning, support the actual UTF-16LE+BOM file format rather than exposing a generic arbitrary text editor.
+6. Do not ship a boot engine merely because AutoPlugin II lists it. Check author source, current artifact, checksum, dependencies and rollback behavior first.
+
