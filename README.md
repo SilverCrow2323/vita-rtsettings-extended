@@ -621,7 +621,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Boot Animation / Boot Splash controls | Research/specification; implementation pending |
 | Boot Sound controls | Research/specification; implementation pending |
 | Custom Startup Warning controls | Research/specification; implementation pending |
-| Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host-test integration pending CI |\n| Asset import/export, filesystem hashing and platform adapters | Pending; backend-specific work required |
+| Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host-test integration pending CI |
+| Asset import/export, filesystem hashing and platform adapters | Pending; backend-specific work required |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
 | Interface Customization | Project target; implementation pending |
 | USB persistent connection service | Lifecycle core exists; Vita backend/UI pending |
@@ -669,11 +670,15 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Settings UI Metadata Catalogue](settings-ui/metadata/README.md)
 - [Complete Settings Feature Catalogue](docs/COMPLETE_FEATURE_CATALOGUE.md)
 - [Settings Entry Catalogue](docs/FEATURE_CATALOGUE.md)
-- [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)\n- [Boot Appearance Adapter Research](docs/PLUGIN_RESEARCH.md#verified-boot-presentation-candidates)
+- [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
+- [Boot Appearance Adapter Research](docs/PLUGIN_RESEARCH.md#verified-boot-presentation-candidates)
 - [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
-- [Custom Assets Manager Core](settings-ui/CUSTOM_ASSETS_MANAGER.md)\n- [Appearance Asset Manifest Schema](schemas/appearance-assets.schema.json)\n- [Managed Appearance Asset Catalogue](data/appearance-assets.json)\n- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
+- [Custom Assets Manager Core](settings-ui/CUSTOM_ASSETS_MANAGER.md)
+- [Appearance Asset Manifest Schema](schemas/appearance-assets.schema.json)
+- [Managed Appearance Asset Catalogue](data/appearance-assets.json)
+- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)
 - [Tai Saver feature documentation](tai-saver/README.md)
