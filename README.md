@@ -20,6 +20,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [User-facing Settings metadata](#user-facing-settings-metadata)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
+- [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
 - [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
 - [Plugin Control Centre](#plugin-control-centre)
@@ -176,6 +177,10 @@ A separate metadata catalogue now maps stable menu IDs to user-facing titles, de
 The project maintains a normalized shortlist for the target PCH-1000 OLED / firmware 3.65 / Ensō / YAMT setup. Every record separates firmware declared by the author, offline validation, physical tests and reports from other devices. It also tracks dependencies, mutually exclusive alternatives, adapter IDs and installation caveats.
 
 See the [curated catalogue](docs/PLUGIN_CATALOGUE.md), [machine-readable JSON](data/plugin-catalogue.json) and [JSON Schema](schemas/plugin-catalogue.schema.json). This is not an install-all list: candidates require project-side review and device testing. Unknown plugins may be inventoried but do not receive guessed controls.
+
+## Plugin inventory and adapter registry
+
+The first host-testable inventory core now parses supplied taiHEN `config.txt` text, tracks active and commented-out plugin entries, sections, source lines and duplicate paths, and maps recognized filenames to catalogue IDs. A separate adapter registry marks a plugin configurable only when an explicit adapter descriptor is registered; unknown or unsupported plugins remain inventory-only. This layer does not access the Vita filesystem or modify configuration. See [Plugin Inventory](docs/PLUGIN_INVENTORY.md). Version detection, dependency/conflict resolution and transactional config editing remain separate follow-up work.
 
 ## System Tools and application shortcuts
 

@@ -1,13 +1,13 @@
 CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
-CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata
+CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
 
-CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c
-CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o
+CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c source/plugin-inventory/plugin_inventory.c
+CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o build/plugin_inventory.o
 LIBRARY := build/librtsettings.a
 TEST_BINARY := build/test_tai_saver
 BOOT_TEST_BINARY := build/test_boot_journal
@@ -15,6 +15,7 @@ PREFERENCES_TEST_BINARY := build/test_preferences
 PROFILE_TEST_BINARY := build/test_layout_profiles
 UI_TEST_BINARY := build/test_preferences_ui
 METADATA_TEST_BINARY := build/test_settings_metadata
+PLUGIN_INVENTORY_TEST_BINARY := build/test_plugin_inventory
 SANITIZER_BINARY := build/test_tai_saver_san
 
 .PHONY: all test sanitize clean
@@ -44,6 +45,9 @@ build/preferences_ui.o: settings-ui/preferences_ui.c settings-ui/preferences_ui.
 build/settings_metadata.o: settings-ui/metadata/settings_metadata.c settings-ui/metadata/settings_metadata.h include/preferences.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/plugin_inventory.o: source/plugin-inventory/plugin_inventory.c include/plugin_inventory.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -66,15 +70,19 @@ $(UI_TEST_BINARY): tests/test_preferences_ui.c $(LIBRARY) settings-ui/preference
 $(METADATA_TEST_BINARY): tests/test_settings_metadata.c $(LIBRARY) settings-ui/metadata/settings_metadata.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY)
+$(PLUGIN_INVENTORY_TEST_BINARY): tests/test_plugin_inventory.c $(LIBRARY) include/plugin_inventory.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
 	./$(PROFILE_TEST_BINARY)
 	./$(UI_TEST_BINARY)
 	./$(METADATA_TEST_BINARY)
+	./$(PLUGIN_INVENTORY_TEST_BINARY)
 
-$(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h | build
+$(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
 
 sanitize: $(SANITIZER_BINARY)
