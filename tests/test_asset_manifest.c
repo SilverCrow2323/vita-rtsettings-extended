@@ -117,10 +117,18 @@ int main(void) {
     }
     /* Rotation preserves only a fully validated old primary. */
     {
-        rta_asset_registry newer=source;
+        rta_asset_registry newer=source, protected_copy=source;
+        size_t protected_length=0;
         strcpy(newer.assets[0].title,"Aurora");
+        strcpy(protected_copy.assets[0].title,"Protected backup");
+        assert(rta_asset_manifest_encode(&protected_copy,buffer,sizeof(buffer),
+               &protected_length)==RTA_OK);
+        assert(store_write(&memory,"manifest.bak",buffer,protected_length)==0);
+        /* Corrupt primary must not replace the independently valid backup. */
         assert(rta_asset_manifest_save_rotate(&source,&io,"manifest","manifest.bak",
                buffer,previous,sizeof(buffer))==RTA_OK);
+        assert(rta_asset_manifest_load(&io,"manifest.bak",buffer,sizeof(buffer),&decoded)==RTA_OK);
+        assert(strcmp(decoded.assets[0].title,"Protected backup")==0);
         assert(rta_asset_manifest_save_rotate(&newer,&io,"manifest","manifest.bak",
                buffer,previous,sizeof(buffer))==RTA_OK);
         assert(rta_asset_manifest_load(&io,"manifest.bak",buffer,sizeof(buffer),&decoded)==RTA_OK);

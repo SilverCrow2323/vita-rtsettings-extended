@@ -294,8 +294,8 @@ rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
                                           unsigned char *previous_scratch,
                                           size_t capacity) {
     rta_asset_registry previous_registry;
-    size_t new_length = 0, previous_length = 0, read_length = 0;
-    int primary_exists, preserve_previous = 0;
+    size_t new_length = 0, previous_length = 0, read_length = 0, backup_length = 0;
+    int primary_exists, backup_exists, preserve_previous = 0, retained_backup = 0;
     unsigned char new_digest[RTA_MANIFEST_DIGEST_SIZE];
     unsigned char previous_digest[RTA_MANIFEST_DIGEST_SIZE];
     unsigned char actual_digest[RTA_MANIFEST_DIGEST_SIZE];
@@ -316,7 +316,7 @@ rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
     ts_sha256_final(&hash, new_digest);
 
     primary_exists = io->exists(io->context, primary_path);
-    if (primary_exists < 0) return RTA_ERR_BACKEND;
+    if (primary_exists < 0 || primary_exists > 1) return RTA_ERR_BACKEND;
     if (primary_exists > 0) {
         if (io->read(io->context, primary_path, previous_scratch,
                      capacity, &previous_length) != 0)
@@ -331,6 +331,20 @@ rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
             ts_sha256_update(&hash, previous_scratch, previous_length);
             ts_sha256_final(&hash, previous_digest);
         }
+    }
+
+    backup_exists = io->exists(io->context, backup_path);
+    if (backup_exists < 0 || backup_exists > 1) return RTA_ERR_BACKEND;
+    if (!preserve_previous && backup_exists) {
+        /* Retain even an unrecognized backup byte-for-byte; never overwrite it. */
+        if (io->read(io->context, backup_path, previous_scratch,
+                     capacity, &backup_length) != 0)
+            return RTA_ERR_BACKEND;
+        if (backup_length > capacity) return RTA_ERR_CAPACITY;
+        ts_sha256_init(&hash);
+        ts_sha256_update(&hash, previous_scratch, backup_length);
+        ts_sha256_final(&hash, previous_digest);
+        retained_backup = 1;
     }
 
     if (io->replace_with_backup_atomic(io->context, primary_path, backup_path,
@@ -350,16 +364,19 @@ rta_result rta_asset_manifest_save_rotate(const rta_asset_registry *registry,
         rta_asset_manifest_decode(scratch, read_length, &previous_registry) != RTA_OK)
         return RTA_ERR_INTEGRITY;
 
-    if (preserve_previous) {
+    if (preserve_previous || retained_backup) {
         read_length = 0;
         if (io->read(io->context, backup_path, previous_scratch,
                      capacity, &read_length) != 0)
             return RTA_ERR_BACKEND;
-        if (read_length != previous_length) return RTA_ERR_INTEGRITY;
+        if (read_length != (preserve_previous ? previous_length : backup_length))
+            return RTA_ERR_INTEGRITY;
         ts_sha256_init(&hash);
         ts_sha256_update(&hash, previous_scratch, read_length);
         ts_sha256_final(&hash, actual_digest);
-        if (memcmp(previous_digest, actual_digest, sizeof(previous_digest)) != 0 ||
+        if (memcmp(previous_digest, actual_digest, sizeof(previous_digest)) != 0)
+            return RTA_ERR_INTEGRITY;
+        if (preserve_previous &&
             rta_asset_manifest_decode(previous_scratch, read_length,
                                       &previous_registry) != RTA_OK)
             return RTA_ERR_INTEGRITY;
