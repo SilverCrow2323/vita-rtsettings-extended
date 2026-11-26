@@ -29,8 +29,9 @@ class InstallerManifestTests(unittest.TestCase):
 
     def module(self, **overrides):
         value = {
-            "manifest_version": 1, "id": "demo", "version": "1.0.0",
-            "minimum_framework": "1.0.0", "minimum_firmware": "3.65",
+            "manifest_version": 1, "id": "demo", "name": "Demo",
+            "description": "Fixture module", "category": "settings",
+            "version": "1.0.0", "minimum_framework": "1.0.0", "minimum_firmware": "3.65",
             "entry": "settings/demo", "payload_root": "payload",
             "owned_paths": ["settings/demo/"], "data_paths": ["ur0:data/RtSettingsExtended/Demo/"],
             "dependencies": [{"id": "rtse-framework", "minimum_version": "1.0.0"}],
