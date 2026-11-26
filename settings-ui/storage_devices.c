@@ -6,7 +6,7 @@ static int valid_mount(const char *p){size_t n,i;if(!p||!p[0])return 1;n=strlen(
 int rtp_storage_snapshot_build(const rtp_storage_observation *obs,size_t count,rtp_storage_snapshot *out){
  size_t i,j;if(!out||(!obs&&count))return RTP_STORAGE_INVALID_ARGUMENT;if(count>RTP_STORAGE_MAX_DEVICES)return RTP_STORAGE_CAPACITY;memset(out,0,sizeof(*out));
  for(i=0;i<count;++i){const rtp_storage_observation *src=&obs[i];rtp_storage_device *dst=&out->devices[i];
-  if(!copy_text(dst->id,sizeof(dst->id),src->id,1)||!copy_text(dst->label,sizeof(dst->label),src->label,1)||!copy_text(dst->mount_point,sizeof(dst->mount_point),src->mount_point,0)||!valid_mount(src->mount_point)||src->kind<RTP_STORAGE_UNKNOWN||src->kind>RTP_STORAGE_USB||src->state<RTP_STORAGE_MOUNTED||src->state>RTP_STORAGE_ERROR||src->free_bytes>src->total_bytes||(src->state==RTP_STORAGE_MOUNTED&&!src->mount_point))return RTP_STORAGE_INVALID_DEVICE;
+  if(!copy_text(dst->id,sizeof(dst->id),src->id,1)||!copy_text(dst->label,sizeof(dst->label),src->label,1)||!copy_text(dst->mount_point,sizeof(dst->mount_point),src->mount_point,0)||!valid_mount(src->mount_point)||src->kind<RTP_STORAGE_UNKNOWN||src->kind>RTP_STORAGE_USB||src->state<RTP_STORAGE_MOUNTED||src->state>RTP_STORAGE_ERROR||src->free_bytes>src->total_bytes||(src->state==RTP_STORAGE_MOUNTED&&(!src->mount_point||!src->mount_point[0])))return RTP_STORAGE_INVALID_DEVICE;
   for(j=0;j<i;++j)if(strcmp(out->devices[j].id,dst->id)==0)return RTP_STORAGE_DUPLICATE_ID;
   dst->kind=src->kind;dst->state=src->state;dst->total_bytes=src->total_bytes;dst->free_bytes=src->free_bytes;dst->read_only=src->read_only?1:0;
   if(src->total_bytes)dst->free_percent=(unsigned int)(((long double)src->free_bytes*100.0L)/(long double)src->total_bytes);
