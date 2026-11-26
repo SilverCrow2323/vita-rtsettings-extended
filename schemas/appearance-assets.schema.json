@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SilverCrow2323/vita-rtsettings-extended/blob/feat/tai-saver-core/schemas/appearance-assets.schema.json",
+  "title": "Rt:Settings Extended Appearance Asset Manifest",
+  "type": "object",
+  "required": ["manifest_version", "assets"],
+  "properties": {
+    "manifest_version": {"type": "string", "const": "1"},
+    "assets": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "type", "path", "owner", "format", "size_bytes", "state", "managed", "compatible", "hash_verified", "protected"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,46}$"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 79},
+          "type": {"enum": ["boot-splash", "boot-animation", "boot-sound", "startup-warning", "interface-theme", "other"]},
+          "path": {"type": "string", "pattern": "^(ur0:|ux0:|uma0:|imc0:|app0:)"},
+          "owner": {"type": "string", "minLength": 1, "maxLength": 47},
+          "format": {"type": "string", "minLength": 1, "maxLength": 15},
+          "size_bytes": {"type": "integer", "minimum": 1},
+          "width": {"type": "integer", "minimum": 0},
+          "height": {"type": "integer", "minimum": 0},
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "state": {"enum": ["available", "active", "backup", "orphaned", "incompatible", "invalid"]},
+          "managed": {"type": "boolean"},
+          "compatible": {"type": "boolean"},
+          "hash_verified": {"type": "boolean"},
+          "protected": {"type": "boolean"},
+          "source": {"type": "string"},
+          "notes": {"type": "string", "maxLength": 255}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
