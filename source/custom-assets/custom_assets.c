@@ -1,4 +1,5 @@
 #include "custom_assets.h"
+#include "sha256.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -103,11 +104,52 @@ rta_result rta_asset_validate(const rta_asset_observation *o) {
     return RTA_OK;
 }
 
+rta_result rta_asset_hash_reader(rta_asset_read_fn reader, void *context, const char *path,
+                                 char sha256_hex[65], uint64_t *size_bytes) {
+    unsigned char buffer[4096], digest[32];
+    size_t bytes_read = 0;
+    uint64_t total = 0;
+    int status;
+    ts_sha256_ctx hash;
+    if (!reader || !valid_path(path) || !sha256_hex || !size_bytes) return RTA_ERR_ARGUMENT;
+    ts_sha256_init(&hash);
+    for (;;) {
+        bytes_read = 0;
+        status = reader(context, path, total, buffer, sizeof(buffer), &bytes_read);
+        if (status < 0) return RTA_ERR_BACKEND;
+        if (status == 0) {
+            if (bytes_read != 0) return RTA_ERR_BACKEND;
+            break;
+        }
+        if (status != 1 || bytes_read == 0 || bytes_read > sizeof(buffer) ||
+            total > UINT64_MAX - (uint64_t)bytes_read) return RTA_ERR_BACKEND;
+        ts_sha256_update(&hash, buffer, bytes_read);
+        total += (uint64_t)bytes_read;
+    }
+    ts_sha256_final(&hash, digest);
+    ts_sha256_hex(digest, sha256_hex);
+    *size_bytes = total;
+    return RTA_OK;
+}
+
+rta_result rta_asset_verify_reader(rta_asset_read_fn reader, void *context, const char *path,
+                                   const char *expected_sha256, uint64_t expected_size) {
+    char actual[65];
+    uint64_t actual_size = 0;
+    rta_result result;
+    if (!valid_hash(expected_sha256)) return RTA_ERR_ARGUMENT;
+    result = rta_asset_hash_reader(reader, context, path, actual, &actual_size);
+    if (result != RTA_OK) return result;
+    if (actual_size != expected_size || strcmp(actual, expected_sha256) != 0) return RTA_ERR_INTEGRITY;
+    return RTA_OK;
+}
+
 static void copy_observation(const rta_asset_observation *o, rta_asset *a) {
     (void)copy_text(a->id, sizeof(a->id), o->id, 1);
     (void)copy_text(a->title, sizeof(a->title), o->title, 1);
     (void)copy_text(a->path, sizeof(a->path), o->path, 1);
     (void)copy_text(a->owner, sizeof(a->owner), o->owner, 1);
+    (void)copy_text(a->source, sizeof(a->source), o->source, 0);
     (void)copy_text(a->format, sizeof(a->format), o->format, 1);
     (void)copy_text(a->sha256, sizeof(a->sha256), o->sha256, 0);
     a->type = o->type; a->state = o->state; a->size_bytes = o->size_bytes;
@@ -223,7 +265,6 @@ rta_result rta_asset_remove(rta_asset_registry *registry, const char *asset_id,
         asset->state == RTA_STATE_ACTIVE) return RTA_ERR_UNSAFE;
     if (asset->protected_asset || asset->state == RTA_STATE_BACKUP) return RTA_ERR_PROTECTED;
     {
-        int was_unverified = !asset->hash_verified;
         char path[RTA_PATH_MAX + 1];
         memcpy(path, asset->path, sizeof(path));
         path[sizeof(path) - 1] = '\\0';
@@ -233,7 +274,6 @@ rta_result rta_asset_remove(rta_asset_registry *registry, const char *asset_id,
                     (registry->count - (size_t)index - 1) * sizeof(registry->assets[0]));
         memset(&registry->assets[registry->count - 1], 0, sizeof(registry->assets[0]));
         registry->count--;
-        (void)was_unverified;
         refresh_counts(registry);
     }
     return RTA_OK;
@@ -276,6 +316,7 @@ const char *rta_result_name(rta_result r) {
         case RTA_ERR_BACKEND: return "backend-error";
         case RTA_ERR_ROLLBACK: return "rollback-failed";
         case RTA_ERR_PROTECTED: return "protected";
+        case RTA_ERR_INTEGRITY: return "integrity-mismatch";
         default: return "unknown";
     }
 }
