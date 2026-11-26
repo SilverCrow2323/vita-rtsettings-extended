@@ -1,0 +1,63 @@
+#include "custom_assets.h"
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef struct { int activate_calls, verify_calls, restore_calls, remove_calls; int activate_fail, verify_fail, restore_fail, remove_fail; char active_path[RTA_PATH_MAX+1]; } fake_backend;
+static int activate(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->activate_calls++;if(f->activate_fail)return -1;strcpy(f->active_path,path);return 0;}
+static int verify_active(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;(void)path;f->verify_calls++;return f->verify_fail?-1:0;}
+static int restore(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->restore_calls++;if(f->restore_fail)return -1;if(path)strcpy(f->active_path,path);else f->active_path[0]='\0';return 0;}
+static int remove_asset(void *ctx,const char *path){fake_backend *f=(fake_backend*)ctx;(void)path;f->remove_calls++;return f->remove_fail?-1:0;}
+#define HASH "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+#define OBS(ID,TITLE,PATH,TYPE,STATE,MANAGED,COMPAT,VERIFIED,PROTECTED) {ID,TITLE,PATH,"rt-settings", "png", HASH,TYPE,STATE,4096,960,544,0,MANAGED,COMPAT,VERIFIED,PROTECTED}
+int main(void){
+ rta_asset_observation obs[]={
+  OBS("splash-default","Default Splash","ur0:data/rt/assets/splash-default.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_ACTIVE,1,1,1,1),
+  OBS("splash-neon","Neon Splash","ur0:data/rt/assets/splash-neon.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,1,0),
+  OBS("splash-user","User Splash","ux0:downloads/user.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,0,1,1,0),
+  OBS("splash-backup","Previous Splash","ur0:data/rt/assets/splash-backup.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_BACKUP,1,1,1,1)
+ };
+ rta_asset_registry reg; fake_backend fake={0}; rta_asset_backend backend={&fake,activate,verify_active,restore,remove_asset};
+ assert(rta_asset_registry_build(obs,4,&reg)==RTA_OK);
+ assert(reg.count==4&&reg.active_count==1&&reg.backup_count==1);
+ assert(rta_asset_activate(&reg,"splash-neon",&backend)==RTA_OK);
+ assert(strcmp(fake.active_path,obs[1].path)==0&&reg.assets[0].state==RTA_STATE_AVAILABLE&&reg.assets[1].state==RTA_STATE_ACTIVE);
+ fake.verify_fail=1;
+ assert(rta_asset_activate(&reg,"splash-default",&backend)==RTA_ERR_BACKEND);
+ assert(strcmp(fake.active_path,obs[1].path)==0&&reg.assets[1].state==RTA_STATE_ACTIVE);
+ fake.restore_fail=1;
+ assert(rta_asset_activate(&reg,"splash-default",&backend)==RTA_ERR_ROLLBACK);
+ fake.restore_fail=0;fake.verify_fail=0;
+ assert(rta_asset_activate(&reg,"splash-user",&backend)==RTA_ERR_UNSAFE);
+ assert(rta_asset_remove(&reg,"splash-default",&backend)==RTA_ERR_UNSAFE);
+ assert(rta_asset_remove(&reg,"splash-backup",&backend)==RTA_ERR_PROTECTED);
+ assert(rta_asset_remove(&reg,"splash-neon",&backend)==RTA_ERR_UNSAFE);
+ assert(rta_asset_remove(&reg,"splash-user",&backend)==RTA_ERR_UNSAFE);
+ assert(rta_asset_remove(&reg,"missing",&backend)==RTA_ERR_NOT_FOUND);
+ {
+  rta_asset_observation bad=OBS("../escape","bad","ur0:data/x.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,1,0);
+  assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
+  bad= (rta_asset_observation)OBS("badpath","bad","ur0:data/../x.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,1,0);
+  assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
+  bad= (rta_asset_observation)OBS("big-sound","bad","ur0:data/a.wav",RTA_TYPE_BOOT_SOUND,RTA_STATE_AVAILABLE,1,1,1,0);
+  bad.size_bytes=1024ULL*1024ULL+1;bad.duration_ms=500;
+  assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
+  bad= (rta_asset_observation)OBS("no-hash","bad","ur0:data/x.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,0,0);
+  bad.sha256="";bad.hash_verified=0;
+  assert(rta_asset_validate(&bad)==RTA_OK);
+ }
+ {
+  rta_asset_observation dup[]={obs[0],obs[0]};
+  assert(rta_asset_registry_build(dup,2,&reg)==RTA_ERR_DUPLICATE_ID);
+  dup[1]=obs[1];dup[1].id="other";dup[1].path=obs[0].path;
+  assert(rta_asset_registry_build(dup,2,&reg)==RTA_ERR_DUPLICATE_PATH);
+ }
+ fake.remove_fail=1;
+ assert(rta_asset_registry_build(obs,4,&reg)==RTA_OK);
+ reg.assets[2].managed=1;reg.assets[2].state=RTA_STATE_AVAILABLE;reg.assets[2].protected_asset=0;
+ assert(rta_asset_remove(&reg,"splash-user",&backend)==RTA_ERR_BACKEND&&reg.count==4);
+ fake.remove_fail=0;
+ assert(rta_asset_remove(&reg,"splash-user",&backend)==RTA_OK&&reg.count==3);
+ assert(strcmp(rta_asset_type_name(RTA_TYPE_BOOT_SOUND),"boot-sound")==0);
+ puts("Custom Assets Manager tests passed.");return 0;
+}
