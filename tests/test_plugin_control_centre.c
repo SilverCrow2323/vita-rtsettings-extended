@@ -9,7 +9,7 @@ int main(void){
  assert(rt_pi_parse(config,sizeof(config)-1,&inv)==RT_PI_OK);rt_pi_adapter_registry_init(&adapters);
  assert(rt_pi_adapter_register(&adapters,"wifi-turbo","wifi-turbo")==RT_PI_OK);
  assert(rt_pi_adapter_register(&adapters,"ftp-for-vita","ftp-vita")==RT_PI_OK);
- assert(rtp_plugin_centre_build(&inv,&adapters,&view)==RTP_PC_OK);assert(view.count==5);assert(view.blocking_findings==1);
+ assert(rtp_plugin_centre_build(&inv,&adapters,&view)==RTP_PC_OK);assert(view.count==5);assert(view.blocking_findings==2);
  row=find_row(&view,"ur0:tai/yamt_helper.skprx");assert(row&&row->state==RTP_PC_ROW_BLOCKED);
  row=find_row(&view,"ur0:tai/storagemgr.skprx");assert(row&&row->state==RTP_PC_ROW_BLOCKED);
  row=find_row(&view,"ur0:tai/wifi_turbo.skprx");assert(row&&row->state==RTP_PC_ROW_CONFIGURABLE);
