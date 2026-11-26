@@ -48,6 +48,12 @@ This is the curated, machine-readable shortlist—not a dump of every plugin eve
 | Vita-BootSound | 1.0 | Boot audio | Conditional | WAV 1 MiB / 48 kHz / stereo limit; possible System Music issue above 3.60 |
 | Custom Warning | source release | Startup warning | Conditional | UTF-16LE text file with FF FE BOM documented upstream; target test pending |
 
+| CBS-Manager | untagged source | Boot presentation | Conditional; preferred combined candidate | Upstream supports splash/animation/console info and a Settings Boot Screen page; 3.65-update365 caveat; no tagged release verified |
+| vita-bootanim | 1.1 | Boot animation | Conditional alternative | Community docs report testing on 3.65 / Ensō 3.60–3.73; physical target test pending |
+| Custom Boot Splash | 1.0 | Boot splash | Alternative | Static image only; original Sony logo remains visible; boot_config integration |
+| Vita-BootSound | 1.0 | Boot audio | Conditional | WAV 1 MiB / 48 kHz / stereo limit; possible System Music issue above 3.60 |
+| Custom Warning | source release | Startup warning | Conditional | UTF-16LE text file with FF FE BOM documented upstream; target test pending |
+
 ## Important target-specific decisions
 
 ### Connectivity
@@ -92,6 +98,6 @@ Every record has a stable ID and can later be enriched with:
 - adapter ID and supported settings schema;
 - last verification timestamp and maintainer activity.
 
-The installer must resolve dependencies, inspect existing files/configuration, stage files, verify SHA-256 hashes, commit config changes atomically, write a transaction journal and support rollback. The current JSON stores hashes for Wi-Fi Turbo, vitastream, Turbo Storage, Bluetooth Turbo and VitaBrightEX. Five additional boot presentation candidates are recorded without fabricated artifact hashes until their release binaries are downloaded and verified. Missing digests must be calculated and verified before an installer can accept those packages. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
+The installer must resolve dependencies, inspect existing files/configuration, stage files, verify SHA-256 hashes, commit config changes atomically, write a transaction journal and support rollback. The current JSON stores hashes for Wi-Fi Turbo, vitastream, Turbo Storage, Bluetooth Turbo and VitaBrightEX. Five boot-presentation candidates have no fabricated artifact hashes; exact release assets must be downloaded and verified before packaging. Five additional boot presentation candidates are recorded without fabricated artifact hashes until their release binaries are downloaded and verified. Missing digests must be calculated and verified before an installer can accept those packages. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
 
 **Review state:** candidate data only. No plugin binaries have been downloaded or installed by this milestone, and no physical Vita test is claimed.
