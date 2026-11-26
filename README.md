@@ -208,7 +208,7 @@ The first Storage & Devices core now converts platform-reported observations int
 
 The Custom Assets Manager now has its first VitaSDK-specific filesystem bridge. It provides bounded offset-based reads that plug directly into the portable SHA-256 reader, rejects unsafe Vita paths, bootstraps only the Rt-owned `ur0:data/rt/assets` directory and checks existing directory types. The Vita build recipe now includes this bridge and the Custom Warning adapter object.
 
-This is deliberately a read-only first slice: no staged writes, rename/overwrite, deletion, activation or persistent manifest is claimed. A failed stat is treated as “not confirmed” rather than assumed missing. The bridge is based on documented user-mode VitaSDK file APIs and still needs an actual VitaSDK cross-build and physical-console validation. See [Vita Asset Filesystem Bridge](settings-ui/VITA_ASSET_FILESYSTEM_BACKEND.md).
+This is deliberately a read-only first slice: no staged writes, rename/overwrite, deletion, activation or persistent manifest is claimed. A failed stat is treated as “not confirmed” rather than assumed missing. A mocked VitaSDK filesystem harness now compiles and exercises the bridge in host CI, including bounded reads, EOF, path rejection, close failures, directory bootstrap and fail-closed stat handling. This validates the adapter logic against the declared API surface, not the actual VitaSDK toolchain or console. The bridge still needs a real VitaSDK cross-build and physical-console validation. See [Vita Asset Filesystem Bridge](settings-ui/VITA_ASSET_FILESYSTEM_BACKEND.md).
 
 ## Plugin Control Centre model
 
