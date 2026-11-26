@@ -1,6 +1,7 @@
 #include "asset_manifest.h"
 #include "sha256.h"
 #include <string.h>
+#include <stdlib.h>
 
 #define HEADER_SIZE 12U
 #define TRAILER_SIZE RTA_MANIFEST_DIGEST_SIZE
@@ -134,9 +135,8 @@ rta_result rta_asset_manifest_encode(const rta_asset_registry *registry,
 
 rta_result rta_asset_manifest_decode(const unsigned char *buffer, size_t length,
                                      rta_asset_registry *registry) {
-    rta_asset_observation observations[RTA_MAX_ASSETS];
-    rta_asset_registry decoded;
-    size_t pos = HEADER_SIZE, payload_end, i;
+    rta_asset_registry *decoded;
+    size_t pos = HEADER_SIZE, payload_end, i, j;
     uint16_t count;
     uint32_t payload_length;
     unsigned char digest[32], actual[32], numeric[31];
@@ -154,38 +154,65 @@ rta_result rta_asset_manifest_decode(const unsigned char *buffer, size_t length,
     ts_sha256_final(&hash, actual);
     memcpy(digest, buffer + payload_end, sizeof(digest));
     if (memcmp(digest, actual, sizeof(digest)) != 0) return RTA_ERR_INTEGRITY;
-    memset(observations, 0, sizeof(observations));
+
+    decoded = (rta_asset_registry *)calloc(1, sizeof(*decoded));
+    if (!decoded) return RTA_ERR_CAPACITY;
     for (i = 0; i < count; ++i) {
-        rta_asset_observation *o = &observations[i];
-        if (!read_bytes(buffer, payload_end, &pos, numeric, sizeof(numeric)))
-            return RTA_ERR_INTEGRITY;
-        o->type=(rta_asset_type)numeric[0]; o->state=(rta_asset_state)numeric[1];
-        if (numeric[2] & 0xF0U) return RTA_ERR_INTEGRITY;
-        o->managed=(numeric[2] & 1U)!=0; o->compatible=(numeric[2] & 2U)!=0;
-        o->hash_verified=(numeric[2] & 4U)!=0; o->protected_asset=(numeric[2] & 8U)!=0;
-        o->size_bytes=get_u64(numeric+3); o->width=get_u32(numeric+11);
-        o->height=get_u32(numeric+15); o->duration_ms=get_u32(numeric+19);
-        o->sample_rate_hz=get_u32(numeric+23); o->channels=get_u32(numeric+27);
-        /* Keep string storage local and stable until registry_build completes. */
-        {
-            static char strings[RTA_MAX_ASSETS][7][RTA_SOURCE_MAX + 1];
-            char (*s)[RTA_SOURCE_MAX + 1] = strings[i];
-            if (!read_string(buffer,payload_end,&pos,s[0],RTA_ID_MAX+1,1) ||
-                !read_string(buffer,payload_end,&pos,s[1],RTA_TITLE_MAX+1,1) ||
-                !read_string(buffer,payload_end,&pos,s[2],RTA_PATH_MAX+1,1) ||
-                !read_string(buffer,payload_end,&pos,s[3],RTA_OWNER_MAX+1,1) ||
-                !read_string(buffer,payload_end,&pos,s[4],RTA_SOURCE_MAX+1,0) ||
-                !read_string(buffer,payload_end,&pos,s[5],RTA_FORMAT_MAX+1,1) ||
-                !read_string(buffer,payload_end,&pos,s[6],RTA_SHA256_HEX+1,0))
-                return RTA_ERR_INTEGRITY;
-            o->id=s[0]; o->title=s[1]; o->path=s[2]; o->owner=s[3];
-            o->source=s[4]; o->format=s[5]; o->sha256=s[6];
+        rta_asset *a = &decoded->assets[i];
+        rta_asset_observation o;
+        if (!read_bytes(buffer, payload_end, &pos, numeric, sizeof(numeric))) {
+            free(decoded); return RTA_ERR_INTEGRITY;
         }
+        a->type=(rta_asset_type)numeric[0]; a->state=(rta_asset_state)numeric[1];
+        if (numeric[2] & 0xF0U) { free(decoded); return RTA_ERR_INTEGRITY; }
+        a->managed=(numeric[2] & 1U)!=0; a->compatible=(numeric[2] & 2U)!=0;
+        a->hash_verified=(numeric[2] & 4U)!=0; a->protected_asset=(numeric[2] & 8U)!=0;
+        a->size_bytes=get_u64(numeric+3); a->width=get_u32(numeric+11);
+        a->height=get_u32(numeric+15); a->duration_ms=get_u32(numeric+19);
+        a->sample_rate_hz=get_u32(numeric+23); a->channels=get_u32(numeric+27);
+        if (!read_string(buffer,payload_end,&pos,a->id,sizeof(a->id),1) ||
+            !read_string(buffer,payload_end,&pos,a->title,sizeof(a->title),1) ||
+            !read_string(buffer,payload_end,&pos,a->path,sizeof(a->path),1) ||
+            !read_string(buffer,payload_end,&pos,a->owner,sizeof(a->owner),1) ||
+            !read_string(buffer,payload_end,&pos,a->source,sizeof(a->source),0) ||
+            !read_string(buffer,payload_end,&pos,a->format,sizeof(a->format),1) ||
+            !read_string(buffer,payload_end,&pos,a->sha256,sizeof(a->sha256),0)) {
+            free(decoded); return RTA_ERR_INTEGRITY;
+        }
+        memset(&o, 0, sizeof(o));
+        o.id=a->id; o.title=a->title; o.path=a->path; o.owner=a->owner;
+        o.source=a->source; o.format=a->format; o.sha256=a->sha256;
+        o.type=a->type; o.state=a->state; o.size_bytes=a->size_bytes;
+        o.width=a->width; o.height=a->height; o.duration_ms=a->duration_ms;
+        o.sample_rate_hz=a->sample_rate_hz; o.channels=a->channels;
+        o.managed=a->managed; o.compatible=a->compatible;
+        o.hash_verified=a->hash_verified; o.protected_asset=a->protected_asset;
+        if (rta_asset_validate(&o) != RTA_OK) { free(decoded); return RTA_ERR_INTEGRITY; }
+        for (j = 0; j < i; ++j) {
+            if (strcmp(decoded->assets[j].id, a->id) == 0) {
+                free(decoded); return RTA_ERR_INTEGRITY;
+            }
+            if (strcmp(decoded->assets[j].path, a->path) == 0) {
+                free(decoded); return RTA_ERR_INTEGRITY;
+            }
+        }
+        if (a->state == RTA_STATE_ACTIVE) decoded->active_count++;
+        if (a->state == RTA_STATE_BACKUP) decoded->backup_count++;
+        if (a->state == RTA_STATE_ORPHANED) decoded->orphaned_count++;
+        if (a->state == RTA_STATE_INCOMPATIBLE) decoded->incompatible_count++;
+        if (!a->hash_verified) decoded->unverified_count++;
+        decoded->count++;
     }
-    if (pos != payload_end) return RTA_ERR_INTEGRITY;
-    if (rta_asset_registry_build(observations, count, &decoded) != RTA_OK)
-        return RTA_ERR_INTEGRITY;
-    *registry = decoded;
+    if (pos != payload_end) { free(decoded); return RTA_ERR_INTEGRITY; }
+    for (i = 0; i < decoded->count; ++i) {
+        if (decoded->assets[i].state != RTA_STATE_ACTIVE) continue;
+        for (j = i + 1; j < decoded->count; ++j)
+            if (decoded->assets[j].state == RTA_STATE_ACTIVE &&
+                decoded->assets[i].type == decoded->assets[j].type)
+                decoded->active_conflict_count++;
+    }
+    *registry = *decoded;
+    free(decoded);
     return RTA_OK;
 }
 
