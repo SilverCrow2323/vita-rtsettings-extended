@@ -215,10 +215,31 @@ rta_result rta_asset_manifest_save(const rta_asset_registry *registry,
                                    unsigned char *scratch, size_t capacity) {
     size_t written = 0;
     rta_result result;
-    if (!io || !io->replace_atomic || !path || !scratch) return RTA_ERR_ARGUMENT;
+    unsigned char expected_digest[32], actual_digest[32];
+    ts_sha256_ctx hash;
+    size_t read_length = 0;
+    if (!io || !io->replace_atomic || !io->read || !path || !scratch)
+        return RTA_ERR_ARGUMENT;
     result = rta_asset_manifest_encode(registry, scratch, capacity, &written);
     if (result != RTA_OK) return result;
-    return io->replace_atomic(io->context, path, scratch, written) == 0 ? RTA_OK : RTA_ERR_BACKEND;
+
+    /* Keep only the digest while the caller's bounded scratch buffer is reused. */
+    ts_sha256_init(&hash);
+    ts_sha256_update(&hash, scratch, written);
+    ts_sha256_final(&hash, expected_digest);
+
+    if (io->replace_atomic(io->context, path, scratch, written) != 0)
+        return RTA_ERR_BACKEND;
+
+    /* A successful write callback is not proof that durable bytes are correct. */
+    if (io->read(io->context, path, scratch, capacity, &read_length) != 0)
+        return RTA_ERR_BACKEND;
+    if (read_length != written) return RTA_ERR_INTEGRITY;
+    ts_sha256_init(&hash);
+    ts_sha256_update(&hash, scratch, read_length);
+    ts_sha256_final(&hash, actual_digest);
+    return memcmp(expected_digest, actual_digest, sizeof(expected_digest)) == 0
+               ? RTA_OK : RTA_ERR_INTEGRITY;
 }
 
 rta_result rta_asset_manifest_load(const rta_asset_manifest_io *io,

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE]; size_t length; int fail_write; int fail_read; } mem_store;
+typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE]; size_t length; int fail_write; int fail_read; int corrupt_write; } mem_store;
 static int store_read(void *ctx,const char *path,unsigned char *out,size_t cap,size_t *len) {
     mem_store *m=(mem_store *)ctx; (void)path;
     if (m->fail_read || m->length>cap) return -1;
@@ -12,7 +12,9 @@ static int store_read(void *ctx,const char *path,unsigned char *out,size_t cap,s
 static int store_write(void *ctx,const char *path,const unsigned char *data,size_t len) {
     mem_store *m=(mem_store *)ctx; (void)path;
     if (m->fail_write || len>sizeof(m->data)) return -1;
-    memcpy(m->data,data,len); m->length=len; return 0;
+    memcpy(m->data,data,len); m->length=len;
+    if (m->corrupt_write && m->length > 20) m->data[20] ^= 0x20;
+    return 0;
 }
 static void make_registry(rta_asset_registry *r) {
     rta_asset_observation o; memset(&o,0,sizeof(o));
@@ -54,6 +56,14 @@ int main(void) {
     }
     memset(&memory,0,sizeof(memory)); io.context=&memory; io.read=store_read; io.replace_atomic=store_write;
     assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_OK);
+    /* A backend that reports success but stores altered bytes must be caught. */
+    memory.corrupt_write=1;
+    assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_ERR_INTEGRITY);
+    memory.corrupt_write=0;
+    /* Read-back failure is reported even though atomic replacement succeeded. */
+    memory.fail_read=1;
+    assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_ERR_BACKEND);
+    memory.fail_read=0;
     memset(&decoded,0,sizeof(decoded));
     assert(rta_asset_manifest_load(&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer),&decoded)==RTA_OK);
     assert(decoded.count==1 && strcmp(decoded.assets[0].id,"boot-splash-1")==0);
