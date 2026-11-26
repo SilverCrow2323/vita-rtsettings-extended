@@ -6,7 +6,7 @@ Rt:Settings Extended aims to turn the native Vita Settings application into a co
 
 This is not intended to be another standalone homebrew launcher or a small collection of unrelated tweaks. The goal is to make the Settings application the central place where users can inspect, configure and manage the capabilities installed on their Vita.
 
-> **Development status:** active development. The Tai Saver host-side core and boot lifecycle journal have been implemented and host-tested. The complete Settings interface, plugin adapters, USB/FTP/streaming services, expandable installer UI, Vita startup integration, VPK packaging and physical-device validation are still under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
+> **Development status:** active development. Tai Saver's portable snapshot engine, Settings Hub navigation tree and boot journal are implemented and host-tested. The shared framework library now cross-builds with VitaSDK in CI. The native Sony Settings adapter, live Tai Saver filesystem/startup service, installer VPK and physical-device validation remain under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
 
 ---
 
@@ -583,7 +583,7 @@ ur0:data/RtSettingsExtended/TaiSaver/
     └── events/
 ```
 
-The snapshot engine and boot journal have host-side implementations and tests. The Vita startup adapter and complete Settings page are still pending.
+The snapshot engine, boot journal and first Tai Saver Settings navigation tree have host-side implementations and tests. The tree exposes Protection, Automatic Backup Policy, Snapshot Archives and Compare & Recovery, with stable IDs, descriptions, icon keys and explicit backend/read-only flags. It is still a renderer-neutral model; the native Sony Settings page and live Vita startup adapter are pending.
 
 ## Safety, compatibility and reliability
 
@@ -647,7 +647,7 @@ make test
 make sanitize
 ```
 
-A VitaSDK build recipe exists, but it is not yet evidence of a successful Vita cross-build. The native Settings integration, service backends, plugin adapters, installer VPK and physical-device tests are separate milestones.
+The portable framework library successfully cross-builds with the official VitaSDK container in GitHub Actions (`Makefile.vita`). CI also runs the complete host regression suite and AddressSanitizer/UndefinedBehaviorSanitizer. This cross-build produces `librtsettings.a`, not a SUPRX or VPK. Native Sony Settings hooks, live Vita backends, installer VPK and physical-device tests remain separate milestones.
 
 A passing host CI run validates only the tests actually executed by that workflow. It does not prove that native Settings hooks or device-level USB/FTP/streaming behavior work on hardware.
 
@@ -658,7 +658,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Tai Saver snapshot engine, SHA-256 manifests, verify/compare and guarded restore | Implemented; host-tested |
 | Boot lifecycle journal | Implemented; host-tested |
 | Preferences registry, named layout profiles and navigation model | Implemented; host-tested |
-| Settings metadata and renderer-neutral screen adapter | Implemented; host-tested |
+| Settings metadata, renderer-neutral screen adapter and Tai Saver navigation tree | Implemented; host-tested |
 | Safe module-control descriptor contract | Implemented; host-tested |
 | Conflict-aware service lifecycle manager | Implemented; host-tested |
 | Plugin inventory, compatibility engine and read-only Control Centre model | Implemented; host-tested |
@@ -684,16 +684,17 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Display & Audio / Power & Performance adapters | Research and implementation pending |
 | System Tools detection and launch adapters | Specification; implementation pending |
 | Expandable installer transaction engine and VPK UI | Specification; implementation pending |
-| Vita-native Settings renderer and Sony category integration | Pending |
-| VitaSDK cross-build and package validation | Pending |
+| Native Sony Settings hook pattern research | Verified against YAMT/h-encore implementations; Rt adapter pending |
+| Rt SUPRX, native XML page and Settings event bridge | Pending |
+| VitaSDK cross-build of portable framework library | CI verified; VPK/package validation pending |
 | Physical PCH-1000 / 3.65 / Ensō / YAMT validation | Pending |
 
 ### Roadmap
 
-1. Complete storage safety and interrupted-staging recovery.
-2. Implement the first end-to-end plugin adapter page using the shared schema, validation, status readback and tests.
-3. Build the Vita-native Settings renderer and integrate the renderer-neutral screen model.
-4. Complete Tai Saver Vita filesystem/startup integration and its retention/known-good/KO archive UI.
+1. Build the Rt user-mode SUPRX and native XML adapter for the Sony Settings application, preserving the original Settings menu.
+2. Connect the Tai Saver Settings tree to live Vita filesystem operations, boot startup, progress reporting and archive actions.
+3. Build the VPK installer/repair utility with taiHEN config backup, preview, transactional install/update and safe uninstall.
+4. Complete storage safety and interrupted-staging recovery, then validate the whole Tai Saver vertical slice on firmware 3.65 Ensō.
 5. Implement transactional taiHEN config editing, version detection and safe plugin enable/disable.
 6. Add the Wi-Fi Turbo Vita transport and verify the adapter on the target console.
 7. Build the expandable installer transaction engine, dependency resolver and module selection UI.
@@ -713,6 +714,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Expandable Installer and Module System](docs/EXPANDABLE_INSTALLER.md)
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
+- [Native Sony Settings Adapter Design](docs/NATIVE_SETTINGS_ADAPTER.md)
 - [Preferences Registry](docs/PREFERENCES_REGISTRY.md)
 - [Layout Profiles](docs/LAYOUT_PROFILES.md)
 - [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
