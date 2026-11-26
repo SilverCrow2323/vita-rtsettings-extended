@@ -41,6 +41,17 @@ int main(void) {
     memcpy(corrupted,buffer,length); corrupted[4]=99;
     assert(rta_asset_manifest_decode(corrupted,length,&decoded)==RTA_ERR_INTEGRITY);
     assert(rta_asset_manifest_encode(&source,buffer,20,&length)==RTA_ERR_CAPACITY);
+    {
+        rta_asset_registry invalid=source;
+        strcpy(invalid.assets[0].id,"bad id");
+        assert(rta_asset_manifest_encode(&invalid,buffer,sizeof(buffer),&length)==RTA_ERR_INVALID_ASSET);
+        invalid=source;
+        strcpy(invalid.assets[0].sha256,"");
+        invalid.assets[0].hash_verified=0;
+        assert(rta_asset_manifest_encode(&invalid,buffer,sizeof(buffer),&length)==RTA_OK);
+        assert(rta_asset_manifest_decode(buffer,length,&decoded)==RTA_OK);
+        assert(!decoded.assets[0].hash_verified && decoded.assets[0].sha256[0]=='\\0');
+    }
     memset(&memory,0,sizeof(memory)); io.context=&memory; io.read=store_read; io.replace_atomic=store_write;
     assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_OK);
     memset(&decoded,0,sizeof(decoded));
