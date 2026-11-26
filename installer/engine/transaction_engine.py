@@ -194,42 +194,90 @@ class InstallerEngine:
     def _write_journal(self, directory: Path, journal: dict) -> None:
         self._write_json_atomic(directory / "journal.json", journal)
 
+    @staticmethod
+    def _copy_atomic(source: Path, target: Path) -> None:
+        """Restore a regular file through a fresh, exclusive temporary file."""
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(
+            prefix=target.name + ".rtse-", suffix=".tmp", dir=target.parent
+        )
+        try:
+            with os.fdopen(fd, "wb") as output, source.open("rb") as input_stream:
+                shutil.copyfileobj(input_stream, output)
+                output.flush()
+                os.fsync(output.fileno())
+            shutil.copystat(source, temporary, follow_symlinks=False)
+            os.replace(temporary, target)
+        except Exception:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise
+
     def _restore(self, directory: Path, journal: dict, *, strict: bool) -> None:
         changes = journal.get("changes", [])
-        for change in reversed(changes):
+        registry_backup = journal.get("registry_backup")
+
+        # Validate the entire rollback before changing any live file. A late
+        # conflict must not leave an earlier file already restored.
+        for change in changes:
             target = self._target(change["path"])
             after_hash = change.get("after_sha256")
             if strict:
                 if after_hash is None:
-                    if target.exists():
-                        raise TransactionError(f"cannot roll back; a file appeared after commit: {change['path']}")
-                elif not target.is_file() or _sha256(target) != after_hash:
-                    raise TransactionError(f"cannot roll back; installed file was modified: {change['path']}")
-            backup_rel = change.get("backup_rel")
+                    if target.exists() or target.is_symlink():
+                        raise TransactionError(
+                            f"cannot roll back; a file appeared after commit: {change['path']}"
+                        )
+                elif target.is_symlink() or not target.is_file() or _sha256(target) != after_hash:
+                    raise TransactionError(
+                        f"cannot roll back; installed file was modified: {change['path']}"
+                    )
             if change["existed"]:
+                backup_rel = change.get("backup_rel")
                 if not backup_rel:
                     raise TransactionError(f"missing backup reference for {change['path']}")
                 backup = directory / backup_rel
-                if not backup.is_file():
-                    raise TransactionError(f"transaction backup is missing: {backup_rel}")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                _reject_symlink_components(target, self.root)
-                restore_temp = target.with_name(target.name + ".rtse-restore")
-                shutil.copy2(backup, restore_temp)
-                os.replace(restore_temp, target)
+                if backup.is_symlink() or not backup.is_file():
+                    raise TransactionError(f"transaction backup is missing or unsafe: {backup_rel}")
+                before_hash = change.get("before_sha256")
+                if before_hash and _sha256(backup) != before_hash:
+                    raise TransactionError(f"transaction backup failed integrity check: {backup_rel}")
+
+        if strict:
+            expected_registry = journal.get("registry_after_sha256")
+            if expected_registry is None:
+                if self.registry_path.exists() or self.registry_path.is_symlink():
+                    raise TransactionError("cannot roll back; installer registry appeared after commit")
+            elif (self.registry_path.is_symlink() or not self.registry_path.is_file() or
+                  _sha256(self.registry_path) != expected_registry):
+                raise TransactionError("cannot roll back; installer registry was modified after commit")
+
+        if journal.get("registry_existed"):
+            if not registry_backup:
+                raise TransactionError("missing installer registry backup reference")
+            backup = directory / registry_backup
+            if backup.is_symlink() or not backup.is_file():
+                raise TransactionError("installer registry backup is missing or unsafe")
+            before_hash = journal.get("registry_before_sha256")
+            if before_hash and _sha256(backup) != before_hash:
+                raise TransactionError("installer registry backup failed integrity check")
+
+        for change in reversed(changes):
+            target = self._target(change["path"])
+            backup_rel = change.get("backup_rel")
+            if change["existed"]:
+                backup = directory / backup_rel
+                self._copy_atomic(backup, target)
             elif target.exists():
                 if target.is_symlink() or not target.is_file():
                     raise TransactionError(f"refusing to remove non-regular target: {target}")
                 target.unlink()
-        registry_backup = journal.get("registry_backup")
+
         if journal.get("registry_existed"):
             backup = directory / registry_backup
-            if not backup.is_file():
-                raise TransactionError("registry backup is missing")
-            self.registry_path.parent.mkdir(parents=True, exist_ok=True)
-            temporary = self.registry_path.with_name(self.registry_path.name + ".rtse-restore")
-            shutil.copy2(backup, temporary)
-            os.replace(temporary, self.registry_path)
+            self._copy_atomic(backup, self.registry_path)
         elif self.registry_path.exists():
             if self.registry_path.is_symlink():
                 raise TransactionError("refusing to remove a registry symlink")
@@ -303,6 +351,7 @@ class InstallerEngine:
                     "path": path,
                     "existed": existed,
                     "backup_rel": backup_rel,
+                    "before_sha256": _sha256(target) if existed else None,
                     "after_sha256": desired.get(path),
                 })
 
@@ -313,6 +362,9 @@ class InstallerEngine:
                     raise TransactionError("registry is not a regular file")
                 shutil.copy2(self.registry_path, backup / "registry.json")
                 registry_backup = "backup/registry.json"
+                registry_before_sha256 = _sha256(self.registry_path)
+            else:
+                registry_before_sha256 = None
 
             journal = {
                 "schema_version": 1,
@@ -322,6 +374,7 @@ class InstallerEngine:
                 "status": "prepared",
                 "registry_existed": registry_existed,
                 "registry_backup": registry_backup,
+                "registry_before_sha256": registry_before_sha256,
                 "changes": changes,
             }
             self._write_journal(directory, journal)
@@ -347,6 +400,7 @@ class InstallerEngine:
                     "data_paths": list(plan.data_paths),
                 }
             self._write_json_atomic(self.registry_path, registry)
+            journal["registry_after_sha256"] = _sha256(self.registry_path)
             journal["status"] = "committed"
             self._write_journal(directory, journal)
             return transaction_id
