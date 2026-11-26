@@ -104,3 +104,8 @@ The installer then offers it automatically as another selectable section. The in
 ## Current implementation status
 
 The expandable module concept and documentation are defined, and the repository already contains the first Tai Saver descriptor/schema work. The host-reference transaction engine now implements install, update and removal plans with staged payload verification, owned-file backups, a transaction journal, registry-last commit and rollback. Its regression suite covers install/update/rollback/remove, unowned-file protection, hash mismatch, traversal, symlink destinations and injected registry failure. This engine is filesystem-rooted for host verification; it is not the Vita runtime backend. The native Vita filesystem adapter, installer UI, service manager, plugin adapter registry, VitaSDK build, installable VPK and on-device validation remain pending.
+
+
+## Host transaction serialization
+
+The host reference engine takes an exclusive advisory lock in the target's `.rtse/installer.lock` before reading the registry or applying/rolling back a transaction. The lock is opened without following symlinks where the platform supports `O_NOFOLLOW`, verified as a regular file, and held across the entire transaction. This prevents two installer processes from both passing the same stale registry check and interleaving file/registry commits. The Vita runtime backend must provide an equivalent platform-native lock; this Python reference implementation is not itself the Vita installer.

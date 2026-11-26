@@ -2,6 +2,7 @@ import hashlib
 import json
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -190,6 +191,27 @@ class InstallerTransactionTests(unittest.TestCase):
         self.assertFalse(target.exists())
         self.assertEqual(outside.read_bytes(), b"must remain untouched")
         self.assertTrue(restore_link.is_symlink())
+
+
+    def test_concurrent_install_attempts_are_serialized(self):
+        engine = InstallerEngine(self.root)
+        plan = self.make_plan("install", "1.0.0", [
+            ("settings/demo/config.ini", b"one installation only"),
+        ])
+        def attempt(_):
+            try:
+                return ("ok", engine.apply(plan))
+            except TransactionError as exc:
+                return ("error", str(exc))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(attempt, range(2)))
+        self.assertEqual(sum(kind == "ok" for kind, _ in results), 1)
+        self.assertEqual(sum(kind == "error" for kind, _ in results), 1)
+        self.assertIn("already installed", next(value for kind, value in results if kind == "error"))
+        registry = json.loads((self.root / ".rtse/registry.json").read_text())
+        self.assertEqual(list(registry["modules"]), ["demo-module"])
+        transactions = list((self.root / ".rtse/transactions").glob("*/journal.json"))
+        self.assertEqual(len(transactions), 1)
 
     def test_rejects_path_traversal_in_module_plan(self):
         engine = InstallerEngine(self.root)

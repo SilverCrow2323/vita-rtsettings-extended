@@ -6,6 +6,9 @@ perform network I/O or claim to be the Vita runtime backend.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
+import fcntl
+import stat
 import hashlib
 import json
 import os
@@ -104,6 +107,30 @@ class InstallerEngine:
         self.transactions = self.state / "transactions"
         self.transactions.mkdir(parents=True, exist_ok=True)
         self.registry_path = self.root / self.REGISTRY_REL.as_posix()
+
+    @contextmanager
+    def _exclusive_lock(self):
+        """Serialize installer mutations across processes sharing this target root."""
+        lock_path = self.state / "installer.lock"
+        flags = os.O_CREAT | os.O_RDWR
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            fd = os.open(lock_path, flags, 0o600)
+        except OSError as exc:
+            raise TransactionError(f"cannot open installer transaction lock: {exc}") from exc
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise TransactionError("installer transaction lock is not a regular file")
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        except OSError as exc:
+            raise TransactionError(f"cannot acquire installer transaction lock: {exc}") from exc
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
 
     def _target(self, relative: str) -> Path:
         rel = _safe_relative(relative)
@@ -284,6 +311,10 @@ class InstallerEngine:
             self.registry_path.unlink()
 
     def apply(self, plan: ModulePlan) -> str:
+        with self._exclusive_lock():
+            return self._apply_locked(plan)
+
+    def _apply_locked(self, plan: ModulePlan) -> str:
         payload_root, entries = self._validate_plan(plan)
         registry = self._load_registry()
         modules = registry["modules"]
@@ -420,6 +451,10 @@ class InstallerEngine:
             raise TransactionError(f"transaction failed and was rolled back: {exc}") from exc
 
     def rollback(self, transaction_id: str) -> None:
+        with self._exclusive_lock():
+            self._rollback_locked(transaction_id)
+
+    def _rollback_locked(self, transaction_id: str) -> None:
         if not _TRANSACTION_ID.fullmatch(transaction_id):
             raise TransactionError("invalid transaction id")
         directory = self.transactions / transaction_id
