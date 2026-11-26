@@ -36,6 +36,9 @@ build-vita/preferences_ui.o: settings-ui/preferences_ui.c settings-ui/preference
 build-vita/settings_metadata.o: settings-ui/metadata/settings_metadata.c settings-ui/metadata/settings_metadata.h include/preferences.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build-vita/service_manager.o: settings-ui/service_manager.c settings-ui/service_manager.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 build-vita/module_controls.o: settings-ui/module_controls.c settings-ui/module_controls.h include/preferences.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
