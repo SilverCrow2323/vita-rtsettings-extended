@@ -47,6 +47,8 @@ typedef struct {
     uint32_t width;
     uint32_t height;
     uint32_t duration_ms;
+    uint32_t sample_rate_hz;
+    uint32_t channels;
     int managed;
     int compatible;
     int hash_verified;
