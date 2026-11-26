@@ -95,7 +95,7 @@ build/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c include/
 build/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings-ui/plugin_control_centre.h include/plugin_inventory.h include/plugin_compatibility.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-build/plugin_help.o: settings-ui/plugin_help.c settings-ui/plugin_help.h include/preferences.h | build
+build/plugin_help.o: settings-ui/plugin_help.c settings-ui/plugin_help.h settings-ui/plugin_control_centre.h include/preferences.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/storage_devices.o: settings-ui/storage_devices.c settings-ui/storage_devices.h | build
