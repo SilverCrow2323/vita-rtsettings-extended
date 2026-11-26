@@ -5,6 +5,8 @@ on:
       - main
       - feat/tai-saver-core
       - feat/installer-manifest-planner
+      - feat/installer-transaction-engine
+      - feat/installer-transaction-engine-tests
   pull_request:
     paths:
       - "include/**"

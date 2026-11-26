@@ -38,6 +38,7 @@ $(PREFERENCES_TEST_BINARY): tests/test_preferences.c $(LIBRARY) include/preferen
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 installer-test:
 	$(PYTHON) tests/test_installer_manifest.py
+	$(PYTHON) tests/test_installer_transaction_engine.py
 test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) installer-test
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
