@@ -1,13 +1,13 @@
 CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
-CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility
+CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
 
-CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c source/plugin-inventory/plugin_inventory.c source/plugin-compatibility/plugin_compatibility.c
-CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o build/plugin_inventory.o build/plugin_compatibility.o
+CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c source/plugin-inventory/plugin_inventory.c source/plugin-compatibility/plugin_compatibility.c source/plugin-adapters/wifi_turbo_adapter.c
+CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o build/plugin_inventory.o build/plugin_compatibility.o build/wifi_turbo_adapter.o
 LIBRARY := build/librtsettings.a
 TEST_BINARY := build/test_tai_saver
 BOOT_TEST_BINARY := build/test_boot_journal
@@ -17,9 +17,11 @@ UI_TEST_BINARY := build/test_preferences_ui
 METADATA_TEST_BINARY := build/test_settings_metadata
 PLUGIN_INVENTORY_TEST_BINARY := build/test_plugin_inventory
 PLUGIN_COMPATIBILITY_TEST_BINARY := build/test_plugin_compatibility
+WIFI_TURBO_TEST_BINARY := build/test_wifi_turbo_adapter
 SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
+WIFI_TURBO_SANITIZER_BINARY := build/test_wifi_turbo_adapter_san
 
 .PHONY: all test sanitize clean
 all: $(LIBRARY)
@@ -54,6 +56,9 @@ build/plugin_inventory.o: source/plugin-inventory/plugin_inventory.c include/plu
 build/plugin_compatibility.o: source/plugin-compatibility/plugin_compatibility.c include/plugin_compatibility.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c include/wifi_turbo_adapter.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -82,7 +87,10 @@ $(PLUGIN_INVENTORY_TEST_BINARY): tests/test_plugin_inventory.c $(LIBRARY) includ
 $(PLUGIN_COMPATIBILITY_TEST_BINARY): tests/test_plugin_compatibility.c $(LIBRARY) include/plugin_compatibility.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY)
+$(WIFI_TURBO_TEST_BINARY): tests/test_wifi_turbo_adapter.c $(LIBRARY) include/wifi_turbo_adapter.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
@@ -91,6 +99,7 @@ test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TE
 	./$(METADATA_TEST_BINARY)
 	./$(PLUGIN_INVENTORY_TEST_BINARY)
 	./$(PLUGIN_COMPATIBILITY_TEST_BINARY)
+	./$(WIFI_TURBO_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
@@ -101,10 +110,14 @@ $(PLUGIN_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_plugin_inventory.c includ
 $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_plugin_compatibility.c include/plugin_compatibility.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_plugin_compatibility.c -o $@ $(LDFLAGS)
 
-sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
+$(WIFI_TURBO_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_wifi_turbo_adapter.c include/wifi_turbo_adapter.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_wifi_turbo_adapter.c -o $@ $(LDFLAGS)
+
+sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(WIFI_TURBO_SANITIZER_BINARY)
 
 clean:
 	rm -rf build

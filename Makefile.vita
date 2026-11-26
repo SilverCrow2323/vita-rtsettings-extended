@@ -3,10 +3,10 @@ CC := $(PREFIX)gcc
 AR := $(PREFIX)ar
 RANLIB := $(PREFIX)ranlib
 
-CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility
+CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/wifi_turbo_adapter.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -40,6 +40,9 @@ build-vita/plugin_inventory.o: source/plugin-inventory/plugin_inventory.c includ
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/plugin_compatibility.o: source/plugin-compatibility/plugin_compatibility.c include/plugin_compatibility.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c include/wifi_turbo_adapter.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)

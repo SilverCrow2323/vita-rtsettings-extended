@@ -21,6 +21,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
+- [Plugin adapter framework](#plugin-adapter-framework)
 - [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
 - [Plugin Control Centre](#plugin-control-centre)
@@ -185,6 +186,10 @@ The first host-testable inventory core now parses supplied taiHEN `config.txt` t
 ## Plugin compatibility and conflict engine
 
 The new host-testable compatibility engine evaluates explicit dependency and conflict rules before future install/enable operations. It blocks known mutually exclusive providers (including YAMT vs StorageMgr, vitastream vs known USB video drivers, FTP for Vita vs FTP Everywhere, Caffeine vs NoSleep, and overlapping performance/remapping managers), and emits review-level warnings for shared display-LUT and Bluetooth-audio hooks. FTP for Vita and Caffeine also require QuickMenuReborn. It reports findings only: it never edits `config.txt`, chooses a plugin to remove, or treats unrecognized plugins as compatible by assumption. See [Plugin Compatibility](docs/PLUGIN_COMPATIBILITY.md).
+
+## Plugin adapter framework
+
+The first operational adapter is Wi-Fi Turbo. It supports the documented remote-control operations through an injected transport, requires the user to enable Developer mode, and never enables that unauthenticated LAN endpoint itself. Power-profile and 40 MHz changes remain pending until explicitly confirmed or reverted. The portable core contains no socket implementation; host tests use a mock transport. See [Plugin Adapter Framework](docs/PLUGIN_ADAPTER_FRAMEWORK.md).
 
 ## System Tools and application shortcuts
 
