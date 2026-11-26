@@ -26,6 +26,8 @@ PLUGIN_CENTRE_TEST_BINARY := build/test_plugin_control_centre
 STORAGE_TEST_BINARY := build/test_storage_devices
 ASSET_TEST_BINARY := build/test_custom_assets
 CUSTOM_WARNING_TEST_BINARY := build/test_custom_warning_adapter
+VITA_ASSET_FS_TEST_BINARY := build/test_vita_asset_fs
+VITA_ASSET_FS_SANITIZER_BINARY := build/test_vita_asset_fs_san
 SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
@@ -153,7 +155,10 @@ $(ASSET_TEST_BINARY): tests/test_custom_assets.c $(LIBRARY) include/custom_asset
 $(CUSTOM_WARNING_TEST_BINARY): tests/test_custom_warning_adapter.c $(LIBRARY) include/custom_warning_adapter.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(CUSTOM_WARNING_TEST_BINARY) $(ASSET_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY)
+$(VITA_ASSET_FS_TEST_BINARY): source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h | build
+	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) $(CFLAGS) source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c -o $@ $(LDFLAGS)
+
+test: $(CUSTOM_WARNING_TEST_BINARY) $(ASSET_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY) $(VITA_ASSET_FS_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
@@ -171,6 +176,7 @@ test: $(CUSTOM_WARNING_TEST_BINARY) $(ASSET_TEST_BINARY) $(STORAGE_TEST_BINARY) 
 	./$(STORAGE_TEST_BINARY)
 	./$(ASSET_TEST_BINARY)
 	./$(CUSTOM_WARNING_TEST_BINARY)
+	./$(VITA_ASSET_FS_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
@@ -205,7 +211,10 @@ $(ASSET_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_custom_assets.c include/cu
 $(CUSTOM_WARNING_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_custom_warning_adapter.c include/custom_warning_adapter.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_custom_warning_adapter.c -o $@ $(LDFLAGS)
 
-sanitize: $(CUSTOM_WARNING_SANITIZER_BINARY) $(ASSET_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY)
+$(VITA_ASSET_FS_SANITIZER_BINARY): source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h | build
+	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c -o $@ $(LDFLAGS)
+
+sanitize: $(CUSTOM_WARNING_SANITIZER_BINARY) $(ASSET_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY) $(VITA_ASSET_FS_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
@@ -217,6 +226,7 @@ sanitize: $(CUSTOM_WARNING_SANITIZER_BINARY) $(ASSET_SANITIZER_BINARY) $(STORAGE
 	ASAN_OPTIONS=detect_leaks=1 ./$(STORAGE_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(ASSET_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(CUSTOM_WARNING_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(VITA_ASSET_FS_SANITIZER_BINARY)
 
 clean:
 	rm -rf build
