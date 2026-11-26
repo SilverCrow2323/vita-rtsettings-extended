@@ -19,6 +19,8 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Preferences registry implementation](#preferences-registry-implementation)
 - [User-facing Settings metadata](#user-facing-settings-metadata)
 - [Settings screen and renderer adapter](#settings-screen-and-renderer-adapter)
+- [Layout Profile Manager](#layout-profile-manager)
+- [Safe module controls](#safe-module-controls)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -168,7 +170,7 @@ Sony-owned entries may be hidden, moved or reordered only when the firmware inte
 
 Hiding a menu item must never uninstall its module, disable its plugin, stop a service, change a system setting or delete user data. Showing a hidden item must not silently enable it. Preferences controls presentation only; operational settings remain owned by their respective modules.
 
-The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The host-testable registry, named Layout Profiles core, Preferences navigation model and renderer-neutral Settings screen adapter are implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md), [Layout Profiles](docs/LAYOUT_PROFILES.md), [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md) and [Settings Screen Adapter](settings-ui/SETTINGS_SCREEN_ADAPTER.md). The Vita-native renderer, verified Sony Settings integration and Vita-specific persistence adapter remain pending.
+The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The host-testable registry, named Layout Profiles core, Preferences navigation model and renderer-neutral Settings screen adapter are implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md), [Layout Profiles](docs/LAYOUT_PROFILES.md), [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md) and [Settings Screen Adapter](settings-ui/SETTINGS_SCREEN_ADAPTER.md). The Layout Profile Manager controller and safe module-control descriptor contract are also implemented. The Vita-native renderer, verified Sony Settings integration and Vita-specific persistence adapter remain pending.
 
 ## User-facing Settings metadata
 
@@ -179,6 +181,14 @@ A separate metadata catalogue now maps stable menu IDs to user-facing titles, de
 The Preferences navigation model and metadata catalogue now produce a complete renderer-neutral page snapshot: page title and description, visible ordered rows, user-facing labels, descriptions, semantic icon keys, presentation flags and selected-row state. A small renderer contract exposes page lifecycle, row drawing and footer callbacks so a future Vita backend can implement the Sony-style presentation without coupling the portable core to unverified proprietary APIs.
 
 This is an integration boundary, not a claim that the Vita-native Settings renderer already exists. The adapter is host-testable through a fake renderer; physical Settings integration remains a separate milestone. See [Settings Screen Adapter](settings-ui/SETTINGS_SCREEN_ADAPTER.md).
+
+## Layout Profile Manager
+
+A host-testable controller now exposes the profile list, profile actions, create, apply, update, rename and confirmed deletion flows. It keeps stable profile IDs separate from display names, protects the built-in `default` profile through the underlying profile store, and returns renderer-neutral view snapshots. See [Profile Manager](settings-ui/PROFILE_MANAGER.md).
+
+## Safe module controls
+
+Module adapters can declare only controls they genuinely support: toggles, finite selectors, stepped sliders and bounded numeric inputs. The shared contract validates option uniqueness, numeric ranges and steps, read-only status, backend read values and write requests. Unknown plugin settings are never guessed or edited. See [Module Control Contract](settings-ui/MODULE_CONTROL_CONTRACT.md).
 
 ## Curated Vita plugin catalogue
 
