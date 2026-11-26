@@ -6,8 +6,8 @@ CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
 
-CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c settings-ui/settings_screen.c settings-ui/profile_manager.c settings-ui/module_controls.c settings-ui/service_manager.c source/plugin-inventory/plugin_inventory.c source/plugin-compatibility/plugin_compatibility.c source/plugin-adapters/wifi_turbo_adapter.c
-CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o build/settings_screen.o build/profile_manager.o build/module_controls.o build/service_manager.o build/plugin_inventory.o build/plugin_compatibility.o build/wifi_turbo_adapter.o
+CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c settings-ui/preferences_ui.c settings-ui/metadata/settings_metadata.c settings-ui/settings_screen.c settings-ui/profile_manager.c settings-ui/module_controls.c settings-ui/service_manager.c settings-ui/plugin_control_centre.c source/plugin-inventory/plugin_inventory.c source/plugin-compatibility/plugin_compatibility.c source/plugin-adapters/wifi_turbo_adapter.c
+CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o build/preferences_ui.o build/settings_metadata.o build/settings_screen.o build/profile_manager.o build/module_controls.o build/service_manager.o build/plugin_control_centre.o build/plugin_inventory.o build/plugin_compatibility.o build/wifi_turbo_adapter.o
 LIBRARY := build/librtsettings.a
 TEST_BINARY := build/test_tai_saver
 BOOT_TEST_BINARY := build/test_boot_journal
@@ -22,6 +22,7 @@ SCREEN_TEST_BINARY := build/test_settings_screen
 PROFILE_MANAGER_TEST_BINARY := build/test_profile_manager
 MODULE_CONTROLS_TEST_BINARY := build/test_module_controls
 SERVICE_MANAGER_TEST_BINARY := build/test_service_manager
+PLUGIN_CENTRE_TEST_BINARY := build/test_plugin_control_centre
 SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
@@ -29,6 +30,7 @@ WIFI_TURBO_SANITIZER_BINARY := build/test_wifi_turbo_adapter_san
 PROFILE_MANAGER_SANITIZER_BINARY := build/test_profile_manager_san
 MODULE_CONTROLS_SANITIZER_BINARY := build/test_module_controls_san
 SERVICE_MANAGER_SANITIZER_BINARY := build/test_service_manager_san
+PLUGIN_CENTRE_SANITIZER_BINARY := build/test_plugin_control_centre_san
 
 .PHONY: all test sanitize clean
 all: $(LIBRARY)
@@ -78,6 +80,9 @@ build/plugin_compatibility.o: source/plugin-compatibility/plugin_compatibility.c
 build/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c include/wifi_turbo_adapter.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings-ui/plugin_control_centre.h include/plugin_inventory.h include/plugin_compatibility.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -121,7 +126,10 @@ $(MODULE_CONTROLS_TEST_BINARY): tests/test_module_controls.c $(LIBRARY) settings
 $(SERVICE_MANAGER_TEST_BINARY): tests/test_service_manager.c $(LIBRARY) settings-ui/service_manager.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY)
+$(PLUGIN_CENTRE_TEST_BINARY): tests/test_plugin_control_centre.c $(LIBRARY) settings-ui/plugin_control_centre.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
@@ -135,6 +143,7 @@ test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TE
 	./$(PROFILE_MANAGER_TEST_BINARY)
 	./$(MODULE_CONTROLS_TEST_BINARY)
 	./$(SERVICE_MANAGER_TEST_BINARY)
+	./$(PLUGIN_CENTRE_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
@@ -154,10 +163,13 @@ $(PROFILE_MANAGER_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_profile_manager.
 $(MODULE_CONTROLS_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_module_controls.c settings-ui/module_controls.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_module_controls.c -o $@ $(LDFLAGS)
 
+$(PLUGIN_CENTRE_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_plugin_control_centre.c settings-ui/plugin_control_centre.h | build
+	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_plugin_control_centre.c -o $@ $(LDFLAGS)
+
 $(SERVICE_MANAGER_SANITIZER_BINARY): $(CORE_SOURCES) tests/test_service_manager.c settings-ui/service_manager.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_service_manager.c -o $@ $(LDFLAGS)
 
-sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY)
+sanitize: $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
@@ -165,6 +177,7 @@ sanitize: $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_
 	ASAN_OPTIONS=detect_leaks=1 ./$(PROFILE_MANAGER_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(MODULE_CONTROLS_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SERVICE_MANAGER_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_CENTRE_SANITIZER_BINARY)
 
 clean:
 	rm -rf build
