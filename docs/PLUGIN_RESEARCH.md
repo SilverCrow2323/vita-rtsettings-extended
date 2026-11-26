@@ -75,6 +75,27 @@ See [Plugin Catalogue](PLUGIN_CATALOGUE.md) for all 16 normalized records, versi
 7. **No nightly builds by default:** use tagged releases; allow development builds only in an explicitly experimental channel.
 8. **Every record needs provenance:** upstream URL, release URL, version, date checked, supported firmware, plugin type, dependencies, conflicts, hash and review state.
 
+
+## Appearance, boot and Quick Menu research pass
+
+A first source-discovery pass has identified these upstream families. This is a discovery shortlist only: it does not yet certify a current binary version, 3.65 compatibility or an Rt configuration adapter.
+
+| Feature | Candidate / source | What is established | Rt decision |
+|---|---|---|---|
+| Quick Menu framework | [QuickMenuReborn](https://github.com/Ibrahim778/QuickMenuReborn) | Upstream describes a developer library/framework for adding widgets to the Vita Quick Menu. Its install notes require the plugin, a QuickMenuReborn data folder and its RCO resource. | Evaluate as a framework dependency, not as a ready-made universal Settings page. Verify current release/tag, widget APIs and installed add-ons before exposing controls. |
+| Quick Menu variants/add-ons | [AutoPlugin II catalogue](https://github.com/ONElua/AutoPlugin2) | The catalogue lists QuickMenuReborn variants/add-ons including DolceWiFi, QuickLauncher and vitaQmBluetooth. | Compare each add-on independently; retain only variants with meaningful feature or compatibility differences. |
+| Custom startup warning | [VitaTweaks / Custom Warning](https://github.com/TheOfficialFloW/VitaTweaks) | AutoPlugin II lists Custom Warning by TheOfficialFloW. | Inspect upstream source and actual configuration interface before promising arbitrary message editing. |
+| Boot splash | [Custom Boot Splash](https://store.brewology.com/vita/custom-boot-splash/) and [VitaSplashDrop source](https://github.com/Mag-Aegis/VitaSplashDrop) | The documented plugin displays a boot splash image; the original Sony boot logo cannot be hidden by this plugin. Installation involves boot configuration details, not merely a normal user plugin entry. | High-sensitivity boot integration candidate. Verify upstream lineage, current source/release and Enso 3.65 behavior; never overwrite boot configuration without verified backup and rollback. |
+| Boot sound | [Vita-BootSound](https://github.com/teakhanirons/Vita-BootSound) | Documentation describes a WAV boot jingle with constraints (1 MiB maximum, up to 48 kHz, stereo maximum) and notes possible System Music/audio-hook issues on firmware above 3.60. | Candidate for asset-management integration, but firmware 3.65 audio compatibility and current maintenance must be checked before adapter approval. |
+
+### What this means for the roadmap
+
+- **QuickMenuReborn** is a framework candidate. Its developer library role must not be confused with a complete user-facing Quick Menu settings API.
+- **Custom Warning**, **Custom Boot Splash** and **Vita-BootSound** are separate implementations with different configuration and boot-loading paths. They must not be merged into one generic plugin adapter.
+- Boot splash and boot sound changes need pre-change backups, validation, an explicit reboot notice and a recovery path.
+- The Custom Assets Manager should be shared by these features, while each plugin retains its own adapter and capability schema.
+- The current source discovery does not establish that these projects have the latest working release for firmware 3.65. The selection policy below still requires an upstream release/source audit and target-specific validation.
+
 ## Next research pass
 
 Expand the curated dataset in batches by category (network/storage, Bluetooth/input, display/power, shell/game-specific), verify each record against author release assets and checksums, and add a separate PSP/Adrenaline catalogue. Keep the installer catalogue separate from the inventory of everything discovered.
