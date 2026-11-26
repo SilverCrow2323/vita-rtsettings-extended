@@ -22,6 +22,8 @@ const rtp_metadata_entry *rtp_metadata_find(const rtp_metadata_catalogue *catalo
 int rtp_metadata_validate(const rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences);
 /* Registers the Appearance & Customization and Quick Menu Settings entries. */
 int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
+/* Registers the first complete Settings Hub feature tree for Tai Saver. */
+int rtp_metadata_register_tai_saver(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
 #ifdef __cplusplus
 }
 #endif
