@@ -3,10 +3,10 @@ CC := $(PREFIX)gcc
 AR := $(PREFIX)ar
 RANLIB := $(PREFIX)ranlib
 
-CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences
+CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -25,6 +25,9 @@ build-vita/boot_journal.o: source/boot-monitor/boot_journal.c include/boot_journ
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/preferences.o: source/preferences/preferences.c include/preferences.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/layout_profiles.o: source/layout-profiles/layout_profiles.c include/layout_profiles.h include/preferences.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)

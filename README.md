@@ -162,7 +162,7 @@ Sony-owned entries may be hidden, moved or reordered only when the firmware inte
 
 Hiding a menu item must never uninstall its module, disable its plugin, stop a service, change a system setting or delete user data. Showing a hidden item must not silently enable it. Preferences controls presentation only; operational settings remain owned by their respective modules.
 
-The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The first host-testable registry core is now implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md). The native UI and Vita-specific persistence adapter remain pending.
+The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The host-testable registry and named Layout Profiles core are implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md) and [Layout Profiles](docs/LAYOUT_PROFILES.md). The native UI and Vita-specific persistence adapter remain pending.
 
 ## System Tools and application shortcuts
 
@@ -439,13 +439,15 @@ Other models, firmwares and storage configurations require independent testing. 
 ├── .github/workflows/       # Continuous integration
 ├── docs/                    # Architecture and integration contracts
 ├── include/                 # Public C interfaces
-│   └── preferences.h         # Stable-ID Settings menu registry API
+│   ├── preferences.h         # Stable-ID Settings menu registry API
+│   └── layout_profiles.h     # Named layout profile API
 ├── installer/               # Package/module manifests and schemas
 ├── settings-ui/             # Settings page specifications
 ├── source/
 │   ├── tai-saver/           # Snapshot engine and SHA-256
 │   ├── boot-monitor/        # Persistent boot lifecycle journal
-│   └── preferences/         # Stable-ID menu registry and persistence
+│   ├── preferences/         # Stable-ID menu registry and persistence
+│   └── layout-profiles/     # Named menu layout profiles
 ├── tai-saver/               # Feature specifications and schemas
 ├── tests/                   # Host-side regression tests
 ├── Makefile                 # Host build and tests
@@ -478,7 +480,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Boot lifecycle journal | Implemented; host-tested |
 | Expandable installer and module architecture | Specified |
 | Preferences registry (visibility, ordering, category moves, persistence) | Implemented; host-tested |
-| Preferences native UI, named profiles and Sony menu integration | Pending |
+| Named layout profile core (create, update, apply, rename, delete, persistence) | Implemented; host-tested |
+| Preferences native UI, profile picker and Sony menu integration | Pending |
 | System Tools application registry and launch shortcuts | Project target; implementation pending |
 | Native Sony menu injection / extension points | Research and compatibility work pending |
 | Plugin Control Centre and adapter contract | Project target; implementation pending |
@@ -517,6 +520,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
 - [Preferences Registry](docs/PREFERENCES_REGISTRY.md)
+- [Layout Profiles](docs/LAYOUT_PROFILES.md)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)

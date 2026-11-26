@@ -1,17 +1,18 @@
 CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
-CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences
+CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
 
-CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c
-CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o
+CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c source/preferences/preferences.c source/layout-profiles/layout_profiles.c
+CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o build/preferences.o build/layout_profiles.o
 LIBRARY := build/librtsettings.a
 TEST_BINARY := build/test_tai_saver
 BOOT_TEST_BINARY := build/test_boot_journal
 PREFERENCES_TEST_BINARY := build/test_preferences
+PROFILE_TEST_BINARY := build/test_layout_profiles
 SANITIZER_BINARY := build/test_tai_saver_san
 
 .PHONY: all test sanitize clean
@@ -32,6 +33,9 @@ build/boot_journal.o: source/boot-monitor/boot_journal.c include/boot_journal.h 
 build/preferences.o: source/preferences/preferences.c include/preferences.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/layout_profiles.o: source/layout-profiles/layout_profiles.c include/layout_profiles.h include/preferences.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -45,10 +49,14 @@ $(BOOT_TEST_BINARY): tests/test_boot_journal.c $(LIBRARY) include/boot_journal.h
 $(PREFERENCES_TEST_BINARY): tests/test_preferences.c $(LIBRARY) include/preferences.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY)
+$(PROFILE_TEST_BINARY): tests/test_layout_profiles.c $(LIBRARY) include/layout_profiles.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
+	./$(PROFILE_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
