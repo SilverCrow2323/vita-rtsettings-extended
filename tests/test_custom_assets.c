@@ -9,7 +9,7 @@ static int verify_active(void *ctx,rta_asset_type type,const char *path){fake_ba
 static int restore(void *ctx,rta_asset_type type,const char *path){fake_backend *f=(fake_backend*)ctx;(void)type;f->restore_calls++;if(f->restore_fail)return -1;if(path)strcpy(f->active_path,path);else f->active_path[0]='\0';return 0;}
 static int remove_asset(void *ctx,const char *path){fake_backend *f=(fake_backend*)ctx;(void)path;f->remove_calls++;return f->remove_fail?-1:0;}
 #define HASH "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-#define OBS(ID,TITLE,PATH,TYPE,STATE,MANAGED,COMPAT,VERIFIED,PROTECTED) {ID,TITLE,PATH,"rt-settings", "png", HASH,TYPE,STATE,4096,960,544,0,MANAGED,COMPAT,VERIFIED,PROTECTED}
+#define OBS(ID,TITLE,PATH,TYPE,STATE,MANAGED,COMPAT,VERIFIED,PROTECTED) {ID,TITLE,PATH,"rt-settings", ((TYPE)==RTA_TYPE_BOOT_SOUND?"wav":(TYPE)==RTA_TYPE_STARTUP_WARNING?"utf-16le":(TYPE)==RTA_TYPE_BOOT_ANIMATION?"rcf":"png"), HASH,TYPE,STATE,4096,960,544,500,48000,2,MANAGED,COMPAT,VERIFIED,PROTECTED}
 int main(void){
  rta_asset_observation obs[]={
   OBS("splash-default","Default Splash","ur0:data/rt/assets/splash-default.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_ACTIVE,1,1,1,1),
@@ -29,7 +29,7 @@ int main(void){
  assert(rta_asset_activate(&reg,"splash-default",&backend)==RTA_ERR_ROLLBACK);
  fake.restore_fail=0;fake.verify_fail=0;
  assert(rta_asset_activate(&reg,"splash-user",&backend)==RTA_ERR_UNSAFE);
- assert(rta_asset_remove(&reg,"splash-default",&backend)==RTA_ERR_UNSAFE);
+ assert(rta_asset_remove(&reg,"splash-default",&backend)==RTA_ERR_PROTECTED);
  assert(rta_asset_remove(&reg,"splash-backup",&backend)==RTA_ERR_PROTECTED);
  assert(rta_asset_remove(&reg,"splash-neon",&backend)==RTA_ERR_UNSAFE);
  assert(rta_asset_remove(&reg,"splash-user",&backend)==RTA_ERR_UNSAFE);
@@ -40,11 +40,14 @@ int main(void){
   bad= (rta_asset_observation)OBS("badpath","bad","ur0:data/../x.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,1,0);
   assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
   bad= (rta_asset_observation)OBS("big-sound","bad","ur0:data/a.wav",RTA_TYPE_BOOT_SOUND,RTA_STATE_AVAILABLE,1,1,1,0);
-  bad.size_bytes=1024ULL*1024ULL+1;bad.duration_ms=500;
+  bad.size_bytes=1024ULL*1024ULL+1;bad.duration_ms=500;bad.sample_rate_hz=48000;bad.channels=2;
   assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
   bad= (rta_asset_observation)OBS("no-hash","bad","ur0:data/x.png",RTA_TYPE_BOOT_SPLASH,RTA_STATE_AVAILABLE,1,1,0,0);
   bad.sha256="";bad.hash_verified=0;
   assert(rta_asset_validate(&bad)==RTA_OK);
+  bad.format="mp3";assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
+  bad.format="wav";bad.size_bytes=4096;bad.sample_rate_hz=96000;
+  assert(rta_asset_validate(&bad)==RTA_ERR_INVALID_ASSET);
  }
  {
   rta_asset_observation dup[]={obs[0],obs[0]};
