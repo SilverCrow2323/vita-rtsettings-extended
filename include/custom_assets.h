@@ -140,6 +140,7 @@ typedef struct {
     int (*commit_staged)(void *context, const char *staging_path, const char *destination_path);
     int (*remove_path)(void *context, const char *path);
     rta_asset_read_fn read_file;
+    /* Must stage/verify/rename atomically and refuse to overwrite an existing destination. */
     int (*copy_atomic)(void *context, const char *source_path, const char *destination_path);
 } rta_asset_file_backend;
 
