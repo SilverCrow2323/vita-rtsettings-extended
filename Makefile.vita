@@ -6,7 +6,7 @@ RANLIB := $(PREFIX)ranlib
 CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters -Isource/custom-assets
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_assets.o build-vita/custom_warning_adapter.o build-vita/vita_asset_fs.o build-vita/asset_manifest.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/profile_manager.o build-vita/module_controls.o build-vita/service_manager.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/plugin_help.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o build-vita/custom_assets.o build-vita/custom_warning_adapter.o build-vita/vita_asset_fs.o build-vita/asset_manifest.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -58,6 +58,9 @@ build-vita/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c inc
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings-ui/plugin_control_centre.h include/plugin_inventory.h include/plugin_compatibility.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/plugin_help.o: settings-ui/plugin_help.c settings-ui/plugin_help.h include/preferences.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/storage_devices.o: settings-ui/storage_devices.c settings-ui/storage_devices.h | build-vita
