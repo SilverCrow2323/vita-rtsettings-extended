@@ -63,6 +63,9 @@ build-vita/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings
 build-vita/storage_devices.o: settings-ui/storage_devices.c settings-ui/storage_devices.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build-vita/custom_assets.o: source/custom-assets/custom_assets.c include/custom_assets.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(OBJECTS)
 	$(AR) rcs $@ $(OBJECTS)
 	$(RANLIB) $@
