@@ -610,49 +610,55 @@ A passing host CI run validates only the tests actually executed by that workflo
 
 | Area | Status |
 |---|---|
-| Tai Saver snapshot engine and SHA-256 manifests | Implemented; host-tested |
-| Snapshot verification, comparison and archive retention | Implemented; host-tested |
-| Guarded restore with Pre-Restore safety snapshot | Implemented; host-tested |
+| Tai Saver snapshot engine, SHA-256 manifests, verify/compare and guarded restore | Implemented; host-tested |
 | Boot lifecycle journal | Implemented; host-tested |
-| Expandable installer and module architecture | Specified |
-| Preferences registry (visibility, ordering, category moves, persistence) | Implemented; host-tested |
-| Named layout profile core (create, update, apply, rename, delete, persistence) | Implemented; host-tested |
-| Preferences navigation/presentation model (tree, visibility, ordering, profile application) | Implemented; host-tested |
-| User-facing Settings metadata catalogue | Implemented; host-tested |
-| Native Preferences renderer, profile picker and Sony menu integration | Pending |
-| System Tools application registry and launch shortcuts | Project target; implementation pending |
-| Native Sony menu injection / extension points | Research and compatibility work pending |
-| Plugin inventory, compatibility engine and read-only Control Centre model | Implemented; host-testable |
-| USB persistent connection controls | Project target; implementation pending |
-| FTP always-on service integration | Project target; implementation pending |
-| USB streaming integration | Project target; backend compatibility work pending |
-| Storage & Devices read-only snapshot model | Implemented; host-testable |
-| Live Vita storage enumeration, YAMT mapping and storage UI | Pending |
-| System, display, audio and power sections | Project target; implementation pending |
-| Staging recovery | Specified; implementation pending |
-| Installer transaction engine and VPK UI | Pending |
-| VitaSDK cross-build validation | Pending |
-| Native Settings category and pages | Pending |
-| Vita startup/service integration | Pending |
-| Physical Vita validation | Pending |
+| Preferences registry, named layout profiles and navigation model | Implemented; host-tested |
+| Settings metadata and renderer-neutral screen adapter | Implemented; host-tested |
+| Safe module-control descriptor contract | Implemented; host-tested |
+| Conflict-aware service lifecycle manager | Implemented; host-tested |
+| Plugin inventory, compatibility engine and read-only Control Centre model | Implemented; host-tested |
+| Storage & Devices snapshot model | Implemented; host-tested |
+| Wi-Fi Turbo typed adapter contract | Implemented; mock-transport host-tested; Vita transport pending |
+| Plugin catalogue, schema and initial source research | Implemented; research shortlist only |
+| Boot Animation / Boot Splash controls | Research/specification; implementation pending |
+| Boot Sound controls | Research/specification; implementation pending |
+| Custom Startup Warning controls | Research/specification; implementation pending |
+| Custom Assets Manager and import/export | Planned; implementation pending |
+| Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
+| Interface Customization | Project target; implementation pending |
+| USB persistent connection service | Lifecycle core exists; Vita backend/UI pending |
+| FTP service and provider selection | Lifecycle core exists; Vita backend/UI pending |
+| USB streaming backends and host integration | Research/compatibility work; implementation pending |
+| Live Vita plugin scanning, binary version detection and transactional config editing | Pending |
+| Plugin adapters beyond Wi-Fi Turbo | Pending; each requires upstream schema/API verification |
+| Live Vita storage enumeration and YAMT mapping | Pending |
+| System & Startup native page and recovery integration | Partial host core; Vita integration pending |
+| Display & Audio / Power & Performance adapters | Research and implementation pending |
+| System Tools detection and launch adapters | Specification; implementation pending |
+| Expandable installer transaction engine and VPK UI | Specification; implementation pending |
+| Vita-native Settings renderer and Sony category integration | Pending |
+| VitaSDK cross-build and package validation | Pending |
+| Physical PCH-1000 / 3.65 / Ensō / YAMT validation | Pending |
 
 ### Roadmap
 
-1. Finish storage safety and interrupted-staging recovery.
-2. Build the native Preferences page on the implemented menu registry.
-3. Add named layout profiles and safe import/export.
-4. Define System Tools application detection and launch-adapter contracts.
-5. Implement the shared service and plugin-adapter contracts.
-6. Implement the installer transaction engine and module selection UI.
-7. Validate the code with the VitaSDK toolchain.
-8. Build the Rt:Settings Extended root category and navigation.
-9. Integrate Tai Saver as the first working module.
-10. Add Connectivity: USB persistent preference and FTP auto-start, with real service-state reporting.
-11. Add USB streaming through a tested backend and conflict-aware service manager.
-12. Build the Plugin Control Centre and adapters for supported plugins.
-13. Add storage, system, display/audio, power and diagnostics modules incrementally.
-14. Implement Sony-page integrations where verified extension points exist.
-15. Test installation, update, rollback, service startup and removal on the target Vita.
+1. Complete storage safety and interrupted-staging recovery.
+2. Implement the first end-to-end plugin adapter page using the shared schema, validation, status readback and tests.
+3. Build the Vita-native Settings renderer and integrate the renderer-neutral screen model.
+4. Complete Tai Saver Vita filesystem/startup integration and its retention/known-good/KO archive UI.
+5. Implement transactional taiHEN config editing, version detection and safe plugin enable/disable.
+6. Add the Wi-Fi Turbo Vita transport and verify the adapter on the target console.
+7. Build the expandable installer transaction engine, dependency resolver and module selection UI.
+8. Implement USB/FTP service adapters and real lifecycle/status reporting.
+9. Validate streaming backends and implement one default provider plus worthwhile alternatives.
+10. Implement Quick Menu framework/add-on inventory and adapter-backed settings.
+11. Implement the Custom Assets Manager shared foundation.
+12. Add separate adapters for Boot Splash, Boot Sound and Custom Warning after upstream/API and 3.65 validation.
+13. Add Interface Customization, Display & Audio, Power & Performance and Bluetooth modules.
+14. Complete live Storage & Devices enumeration, YAMT mapping and diagnostics.
+15. Implement System Tools detection/launch and System & Startup recovery integration.
+16. Add Sony-page integrations only where stable extension points are verified.
+17. Run VitaSDK builds, packaging, install/update/rollback regression and physical-device validation.
 
 ## Documentation
 
@@ -663,6 +669,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Layout Profiles](docs/LAYOUT_PROFILES.md)
 - [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
 - [Settings UI Metadata Catalogue](settings-ui/metadata/README.md)
+- [Complete Settings Feature Catalogue](docs/COMPLETE_FEATURE_CATALOGUE.md)
 - [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
 - [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
