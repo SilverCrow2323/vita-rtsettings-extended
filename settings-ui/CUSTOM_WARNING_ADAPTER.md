@@ -3,10 +3,7 @@
 ## Upstream behavior
 
 VitaTweaks Custom Warning replaces the Ensō startup epilepsy warning. Its upstream source searches:
-1. ux0:tai/custom_warning/ for random warning files;
-2. ur0:tai/custom_warning/ if the ux0 directory has no usable entries;
-3. ux0:tai/custom_warning.txt;
-4. ur0:tai/custom_warning.txt.
+For each mount in order (ux0, then ur0), it first checks the custom_warning directory for random warning files, then falls back to that mount's custom_warning.txt. Therefore the exact lookup order is ux0 directory, ux0 fixed file, ur0 directory, ur0 fixed file.
 
 The file is Unicode UTF-16 Little Endian with BOM bytes FF FE. A BOM-only file displays no custom text. The adapter follows this precedence instead of assuming that a fixed text file is always the active source.
 
