@@ -30,3 +30,7 @@ The registry copies every string into bounded storage. Callers may therefore bui
 ## Current boundary
 
 This is a portable, host-testable data model. It does not render Sony Settings pages, load module manifests, discover plugins or implement Vita-specific graphics. Those are separate integration layers.
+
+## Appearance & Customization defaults
+
+The shared metadata catalogue exposes `rtp_metadata_register_appearance()`, which registers the Sony-style Appearance & Customization category and the Boot Animation, Boot Splash, Boot Sound, Startup Warning, Interface Customization, Custom Assets Manager and Quick Menu entries. Quick Menu Widgets and Quick Menu Shortcuts are nested below Quick Menu. Descriptions are plain-language English; backend and reboot flags are declared per entry. This registers metadata/menu entries only—it does not claim that the corresponding Vita backends are installed.
