@@ -1,0 +1,613 @@
+{
+  "catalogue_version": "0.1.0",
+  "snapshot_date": "2026-11-26",
+  "target_profile": {
+    "device": "PS Vita PCH-1000 OLED",
+    "firmware": "3.65",
+    "environment": "HENkaku Ensō",
+    "storage": "YAMT + SD2Vita",
+    "note": "Compatibility labels below distinguish upstream support claims, offline validation, physical testing, and testing on this exact target."
+  },
+  "status_definitions": {
+    "recommended_candidate": "Strong feature fit and current upstream release; still requires project-side installation and regression validation before one-click default.",
+    "conditional": "Useful, but target-specific compatibility, safety, or backend interaction must be checked first.",
+    "optional": "Specialist feature, not required for the core system and not installed by default.",
+    "dependency": "Runtime dependency installed only when a selected module requires it.",
+    "alternative": "Competing implementation; do not install concurrently with the selected provider.",
+    "review": "Discovery record not yet approved for installation."
+  },
+  "records": [
+    {
+      "id": "wifi-turbo",
+      "name": "Wi-Fi Turbo",
+      "version": "0.7.2",
+      "author": "juanjsebgarcia",
+      "category": "connectivity",
+      "kind": "taihen-plugin",
+      "status": "recommended_candidate",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.61",
+          "3.63",
+          "3.65",
+          "3.67",
+          "3.68",
+          "3.69",
+          "3.70",
+          "3.71",
+          "3.72",
+          "3.73",
+          "3.74"
+        ],
+        "tested": [
+          "3.60",
+          "3.65",
+          "3.68"
+        ],
+        "target_tested": false
+      },
+      "components": [
+        "wifiturbo_kernel.skprx",
+        "wifiturbo.suprx",
+        "wifiturbo_qm.suprx (optional)"
+      ],
+      "dependencies": [],
+      "conflicts": [],
+      "features": [
+        "HT40",
+        "power profiles",
+        "boot auto-connect",
+        "auto-reconnect",
+        "keep-alive",
+        "optional keep-Wi-Fi-on",
+        "live HUD",
+        "optional Quick Menu toggles"
+      ],
+      "target_notes": "3.65 is explicitly listed as physically tested by the author. Keep Wi-Fi on prevents automatic standby and increases battery use; expose sleep/battery consequences clearly. Quick Menu module is optional.",
+      "adapter": "network.wifi_turbo",
+      "source": "https://github.com/juanjsebgarcia/vita-turbo-wifi",
+      "release": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/tag/v0.7.2",
+      "release_date": "2026-11-14"
+    },
+    {
+      "id": "vitastream",
+      "name": "vitastream",
+      "version": "2.3",
+      "author": "devnoname120 and xerpi",
+      "category": "usb-streaming",
+      "kind": "kernel-plugin",
+      "status": "recommended_candidate",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.61",
+          "3.63",
+          "3.65",
+          "3.67",
+          "3.68",
+          "3.69",
+          "3.70",
+          "3.71",
+          "3.72",
+          "3.73",
+          "3.74"
+        ],
+        "tested": [
+          "3.60"
+        ],
+        "offline_validated": [
+          "3.65"
+        ],
+        "target_tested": false
+      },
+      "components": [
+        "vitastream.skprx",
+        "vitastream.cfg"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "udcd_uvc",
+        "VitaUSBStream",
+        "other USB Video Class kernel plugins"
+      ],
+      "features": [
+        "USB Video Class capture",
+        "USB Audio Class 1.0 final-mix capture",
+        "multiple resolutions and frame rates"
+      ],
+      "target_notes": "Firmware-aware module identity checks and offline compatibility coverage are documented. Retail physical validation cited by the author is on 3.60; do not claim a 3.65 hardware test. Install only one USB video kernel backend. Audio routing remains resident until reboot after stop/removal.",
+      "adapter": "connectivity.usb_stream",
+      "source": "https://github.com/devnoname120/vitastream",
+      "release": "https://github.com/devnoname120/vitastream/releases/tag/v2.3",
+      "release_date": "2026-11-04"
+    },
+    {
+      "id": "turbo-storage",
+      "name": "Turbo Storage",
+      "version": "0.4.0",
+      "author": "juanjsebgarcia",
+      "category": "storage",
+      "kind": "taihen-plugin-suite",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.61",
+          "3.63",
+          "3.65",
+          "3.67",
+          "3.68",
+          "3.69",
+          "3.70",
+          "3.71",
+          "3.72",
+          "3.73",
+          "3.74"
+        ],
+        "tested": [
+          "3.60"
+        ],
+        "reported": [
+          "3.65 (v0.3.0 on PCH-1100; user report)"
+        ],
+        "target_tested": false
+      },
+      "components": [
+        "storageturbo_kernel.skprx",
+        "storageturbo.suprx",
+        "storageturbo_settings.suprx",
+        "storageturbo_qm.suprx (optional)"
+      ],
+      "dependencies": [],
+      "conflicts": [],
+      "features": [
+        "SD2Vita read/write acceleration",
+        "safe fallback",
+        "crash-loop guard",
+        "pause acceleration in Vita games",
+        "optional Quick Menu switch"
+      ],
+      "target_notes": "Latest v0.4.0 was physically tested by its author on PCH-1000 firmware 3.60. Firmware 3.65 is listed as alpha; the reported 3.65 success concerns older v0.3.0 on PCH-1100. Our PCH-1000 + 3.65 + YAMT + SD2Vita combination is unverified. v0.4.0 removed internal-storage acceleration. Keep all acceleration off until validated; backup both SD and memory card first.",
+      "adapter": "storage.turbo_storage",
+      "source": "https://github.com/juanjsebgarcia/vita-turbo-storage",
+      "release": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/tag/v0.4.0",
+      "release_date": "2026-11-05"
+    },
+    {
+      "id": "bluetooth-turbo",
+      "name": "Bluetooth Turbo",
+      "version": "0.2.0",
+      "author": "juanjsebgarcia",
+      "category": "bluetooth",
+      "kind": "taihen-plugin-suite",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.61",
+          "3.63",
+          "3.65",
+          "3.67",
+          "3.68",
+          "3.69",
+          "3.70",
+          "3.71",
+          "3.72",
+          "3.73",
+          "3.74"
+        ],
+        "tested": [
+          "3.60"
+        ],
+        "target_tested": false
+      },
+      "components": [
+        "bluetoothturbo_kernel.skprx",
+        "bluetoothturbo.suprx",
+        "AAC/aptX/LDAC add-ons (optional)"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "Bluetooth audio patches that hook the same stack (review before enabling together)"
+      ],
+      "features": [
+        "Bluetooth audio timing fix",
+        "headset battery reporting",
+        "hands-free microphone support",
+        "battery notifications",
+        "optional AAC/aptX/LDAC codecs"
+      ],
+      "target_notes": "Author's physical test is one PCH-1000 on 3.60; 3.65 is declared but not physically tested. Optional codec add-ons are unofficial, opt-in and separately licensed/notices apply. Existing paired headsets must be removed and paired again after enabling.",
+      "adapter": "devices.bluetooth_turbo",
+      "source": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth",
+      "release": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/tag/v0.2.0",
+      "release_date": "2026-11-23"
+    },
+    {
+      "id": "vitabright-ex",
+      "name": "VitaBrightEX",
+      "version": "1.3 + LUT Editor 4.2",
+      "author": "Zushikina-kun",
+      "category": "display",
+      "kind": "kernel-plugin-and-companion-app",
+      "status": "recommended_candidate",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.61",
+          "3.63",
+          "3.65",
+          "3.67",
+          "3.68",
+          "3.69",
+          "3.70",
+          "3.71",
+          "3.72",
+          "3.73",
+          "3.74"
+        ],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "vitabright.skprx",
+        "panel-specific OLED LUT files",
+        "VitaBrightEX LUT Editor v4.2 (VPK)"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "other brightness/LUT driver plugins; verify before combining"
+      ],
+      "features": [
+        "OLED per-panel LUT selection",
+        "OLED red-tint correction for affected panels",
+        "hardware invert",
+        "LCD colour enhancements and filters"
+      ],
+      "target_notes": "Strong match for PCH-1000 OLED. The 1.3 release explicitly leaves the OLED hardware LUT untouched by filter math; on OLED the companion UI intentionally limits controls to safe invert/reset actions. Validate the installed panel/LUT selection before altering files. Firmware support is NID-based, but no exact PCH-1000 3.65 test is recorded in this catalogue.",
+      "adapter": "display.vitabright_ex",
+      "source": "https://github.com/Zushikina-kun/VitaBrightEX",
+      "release": "https://github.com/Zushikina-kun/VitaBrightEX/releases",
+      "release_date": "2026-08-18"
+    },
+    {
+      "id": "psvshell-plus",
+      "name": "PSVshellPlus",
+      "version": "1.4",
+      "author": "GrapheneCt",
+      "category": "performance",
+      "kind": "kernel-plugin-and-shell-module",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "PSVshellPlus_Kernel.skprx",
+        "PSVshellPlus_Shell.suprx"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "LOLIcon",
+        "NoPowerLimits and other CPU/GPU frequency controllers"
+      ],
+      "features": [
+        "per-title clock profiles",
+        "performance overlay",
+        "current draw tracking",
+        "developer mode"
+      ],
+      "target_notes": "Latest tagged release found is v1.4 (2023). It remains a useful established control surface but is not a recent release; keep optional and verify 3.65 compatibility and conflicts before enabling. Never run multiple overclock managers together.",
+      "adapter": "performance.psvshell_plus",
+      "source": "https://github.com/GrapheneCt/PSVshellPlus",
+      "release": "https://github.com/GrapheneCt/PSVshellPlus/releases/tag/v1.4",
+      "release_date": "2023-05-05"
+    },
+    {
+      "id": "revita-extended",
+      "name": "reVita-extended",
+      "version": "1.1",
+      "author": "JSilva6",
+      "category": "input",
+      "kind": "kernel-plugin",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "reVita-extended plugin files (verify release package)"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "reVita and other overlapping controller remappers"
+      ],
+      "features": [
+        "controller remapping",
+        "input profiles and macros (verify exact release feature set)"
+      ],
+      "target_notes": "A maintained extended fork is listed by the community catalogue. Keep as a distinct alternative to original reVita, not a simultaneous install. Firmware compatibility and exact binary manifest require upstream review before packaging.",
+      "adapter": null,
+      "source": "https://github.com/JSilva6/reVita-extended",
+      "release": "https://github.com/JSilva6/reVita-extended",
+      "release_date": "2026-07-22"
+    },
+    {
+      "id": "ftp-for-vita",
+      "name": "FTP for Vita",
+      "version": "1.0.0",
+      "author": "M-Essa11",
+      "category": "connectivity",
+      "kind": "quick-menu-plugin-and-installer",
+      "status": "recommended_candidate",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "FTPForVita.suprx",
+        "ftp_for_vita.png",
+        "FTPForVita.vpk installer"
+      ],
+      "dependencies": [
+        "QuickMenuReborn 2.5"
+      ],
+      "conflicts": [
+        "FTP Everywhere (both use port 1337)"
+      ],
+      "features": [
+        "VitaShell-compatible FTP server toggle",
+        "live IP and port display",
+        "restart on Wi-Fi address change"
+      ],
+      "target_notes": "Starts disabled after each reboot. Requires QuickMenuReborn for standalone install; the VPK installer bundles it. Do not combine with FTP Everywhere. Adapter should manage start/stop and status, not assume FTP is always active.",
+      "adapter": "connectivity.ftp_for_vita",
+      "source": "https://github.com/M-Essa11/FTP-for-Vita",
+      "release": "https://github.com/M-Essa11/FTP-for-Vita",
+      "release_date": "2026-09-20"
+    },
+    {
+      "id": "caffeine-for-vita",
+      "name": "Caffeine for Vita",
+      "version": "1.0.1",
+      "author": "M-Essa11",
+      "category": "power",
+      "kind": "quick-menu-plugin-and-installer",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "caffeine.suprx",
+        "caffeine.png",
+        "CaffeineForVita.vpk installer"
+      ],
+      "dependencies": [
+        "QuickMenuReborn 2.5"
+      ],
+      "conflicts": [
+        "NoSleep and other suspend-prevention plugins"
+      ],
+      "features": [
+        "manual sleep-prevention toggle",
+        "display-awake toggle"
+      ],
+      "target_notes": "Starts disabled after reboot and preserves manual standby. VPK includes QuickMenuReborn 2.5; standalone installation requires it already installed. Keep optional because it can affect battery and suspend behavior.",
+      "adapter": "power.caffeine",
+      "source": "https://github.com/M-Essa11/Caffeine-for-Vita",
+      "release": "https://github.com/M-Essa11/Caffeine-for-Vita",
+      "release_date": "2026-09-20"
+    },
+    {
+      "id": "livearea-nolimits",
+      "name": "LiveArea NoLimits",
+      "version": "2.1.0",
+      "author": "devnoname120",
+      "category": "shell",
+      "kind": "user-plugin",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "livearea_nolimits.suprx"
+      ],
+      "dependencies": [],
+      "conflicts": [],
+      "features": [
+        "raises LiveArea page and icon limits"
+      ],
+      "target_notes": "Useful only for users exceeding stock LiveArea limits. Not a Settings control; inventory and offer as an optional shell extension.",
+      "adapter": null,
+      "source": "https://github.com/devnoname120/livearea_nolimits",
+      "release": "https://github.com/devnoname120/livearea_nolimits/releases",
+      "release_date": "2026-10-11"
+    },
+    {
+      "id": "screenshot-noshard",
+      "name": "Screenshot NoShard",
+      "version": "1.2.0",
+      "author": "devnoname120",
+      "category": "shell",
+      "kind": "user-plugin",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "Screenshot NoShard plugin binary (verify release package)"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "other screenshot path/storage redirection plugins"
+      ],
+      "features": [
+        "unsharded screenshot storage",
+        "avoids photo promotion"
+      ],
+      "target_notes": "Quality-of-life feature; useful but not essential. Keep optional and avoid stacking with screenshot plugins that redirect the same paths.",
+      "adapter": null,
+      "source": "https://github.com/devnoname120/screenshot_noshard",
+      "release": "https://github.com/devnoname120/screenshot_noshard/releases",
+      "release_date": "2026-10-09"
+    },
+    {
+      "id": "repatch-reloaded",
+      "name": "rePatch reLoaded",
+      "version": "2.1",
+      "author": "SonicMastr",
+      "category": "modding",
+      "kind": "kernel-plugin",
+      "status": "optional",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "repatch_ex.skprx"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "other rePatch implementations"
+      ],
+      "features": [
+        "game and homebrew data redirection"
+      ],
+      "target_notes": "Keep as the preferred modern rePatch line for game mod/data redirection, but it is not a general Settings feature. Validate per-title compatibility and do not install alongside the legacy rePatch binary.",
+      "adapter": null,
+      "source": "https://github.com/SonicMastr/rePatch-reLoaded",
+      "release": "https://github.com/SonicMastr/rePatch-reLoaded/releases",
+      "release_date": "2024-04-24"
+    },
+    {
+      "id": "kubridge",
+      "name": "kubridge",
+      "version": "0.3.1",
+      "author": "TheOfficialFloW and Bythos",
+      "category": "runtime-dependencies",
+      "kind": "kernel-dependency",
+      "status": "dependency",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "kubridge.skprx"
+      ],
+      "dependencies": [],
+      "conflicts": [],
+      "features": [
+        "DynaRec feature extender for compatible homebrew"
+      ],
+      "target_notes": "Install only when a selected application/plugin explicitly requires it. Do not show as a user-facing tweak.",
+      "adapter": null,
+      "source": "https://github.com/bythos14/kubridge",
+      "release": "https://github.com/bythos14/kubridge/releases",
+      "release_date": "2024-03-05"
+    },
+    {
+      "id": "ioplus",
+      "name": "ioPlus",
+      "version": "0.1",
+      "author": "FAPS Team / CelesteBlue",
+      "category": "runtime-dependencies",
+      "kind": "kernel-dependency",
+      "status": "dependency",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "ioplus.skprx"
+      ],
+      "dependencies": [],
+      "conflicts": [],
+      "features": [
+        "I/O compatibility layer required by selected plugins"
+      ],
+      "target_notes": "Use the standardized AutoPlugin II dependency build and resolve it only for dependents. Preserve it when another installed plugin still requires it.",
+      "adapter": null,
+      "source": "https://github.com/CelesteBlue-dev/PSVita-RE-tools",
+      "release": "https://github.com/ONElua/AutoPlugin2",
+      "release_date": "catalogue-2.20"
+    },
+    {
+      "id": "yamt",
+      "name": "YAMT",
+      "version": "installed baseline; verify exact installed build",
+      "author": "SkGleba",
+      "category": "storage",
+      "kind": "storage-driver",
+      "status": "recommended_candidate",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.65"
+        ],
+        "tested": [],
+        "target_tested": true
+      },
+      "components": [
+        "YAMT kernel plugin and installer"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "StorageMgr",
+        "other competing SD2Vita mount drivers"
+      ],
+      "features": [
+        "SD2Vita mount management",
+        "storage mount configuration"
+      ],
+      "target_notes": "Already part of the target console setup. Detect and preserve the existing configuration; never silently reinstall or replace. YAMT is the chosen storage provider for this device; migration to StorageMgr must be explicit and transactional.",
+      "adapter": "storage.yamt",
+      "source": "https://github.com/SKGleba/ yamt-vita",
+      "release": "https://vita.hacks.guide/yamt.html",
+      "release_date": "baseline"
+    },
+    {
+      "id": "storagemgr",
+      "name": "StorageMgr",
+      "version": "2.0",
+      "author": "CelesteBlue and Yoti",
+      "category": "storage",
+      "kind": "storage-driver",
+      "status": "alternative",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "storagemgr.skprx",
+        "storage_config.txt"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "YAMT",
+        "other competing SD2Vita mount drivers"
+      ],
+      "features": [
+        "SD2Vita and external storage mounting"
+      ],
+      "target_notes": "Alternative storage driver only. Not offered for installation while YAMT is active. Include only as an explicit migration option after backing up storage configuration and confirming mount mappings.",
+      "adapter": "storage.storagemgr",
+      "source": "https://github.com/RealYoti/StorageMgr",
+      "release": "https://github.com/RealYoti/StorageMgr",
+      "release_date": "legacy-maintained"
+    }
+  ]
+}

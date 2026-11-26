@@ -13,6 +13,21 @@
 | [PSX-Place Vita plugin resources](https://www.psx-place.com/resources/categories/plugins.11/) | Historical releases, discussion and discovery | Resource pages may lag behind upstream repositories |
 | Author GitHub repositories/releases | Primary authority for version, compatibility, changelog and binaries | Prefer tagged releases and source code over mirrors |
 
+## Normalized catalogue
+
+The first curated, machine-readable dataset now lives in [Plugin Catalogue](PLUGIN_CATALOGUE.md), with JSON records and a JSON Schema. It is intentionally a selected shortlist, not a mirror of every entry in an installer app. The target profile is PCH-1000 OLED / firmware 3.65 / Ensō / YAMT + SD2Vita.
+
+The catalogue separates declared firmware support, offline validation, physical testing and reports from other users. A release that declares 3.65 is not automatically considered tested on our exact hardware.
+
+## Discovery-source comparison
+
+- **AutoPlugin II 2.20** is useful as a discovery/install catalogue and its changelog shows dependency-aware uninstall and safer config writes. It is not treated as the authority for latest upstream versions. Community guidance also warns against trusting automatic installation blindly; Rt will implement its own reviewed transaction and rollback flow. [AutoPlugin II](https://github.com/ONElua/AutoPlugin2)
+- **VitaHomebrewDB** provides a broad recovered feed (182 plugin records in the snapshot reviewed), but its preserved feed is not current enough to choose versions by itself. Use it for discovery and source links.
+- **GameBrew** is useful for recent additions and release cross-checks, but version tables can lag or disagree with upstream.
+- **Brewology** is useful for recent release dates and package manifests; downloads still resolve to upstream author releases where available.
+- **PSX-Place** remains a historical discovery/forum source. It is not a substitute for checking the author's repository and tagged release.
+- **Author GitHub releases and source** decide the selected version, binary manifest, firmware claims, changelog and checksums.
+
 ## First-pass candidates
 
 These are research candidates, not an approved one-click install set. Version selection must be checked against the author's latest release and target firmware before packaging.
@@ -22,10 +37,10 @@ These are research candidates, not an approved one-click install set. Version se
 | YAMT | Storage | Keep / baseline dependency | User's target already uses YAMT; avoid installing a competing storage driver blindly |
 | StorageMgr | Storage | Alternative only | Preserve as a selectable alternative where compatibility or user setup requires it; never run alongside YAMT without verified configuration |
 | VitaShell FTP backend / FTP for Vita | Connectivity | Investigate service adapter | Distinguish VitaShell's FTP server from Quick Menu toggles and standalone FTP plugins |
-| vitastream / UDCD USB Video Class | Streaming | High-priority candidate | Recent maintained USB video/audio path; check host support and conflict with other USB modes |
+| vitastream | Streaming | 2.3 recommended candidate | Offline firmware validation includes 3.65; retail physical test documented on 3.60 only; mutually exclusive with other UVC kernel drivers |
 | VitaUSBStream | Streaming | Alternative backend | Separate implementation; retain only if it provides materially different host compatibility or quality |
-| VitaBright / VitaBrightEX | Display | Variant family | Keep multiple variants only where OLED/LCD or firmware support differs; verify current upstream before selecting default |
-| PSVshellPlus / PSVshell | Performance | High-priority candidate | Prefer current maintained Plus line if feature and compatibility checks confirm it supersedes legacy build |
+| VitaBrightEX | Display | 1.3 + LUT Editor 4.2 recommended candidate | Better fit for OLED/LCD split and OLED panel LUT safety; OLED filter operations are intentionally restricted |
+| PSVshellPlus | Performance | 1.4 optional | Latest tagged release found; mature but dated, and must not coexist with other overclock managers |
 | reVita / reVita-extended | Input | Variant family | Compare maintained fork, supported devices and feature parity before choosing default |
 | rePatch reLoaded | Mod support | Keep | Core data redirection use case; verify dependencies and title compatibility |
 | kubridge | Runtime dependency | Dependency, not user-facing tweak | Install only when a selected application/plugin requires it |
@@ -36,8 +51,18 @@ These are research candidates, not an approved one-click install set. Version se
 | VitaGrafix | Graphics | Evaluate | Per-title graphics patching; not a general Settings control |
 | NoPowerLimits / LOLITA | Performance | Do not bundle by default | Legacy/overlapping overclock paths; prioritize one actively maintained and safe interface |
 | Caffeine for Vita | Power | Evaluate | Simple sleep prevention; useful only if exposed as a supported service toggle |
-| Wi-Fi Turbo | Connectivity | High-priority candidate | Recent QoL plugin; verify exact firmware/hardware support and default behavior |
-| Turbo Storage | Storage | High-priority candidate | Recent storage-performance work; do not combine with storage drivers until interaction is verified |
+| Wi-Fi Turbo | Connectivity | 0.7.2 recommended candidate | Author explicitly lists 3.65 among physically tested firmware; Keep Wi-Fi on has battery/sleep implications |
+| Turbo Storage | Storage | 0.4.0 conditional | Latest release physically tested on PCH-1000/3.60; 3.65 is alpha and prior user report was PCH-1100/v0.3.0; target YAMT interaction unverified |
+
+## Target profile shortlist
+
+See [Plugin Catalogue](PLUGIN_CATALOGUE.md) for all 16 normalized records, versions, adapter IDs, dependencies, conflicts and per-plugin caveats. Key decisions for the PCH-1000 OLED / 3.65 / YAMT setup:
+
+- Wi-Fi Turbo 0.7.2: 3.65 physically tested by the author.
+- vitastream 2.3: offline validated for 3.65, physical retail test documented on 3.60 only.
+- Turbo Storage 0.4.0: 3.65 alpha; do not enable by default on our target.
+- Bluetooth Turbo 0.2.0: declared support 3.60–3.74, physical test only on 3.60.
+- VitaBrightEX 1.3: OLED-aware and explicitly fixes the previous OLED LUT/filter issue.
 
 ## Selection policy
 
@@ -52,4 +77,4 @@ These are research candidates, not an approved one-click install set. Version se
 
 ## Next research pass
 
-Build a normalized machine-readable catalogue from AutoPlugin II's active Vita list and VitaHomebrewDB's plugin records, then deduplicate by upstream project and binary identity. Cross-check all shortlisted entries against author releases and known firmware constraints. Add PSP/Adrenaline plugins to a separate catalogue so they never appear as native Vita taiHEN entries.
+Expand the curated dataset in batches by category (network/storage, Bluetooth/input, display/power, shell/game-specific), verify each record against author release assets and checksums, and add a separate PSP/Adrenaline catalogue. Keep the installer catalogue separate from the inventory of everything discovered.

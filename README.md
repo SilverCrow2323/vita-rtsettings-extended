@@ -19,6 +19,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Preferences registry implementation](#preferences-registry-implementation)
 - [User-facing Settings metadata](#user-facing-settings-metadata)
 - [Vita plugin research](#vita-plugin-research)
+- [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [System Tools and application shortcuts](#system-tools-and-application-shortcuts)
 - [Feature catalogue](#feature-catalogue)
 - [Plugin Control Centre](#plugin-control-centre)
@@ -169,6 +170,12 @@ The menu registry should store stable entry identifiers rather than relying on t
 ## User-facing Settings metadata
 
 A separate metadata catalogue now maps stable menu IDs to user-facing titles, descriptions, semantic icon keys, owning modules and presentation flags. It copies bounded strings, rejects duplicate IDs and invalid category references, and never creates or changes operational settings by itself. See [Settings UI Metadata Catalogue](settings-ui/metadata/README.md).
+
+## Curated Vita plugin catalogue
+
+The project maintains a normalized shortlist for the target PCH-1000 OLED / firmware 3.65 / Ensō / YAMT setup. Every record separates firmware declared by the author, offline validation, physical tests and reports from other devices. It also tracks dependencies, mutually exclusive alternatives, adapter IDs and installation caveats.
+
+See the [curated catalogue](docs/PLUGIN_CATALOGUE.md), [machine-readable JSON](data/plugin-catalogue.json) and [JSON Schema](schemas/plugin-catalogue.schema.json). This is not an install-all list: candidates require project-side review and device testing. Unknown plugins may be inventoried but do not receive guessed controls.
 
 ## System Tools and application shortcuts
 
@@ -534,6 +541,9 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Layout Profiles](docs/LAYOUT_PROFILES.md)\n- [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
 - [Settings UI Metadata Catalogue](settings-ui/metadata/README.md)
 - [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
+- [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
+- [Plugin catalogue JSON](data/plugin-catalogue.json)
+- [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
 - [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 - [Installer package and module format](installer/README.md)
