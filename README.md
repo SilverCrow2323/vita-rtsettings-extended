@@ -620,7 +620,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Plugin catalogue, schema and initial source research | Implemented; research shortlist only |
 | Boot Animation / Boot Splash controls | Research/specification; implementation pending |
 | Boot Sound controls | Research/specification; implementation pending |
-| Custom Startup Warning controls | Research/specification; implementation pending |
+| Custom Warning UTF-16LE adapter (read, validate, write, verify, rollback) | Implemented; host regression coverage added; Vita plugin/filesystem integration pending |
 | Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host regression and sanitizer coverage added |
 | Asset import/export, filesystem hashing and platform adapters | Pending; backend-specific work required |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
@@ -629,7 +629,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | FTP service and provider selection | Lifecycle core exists; Vita backend/UI pending |
 | USB streaming backends and host integration | Research/compatibility work; implementation pending |
 | Live Vita plugin scanning, binary version detection and transactional config editing | Pending |
-| Plugin adapters beyond Wi-Fi Turbo | Pending; each requires upstream schema/API verification |
+| Plugin adapters beyond Wi-Fi Turbo | Custom Warning portable adapter implemented; remaining adapters require upstream schema/API verification |
 | Live Vita storage enumeration and YAMT mapping | Pending |
 | System & Startup native page and recovery integration | Partial host core; Vita integration pending |
 | Display & Audio / Power & Performance adapters | Research and implementation pending |
@@ -672,6 +672,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Settings Entry Catalogue](docs/FEATURE_CATALOGUE.md)
 - [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
 - [Boot Appearance Adapter Decisions](docs/BOOT_APPEARANCE_ADAPTERS.md)
+- [Custom Warning Adapter](settings-ui/CUSTOM_WARNING_ADAPTER.md)
 - [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
