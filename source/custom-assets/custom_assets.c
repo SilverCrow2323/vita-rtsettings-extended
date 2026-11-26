@@ -1,6 +1,7 @@
 #include "custom_assets.h"
 #include "sha256.h"
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 
 #define RTA_BOOT_SOUND_MAX (1024ULL * 1024ULL)
@@ -216,6 +217,101 @@ static int find_asset(const rta_asset_registry *registry, const char *id) {
     for (i = 0; i < registry->count; ++i)
         if (strcmp(registry->assets[i].id, id) == 0) return (int)i;
     return -1;
+}
+
+rta_result rta_asset_import(rta_asset_registry *registry, const rta_asset_import_spec *spec,
+                            const rta_asset_file_backend *backend, char imported_id[RTA_ID_MAX + 1]) {
+    char staging[RTA_PATH_MAX + 1], destination[RTA_PATH_MAX + 1], digest[65];
+    uint64_t size = 0;
+    int n;
+    size_t i;
+    rta_asset_observation observation;
+    rta_asset validated;
+    rta_result result;
+    if (!registry || !spec || !backend || !imported_id || !backend->copy_to_staging ||
+        !backend->commit_staged || !backend->remove_path || !backend->read_file ||
+        !spec->source_path || !valid_path(spec->source_path) || !spec->owner ||
+        !spec->format || !valid_id(spec->id)) return RTA_ERR_ARGUMENT;
+    if (registry->count >= RTA_MAX_ASSETS) return RTA_ERR_CAPACITY;
+    for (i = 0; i < registry->count; ++i)
+        if (strcmp(registry->assets[i].id, spec->id) == 0) return RTA_ERR_DUPLICATE_ID;
+    if (strlen(spec->source_path) > RTA_SOURCE_MAX || strlen(spec->format) > RTA_FORMAT_MAX)
+        return RTA_ERR_INVALID_ASSET;
+    {
+        size_t j;
+        for (j = 0; spec->format[j]; ++j)
+            if (!isalnum((unsigned char)spec->format[j]) && spec->format[j] != '-' && spec->format[j] != '_')
+                return RTA_ERR_INVALID_ASSET;
+    }
+    n = snprintf(destination, sizeof(destination), "ur0:data/rt/assets/%s.%s", spec->id, spec->format);
+    if (n < 0 || (size_t)n >= sizeof(destination)) return RTA_ERR_CAPACITY;
+    n = snprintf(staging, sizeof(staging), "ur0:data/rt/assets/.%s.stage", spec->id);
+    if (n < 0 || (size_t)n >= sizeof(staging)) return RTA_ERR_CAPACITY;
+    for (i = 0; i < registry->count; ++i)
+        if (strcmp(registry->assets[i].path, destination) == 0) return RTA_ERR_DUPLICATE_PATH;
+
+    if (backend->copy_to_staging(backend->context, spec->source_path, staging) != 0) {
+        (void)backend->remove_path(backend->context, staging);
+        return RTA_ERR_BACKEND;
+    }
+    result = rta_asset_hash_reader(backend->read_file, backend->context, staging, digest, &size);
+    if (result != RTA_OK || !size) {
+        (void)backend->remove_path(backend->context, staging);
+        return result == RTA_OK ? RTA_ERR_INVALID_ASSET : result;
+    }
+    if (spec->expected_sha256 && spec->expected_sha256[0]) {
+        if (!valid_hash(spec->expected_sha256) || strcmp(spec->expected_sha256, digest) != 0) {
+            (void)backend->remove_path(backend->context, staging);
+            return RTA_ERR_INTEGRITY;
+        }
+    }
+    memset(&observation, 0, sizeof(observation));
+    observation.id = spec->id; observation.title = spec->title;
+    observation.path = destination; observation.owner = spec->owner;
+    observation.source = spec->source_path; observation.format = spec->format;
+    observation.sha256 = digest; observation.type = spec->type;
+    observation.state = RTA_STATE_AVAILABLE; observation.size_bytes = size;
+    observation.width = spec->width; observation.height = spec->height;
+    observation.duration_ms = spec->duration_ms; observation.sample_rate_hz = spec->sample_rate_hz;
+    observation.channels = spec->channels; observation.managed = 1;
+    observation.compatible = spec->compatible ? 1 : 0;
+    observation.hash_verified = 1; observation.protected_asset = spec->protected_asset ? 1 : 0;
+    result = rta_asset_validate(&observation);
+    if (result != RTA_OK) {
+        (void)backend->remove_path(backend->context, staging);
+        return result;
+    }
+    memset(&validated, 0, sizeof(validated));
+    copy_observation(&observation, &validated);
+    if (backend->commit_staged(backend->context, staging, destination) != 0) {
+        (void)backend->remove_path(backend->context, staging);
+        return RTA_ERR_BACKEND;
+    }
+    registry->assets[registry->count++] = validated;
+    refresh_counts(registry);
+    strcpy(imported_id, spec->id);
+    return RTA_OK;
+}
+
+rta_result rta_asset_export(const rta_asset_registry *registry, const char *asset_id,
+                            const char *destination_path, const rta_asset_file_backend *backend) {
+    int index;
+    const rta_asset *asset;
+    rta_result result;
+    if (!registry || !asset_id || !destination_path || !backend ||
+        !backend->read_file || !backend->copy_atomic || !valid_path(destination_path))
+        return RTA_ERR_ARGUMENT;
+    index = find_asset(registry, asset_id);
+    if (index < 0) return RTA_ERR_NOT_FOUND;
+    asset = &registry->assets[index];
+    if (!asset->managed || !asset->hash_verified || !valid_hash(asset->sha256))
+        return RTA_ERR_UNVERIFIED;
+    if (strcmp(asset->path, destination_path) == 0) return RTA_ERR_UNSAFE;
+    result = rta_asset_verify_reader(backend->read_file, backend->context, asset->path,
+                                     asset->sha256, asset->size_bytes);
+    if (result != RTA_OK) return result;
+    return backend->copy_atomic(backend->context, asset->path, destination_path) == 0 ?
+           RTA_OK : RTA_ERR_BACKEND;
 }
 
 rta_result rta_asset_activate(rta_asset_registry *registry, const char *asset_id,
