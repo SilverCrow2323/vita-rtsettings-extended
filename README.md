@@ -489,7 +489,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | USB streaming integration | Project target; backend compatibility work pending |
 | Storage, system, display, audio and power sections | Project target; implementation pending |
 | Staging recovery | Specified; implementation pending |
-| Installer transaction engine and VPK UI | Manifest validator/planner host prototype implemented; reversible file transactions and Vita UI pending |
+| Installer transaction engine and VPK UI | Host-reference install/update/remove transaction engine implemented and regression-tested; Vita adapter/UI pending |
 | VitaSDK cross-build validation | Pending |
 | Native Settings category and pages | Pending |
 | Vita startup/service integration | Pending |
@@ -502,7 +502,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 3. Add named layout profiles and safe import/export.
 4. Define System Tools application detection and launch-adapter contracts.
 5. Implement the shared service and plugin-adapter contracts.
-6. Implement the installer transaction engine and module selection UI.
+6. Port the host-reference transaction contract to a Vita-native filesystem adapter, then implement the module selection UI.
 7. Validate the code with the VitaSDK toolchain.
 8. Build the Rt:Settings Extended root category and navigation.
 9. Integrate Tai Saver as the first working module.
