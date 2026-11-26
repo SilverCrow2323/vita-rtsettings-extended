@@ -79,7 +79,11 @@ int main(void) {
     assert(rta_asset_manifest_load(&io,"manifest",buffer,sizeof(buffer),&decoded)==RTA_ERR_BACKEND);
     memory.fail_read=0;
     /* Corrupt primary is rejected; a separate validated backup is accepted. */
-    assert(store_write(&memory,"manifest.bak",buffer,memory.length)==0);
+    {
+        size_t backup_length=0;
+        assert(rta_asset_manifest_encode(&source,buffer,sizeof(buffer),&backup_length)==RTA_OK);
+        assert(store_write(&memory,"manifest.bak",buffer,backup_length)==0);
+    }
     memory.data[20]^=0x40;
     {
         int used_backup=0;
