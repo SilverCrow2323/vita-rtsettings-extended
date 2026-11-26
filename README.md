@@ -23,6 +23,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Safe module controls](#safe-module-controls)
 - [Connectivity service lifecycle](#connectivity-service-lifecycle)
 - [Plugin Control Centre model](#plugin-control-centre-model)
+- [Storage & Devices snapshot model](#storage--devices-snapshot-model)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -191,6 +192,10 @@ A host-testable controller now exposes the profile list, profile actions, create
 ## Safe module controls
 
 Module adapters can declare only controls they genuinely support: toggles, finite selectors, stepped sliders and bounded numeric inputs. The shared contract validates option uniqueness, numeric ranges and steps, read-only status, backend read values and write requests. Unknown plugin settings are never guessed or edited. See [Module Control Contract](settings-ui/MODULE_CONTROL_CONTRACT.md).
+
+## Storage & Devices snapshot model
+
+The first Storage & Devices core now converts platform-reported observations into a bounded, renderer-neutral snapshot: SD2Vita, Sony Memory Card, internal and USB device kinds; mount state; mount point; total/free capacity; read-only state; free-space percentage; and duplicate mount-point warnings. Invalid capacity data and duplicate stable IDs are rejected. The model never probes, mounts, formats or changes storage itself. The Vita device-enumeration adapter and YAMT mapping detection remain pending. See [Storage & Devices model](settings-ui/STORAGE_DEVICES.md).
 
 ## Plugin Control Centre model
 
@@ -550,7 +555,9 @@ A passing host CI run validates only the tests actually executed by that workflo
 | USB persistent connection controls | Project target; implementation pending |
 | FTP always-on service integration | Project target; implementation pending |
 | USB streaming integration | Project target; backend compatibility work pending |
-| Storage, system, display, audio and power sections | Project target; implementation pending |
+| Storage & Devices read-only snapshot model | Implemented; host-testable |
+| Live Vita storage enumeration, YAMT mapping and storage UI | Pending |
+| System, display, audio and power sections | Project target; implementation pending |
 | Staging recovery | Specified; implementation pending |
 | Installer transaction engine and VPK UI | Pending |
 | VitaSDK cross-build validation | Pending |
