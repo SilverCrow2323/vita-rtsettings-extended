@@ -40,6 +40,7 @@ This is the first normalized, machine-readable shortlist—not a dump of every p
 | ioPlus | 0.1 | Runtime | Dependency | Install only for declared dependents |
 | YAMT | Existing installation | Storage | Preserve as baseline | Target setup already uses YAMT; detect exact installed build |
 | StorageMgr | 2.0 | Storage | Alternative | Never install alongside YAMT |
+| QuickMenuReborn | 2.5 | Shell framework | Dependency | Required by selected Quick Menu add-ons; detect before installation |
 
 ## Important target-specific decisions
 

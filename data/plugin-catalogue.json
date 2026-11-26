@@ -225,7 +225,7 @@
         },
         {
           "name": "storageturbo_settings.suprx",
-          "sha256": "2d4d8e4b1df9b21bcfcd74a02cc9bc2288b96e925260a47422d72a112b424ab1",
+          "sha256": "2d4d8e4b1df9b21bcfcd74a02cc9bc2285db8118368054d92592c075ff58f384",
           "url": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/download/v0.4.0/storageturbo_settings.suprx"
         },
         {
@@ -565,8 +565,8 @@
       ],
       "target_notes": "Quality-of-life feature; useful but not essential. Keep optional and avoid stacking with screenshot plugins that redirect the same paths.",
       "adapter": null,
-      "source": "https://github.com/devnoname120/screenshot_noshard",
-      "release": "https://github.com/devnoname120/screenshot_noshard/releases",
+      "source": "https://github.com/devnoname120/screenshot-noshard",
+      "release": "https://github.com/devnoname120/screenshot-noshard/releases",
       "release_date": "2026-10-09"
     },
     {
@@ -682,7 +682,7 @@
       ],
       "target_notes": "Already part of the target console setup. Detect and preserve the existing configuration; never silently reinstall or replace. YAMT is the chosen storage provider for this device; migration to StorageMgr must be explicit and transactional.",
       "adapter": "storage.yamt",
-      "source": "https://github.com/SKGleba/ yamt-vita",
+      "source": "https://github.com/SKGleba/yamt-vita",
       "release": "https://vita.hacks.guide/yamt.html",
       "release_date": "baseline"
     },
@@ -716,6 +716,35 @@
       "source": "https://github.com/RealYoti/StorageMgr",
       "release": "https://github.com/RealYoti/StorageMgr",
       "release_date": "legacy-maintained"
+    },
+    {
+      "id": "quickmenureborn",
+      "name": "QuickMenuReborn",
+      "version": "2.5",
+      "author": "Ibrahim778",
+      "category": "shell-framework",
+      "kind": "shell-plugin-framework",
+      "status": "dependency",
+      "firmware": {
+        "declared": [],
+        "tested": [],
+        "target_tested": false
+      },
+      "components": [
+        "QuickMenuReborn.suprx and framework assets"
+      ],
+      "dependencies": [],
+      "conflicts": [
+        "other Quick Menu replacement frameworks"
+      ],
+      "features": [
+        "extension framework used by selected Quick Menu plugins"
+      ],
+      "target_notes": "Required by FTP for Vita and Caffeine for Vita standalone installs. Their VPK installers may bundle it; the installer must detect an existing installation and avoid overwriting user modifications.",
+      "adapter": null,
+      "source": "https://github.com/Ibrahim778/QuickMenuReborn",
+      "release": "https://github.com/Ibrahim778/QuickMenuReborn",
+      "release_date": "2.5 referenced by dependent plugin installers"
     }
   ],
   "provenance": {
