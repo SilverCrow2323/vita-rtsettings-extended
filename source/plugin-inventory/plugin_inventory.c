@@ -31,7 +31,7 @@ static void identify(rt_pi_entry *e){const char *base=strrchr(e->path,'/');char 
 #undef MATCH
 }
 void rt_pi_inventory_init(rt_pi_inventory *v){if(v)memset(v,0,sizeof(*v));}
-static int section_line(const char *s,char *section,size_t cap){size_t n=strlen(s);if(n<3||s[0]!='['||s[n-1]!=']')return (s[0]=='['|| (n&&s[n-1]==']'))?-1:0;{char tmp[RT_PI_SECTION_MAX+1];if(n-2>=sizeof(tmp)||n-2>=cap)return -1;memcpy(tmp,s+1,n-2);tmp[n-2]='\0';trim(tmp);if(!tmp[0])return -1;return copy(section,cap,tmp)?1:-1;}}
+static int section_line(const char *s,char *section,size_t cap){size_t n=strlen(s);if(s[0]=='*'){if(n<2||n>=cap)return -1;return copy(section,cap,s)?1:-1;}if(s[0]=='['||(n&&s[n-1]==']'))return -1;return 0;}
 int rt_pi_parse(const char *text,size_t length,rt_pi_inventory *out){
  size_t pos=0;unsigned int line=0;char section[RT_PI_SECTION_MAX+1]="";
  if(!text||!out)return RT_PI_INVALID;rt_pi_inventory_init(out);
