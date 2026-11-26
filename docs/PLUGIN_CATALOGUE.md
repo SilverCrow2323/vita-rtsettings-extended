@@ -3,7 +3,7 @@
 **Snapshot:** 26 November 2026  
 **Target profile:** PS Vita 1000 OLED · firmware 3.65 · Ensō · YAMT + SD2Vita
 
-This is the first normalized, machine-readable shortlist—not a dump of every plugin ever published. Five high-priority release packages now include upstream asset URLs and SHA-256 digests, copied from GitHub release metadata. It records selected upstream projects, release versions, firmware evidence, dependencies, conflicts, target-specific caveats and future adapter IDs.
+This is the curated, machine-readable shortlist—not a dump of every plugin ever published. It now includes boot presentation candidates and distinguishes verified upstream facts from target-tested status. Five high-priority release packages now include upstream asset URLs and SHA-256 digests, copied from GitHub release metadata. It records selected upstream projects, release versions, firmware evidence, dependencies, conflicts, target-specific caveats and future adapter IDs.
 
 - Machine-readable data: [`data/plugin-catalogue.json`](../data/plugin-catalogue.json)
 - Validation schema: [`schemas/plugin-catalogue.schema.json`](../schemas/plugin-catalogue.schema.json)
@@ -41,6 +41,12 @@ This is the first normalized, machine-readable shortlist—not a dump of every p
 | YAMT | Existing installation | Storage | Preserve as baseline | Target setup already uses YAMT; detect exact installed build |
 | StorageMgr | 2.0 | Storage | Alternative | Never install alongside YAMT |
 | QuickMenuReborn | 2.5 | Shell framework | Dependency | Required by selected Quick Menu add-ons; detect before installation |
+
+| CBS-Manager | untagged source | Boot presentation | Conditional; preferred combined candidate | Upstream supports splash/animation/console info and a Settings Boot Screen page; 3.65-update365 caveat; no tagged release verified |
+| vita-bootanim | 1.1 | Boot animation | Conditional alternative | Community docs report testing on 3.65 / Ensō 3.60–3.73; physical target test pending |
+| Custom Boot Splash | 1.0 | Boot splash | Alternative | Static image only; original Sony logo remains visible; boot_config integration |
+| Vita-BootSound | 1.0 | Boot audio | Conditional | WAV 1 MiB / 48 kHz / stereo limit; possible System Music issue above 3.60 |
+| Custom Warning | source release | Startup warning | Conditional | UTF-16LE text file with FF FE BOM documented upstream; target test pending |
 
 ## Important target-specific decisions
 
@@ -86,6 +92,6 @@ Every record has a stable ID and can later be enriched with:
 - adapter ID and supported settings schema;
 - last verification timestamp and maintainer activity.
 
-The installer must resolve dependencies, inspect existing files/configuration, stage files, verify SHA-256 hashes, commit config changes atomically, write a transaction journal and support rollback. The current JSON stores hashes for Wi-Fi Turbo, vitastream, Turbo Storage, Bluetooth Turbo and VitaBrightEX. Missing digests must be calculated and verified before an installer can accept those packages. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
+The installer must resolve dependencies, inspect existing files/configuration, stage files, verify SHA-256 hashes, commit config changes atomically, write a transaction journal and support rollback. The current JSON stores hashes for Wi-Fi Turbo, vitastream, Turbo Storage, Bluetooth Turbo and VitaBrightEX. Five additional boot presentation candidates are recorded without fabricated artifact hashes until their release binaries are downloaded and verified. Missing digests must be calculated and verified before an installer can accept those packages. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
 
 **Review state:** candidate data only. No plugin binaries have been downloaded or installed by this milestone, and no physical Vita test is claimed.
