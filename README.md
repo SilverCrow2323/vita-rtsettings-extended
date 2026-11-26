@@ -18,6 +18,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Preferences and menu customization](#preferences-and-menu-customization)
 - [Preferences registry implementation](#preferences-registry-implementation)
 - [User-facing Settings metadata](#user-facing-settings-metadata)
+- [Settings screen and renderer adapter](#settings-screen-and-renderer-adapter)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -167,11 +168,17 @@ Sony-owned entries may be hidden, moved or reordered only when the firmware inte
 
 Hiding a menu item must never uninstall its module, disable its plugin, stop a service, change a system setting or delete user data. Showing a hidden item must not silently enable it. Preferences controls presentation only; operational settings remain owned by their respective modules.
 
-The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The host-testable registry, named Layout Profiles core and Preferences navigation/presentation model are implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md), [Layout Profiles](docs/LAYOUT_PROFILES.md) and [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md). The native renderer and Vita-specific persistence adapter remain pending.
+The menu registry should store stable entry identifiers rather than relying on translated display labels or list positions. Unknown or removed identifiers should be ignored safely, and invalid layouts should fall back to a valid default. Layout changes should be validated and committed atomically so an interrupted write cannot leave Settings with an unusable menu. The host-testable registry, named Layout Profiles core, Preferences navigation model and renderer-neutral Settings screen adapter are implemented; see [Preferences Registry](docs/PREFERENCES_REGISTRY.md), [Layout Profiles](docs/LAYOUT_PROFILES.md), [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md) and [Settings Screen Adapter](settings-ui/SETTINGS_SCREEN_ADAPTER.md). The Vita-native renderer, verified Sony Settings integration and Vita-specific persistence adapter remain pending.
 
 ## User-facing Settings metadata
 
 A separate metadata catalogue now maps stable menu IDs to user-facing titles, descriptions, semantic icon keys, owning modules and presentation flags. It copies bounded strings, rejects duplicate IDs and invalid category references, and never creates or changes operational settings by itself. See [Settings UI Metadata Catalogue](settings-ui/metadata/README.md).
+
+## Settings screen and renderer adapter
+
+The Preferences navigation model and metadata catalogue now produce a complete renderer-neutral page snapshot: page title and description, visible ordered rows, user-facing labels, descriptions, semantic icon keys, presentation flags and selected-row state. A small renderer contract exposes page lifecycle, row drawing and footer callbacks so a future Vita backend can implement the Sony-style presentation without coupling the portable core to unverified proprietary APIs.
+
+This is an integration boundary, not a claim that the Vita-native Settings renderer already exists. The adapter is host-testable through a fake renderer; physical Settings integration remains a separate milestone. See [Settings Screen Adapter](settings-ui/SETTINGS_SCREEN_ADAPTER.md).
 
 ## Curated Vita plugin catalogue
 
