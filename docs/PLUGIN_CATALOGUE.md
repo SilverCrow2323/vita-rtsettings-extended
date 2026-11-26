@@ -48,12 +48,6 @@ This is the curated, machine-readable shortlist—not a dump of every plugin eve
 | Vita-BootSound | 1.0 | Boot audio | Conditional | WAV 1 MiB / 48 kHz / stereo limit; possible System Music issue above 3.60 |
 | Custom Warning | source release | Startup warning | Conditional | UTF-16LE text file with FF FE BOM documented upstream; target test pending |
 
-| CBS-Manager | untagged source | Boot presentation | Conditional; preferred combined candidate | Upstream supports splash/animation/console info and a Settings Boot Screen page; 3.65-update365 caveat; no tagged release verified |
-| vita-bootanim | 1.1 | Boot animation | Conditional alternative | Community docs report testing on 3.65 / Ensō 3.60–3.73; physical target test pending |
-| Custom Boot Splash | 1.0 | Boot splash | Alternative | Static image only; original Sony logo remains visible; boot_config integration |
-| Vita-BootSound | 1.0 | Boot audio | Conditional | WAV 1 MiB / 48 kHz / stereo limit; possible System Music issue above 3.60 |
-| Custom Warning | source release | Startup warning | Conditional | UTF-16LE text file with FF FE BOM documented upstream; target test pending |
-
 ## Important target-specific decisions
 
 ### Connectivity
