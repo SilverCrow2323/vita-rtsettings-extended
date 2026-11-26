@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tai Saver settings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Create an automatic snapshot during boot."
+    },
+    "automatic_retention": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 1000,
+      "default": 3,
+      "description": "Maximum number of Automatic snapshots. Does not apply to Known-Good or Failed archives."
+    },
+    "verify_after_copy": {
+      "type": "boolean",
+      "default": true
+    },
+    "create_pre_restore_snapshot": {
+      "const": true,
+      "default": true,
+      "description": "A safety snapshot is mandatory before restore."
+    },
+    "storage_root": {
+      "type": "string",
+      "default": "ur0:data/RtSettingsExtended/TaiSaver/"
+    }
+  },
+  "required": [
+    "enabled",
+    "automatic_retention",
+    "verify_after_copy",
+    "create_pre_restore_snapshot",
+    "storage_root"
+  ]
+}
