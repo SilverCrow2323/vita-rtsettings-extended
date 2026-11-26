@@ -47,7 +47,11 @@ This is not intended to be another standalone homebrew launcher or a small colle
 
 ## Localization and language support
 
-All user-facing interface text is being moved to stable translation keys. The new bounded C99 localization registry supports module-owned translations, duplicate detection, locale-specific lookup, primary-language fallback, configured fallback locale and safe removal of a module's strings. English (`en-US`) is the source/fallback language; Italian (`it-IT`) is the first additional target. The current registry is host-tested. Vita system-language detection, language settings UI, resource-pack loading and automated coverage checks remain integration work. See [Localization architecture](settings-ui/LOCALIZATION.md).
+All user-facing interface text is being moved to stable translation keys. The new bounded C99 localization registry supports module-owned translations, duplicate detection, locale-specific lookup, primary-language fallback, exact configured fallback locale and safe removal of a module's strings. English (`en-US`) is the source/fallback language; Italian (`it-IT`) is the first additional target. The current registry is host-tested. Vita system-language detection, language settings UI, resource-pack loading and automated coverage checks remain integration work. See [Localization architecture](settings-ui/LOCALIZATION.md).
+
+## Plugin Intelligence and compatibility rules
+
+The compatibility evaluator now supports a bounded, caller-owned rule registry. Verified adapters can register missing-dependency and conflict rules without changing the evaluator's central source. Rules produce read-only blocking/review findings; they never modify taiHEN configuration or automatically disable plugins. Conflict duplicates are detected symmetrically, dependency rules fail closed, and unknown plugins remain inventory-only. See [Plugin Compatibility Rule Registry](settings-ui/PLUGIN_COMPATIBILITY_RULES.md) and [Rt Plugin Strategy](docs/PLUGIN_STRATEGY.md).
 
 ## The overall vision
 
