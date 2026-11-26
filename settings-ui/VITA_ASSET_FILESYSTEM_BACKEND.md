@@ -10,6 +10,8 @@ The first VitaSDK-specific filesystem bridge is now present:
 - Bootstrap of the Rt-owned `ur0:data/rt/assets` directory, accepting an existing directory but rejecting a non-directory at any level.
 - A conservative file-existence probe that never interprets an arbitrary I/O error as proof that a path is absent.
 
+A host-side mocked VitaSDK harness compiles the Vita-only source against minimal API stubs and exercises its path/read/directory/error behavior. This is a regression harness, not a substitute for the real VitaSDK cross-build.
+
 The bridge is intentionally read-only at this stage. It does not import, overwrite, rename, delete, activate, or persist manifests. Those operations remain behind the portable file-backend contract until their no-clobber and recovery semantics are implemented and tested.
 
 ## VitaSDK API basis
