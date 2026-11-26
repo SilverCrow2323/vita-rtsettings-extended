@@ -20,7 +20,8 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [User-facing Settings metadata](#user-facing-settings-metadata)
 - [Settings screen and renderer adapter](#settings-screen-and-renderer-adapter)
 - [Layout Profile Manager](#layout-profile-manager)
-- [Safe module controls](#safe-module-controls)\n- [Connectivity service lifecycle](#connectivity-service-lifecycle)
+- [Safe module controls](#safe-module-controls)
+- [Connectivity service lifecycle](#connectivity-service-lifecycle)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -534,7 +535,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Preferences registry (visibility, ordering, category moves, persistence) | Implemented; host-tested |
 | Named layout profile core (create, update, apply, rename, delete, persistence) | Implemented; host-tested |
 | Preferences navigation/presentation model (tree, visibility, ordering, profile application) | Implemented; host-tested |
-| User-facing Settings metadata catalogue | Implemented; host-tested |\n| Native Preferences renderer, profile picker and Sony menu integration | Pending |
+| User-facing Settings metadata catalogue | Implemented; host-tested |
+| Native Preferences renderer, profile picker and Sony menu integration | Pending |
 | System Tools application registry and launch shortcuts | Project target; implementation pending |
 | Native Sony menu injection / extension points | Research and compatibility work pending |
 | Plugin Control Centre and adapter contract | Project target; implementation pending |
@@ -573,7 +575,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
 - [Preferences Registry](docs/PREFERENCES_REGISTRY.md)
-- [Layout Profiles](docs/LAYOUT_PROFILES.md)\n- [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
+- [Layout Profiles](docs/LAYOUT_PROFILES.md)
+- [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
 - [Settings UI Metadata Catalogue](settings-ui/metadata/README.md)
 - [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
 - [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
