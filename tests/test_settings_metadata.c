@@ -16,5 +16,13 @@ int main(void){
  d.category_id="connectivity";d.title="";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_INVALID_TEXT);
  d.title="FTP Server";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_OK);
  assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
+ rtp_preferences_init(&p);rtp_metadata_init(&c);
+ assert(rtp_metadata_register_appearance(&c,&p)==RTP_META_OK);
+ assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
+ e=rtp_metadata_find(&c,"custom-assets-manager");assert(e&&strcmp(e->title,"Custom Assets Manager")==0);
+ assert((e->flags&RTP_META_FLAG_REQUIRES_BACKEND)!=0);
+ e=rtp_metadata_find(&c,"boot-animation");assert(e&&(e->flags&RTP_META_FLAG_REQUIRES_REBOOT)!=0);
+ e=rtp_metadata_find(&c,"quick-menu-widgets");assert(e&&strcmp(e->module_id,"quick-menu")==0);
+ assert(rtp_preferences_find(&p,"appearance-customization")!=NULL);
  puts("Settings metadata tests passed.");return 0;
 }
