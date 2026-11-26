@@ -24,6 +24,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Connectivity service lifecycle](#connectivity-service-lifecycle)
 - [Plugin Control Centre model](#plugin-control-centre-model)
 - [Storage & Devices snapshot model](#storage--devices-snapshot-model)
+- [Vita filesystem bridge for Custom Assets](#vita-filesystem-bridge-for-custom-assets)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -202,6 +203,12 @@ Module adapters can declare only controls they genuinely support: toggles, finit
 ## Storage & Devices snapshot model
 
 The first Storage & Devices core now converts platform-reported observations into a bounded, renderer-neutral snapshot: SD2Vita, Sony Memory Card, internal and USB device kinds; mount state; mount point; total/free capacity; read-only state; free-space percentage; and duplicate mount-point warnings. Invalid capacity data and duplicate stable IDs are rejected. The model never probes, mounts, formats or changes storage itself. The Vita device-enumeration adapter and YAMT mapping detection remain pending. See [Storage & Devices model](settings-ui/STORAGE_DEVICES.md).
+
+## Vita filesystem bridge for Custom Assets
+
+The Custom Assets Manager now has its first VitaSDK-specific filesystem bridge. It provides bounded offset-based reads that plug directly into the portable SHA-256 reader, rejects unsafe Vita paths, bootstraps only the Rt-owned `ur0:data/rt/assets` directory and checks existing directory types. The Vita build recipe now includes this bridge and the Custom Warning adapter object.
+
+This is deliberately a read-only first slice: no staged writes, rename/overwrite, deletion, activation or persistent manifest is claimed. A failed stat is treated as “not confirmed” rather than assumed missing. The bridge is based on documented user-mode VitaSDK file APIs and still needs an actual VitaSDK cross-build and physical-console validation. See [Vita Asset Filesystem Bridge](settings-ui/VITA_ASSET_FILESYSTEM_BACKEND.md).
 
 ## Plugin Control Centre model
 
@@ -579,6 +586,7 @@ Other models, firmwares and storage configurations require independent testing. 
 ├── settings-ui/             # Settings page specifications and UI model
 ├── source/
 │   ├── tai-saver/           # Snapshot engine and SHA-256
+│   └── custom-assets/       # Custom Assets Manager and Vita filesystem bridge
 │   ├── boot-monitor/        # Persistent boot lifecycle journal
 │   ├── preferences/         # Stable-ID menu registry and persistence
 │   └── layout-profiles/     # Named menu layout profiles
@@ -622,7 +630,8 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Boot Sound controls | Research/specification; implementation pending |
 | Custom Warning UTF-16LE adapter (read, validate, write, verify, rollback) | Implemented; host regression coverage added; Vita plugin/filesystem integration pending |
 | Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host regression and sanitizer coverage added |
-| Custom Assets Manager staged import, SHA-256 verification and atomic export API | Implemented; host-tested; Vita filesystem backend and manifest persistence pending |
+| Custom Assets Manager staged import, SHA-256 verification and atomic export API | Implemented; host-tested; Vita write backend and manifest persistence pending |
+| Vita Custom Assets filesystem bridge (bounded reads, path checks, owned directory bootstrap) | Implemented in Vita target source; cross-build and device validation pending |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
 | Interface Customization | Project target; implementation pending |
 | USB persistent connection service | Lifecycle core exists; Vita backend/UI pending |
@@ -677,6 +686,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
 - [Custom Assets Manager Core](settings-ui/CUSTOM_ASSETS_MANAGER.md)
+- [Vita Asset Filesystem Bridge](settings-ui/VITA_ASSET_FILESYSTEM_BACKEND.md)
 - [Appearance Asset Manifest Schema](schemas/appearance-assets.schema.json)
 - [Managed Appearance Asset Catalogue](data/appearance-assets.json)
 - [Tai Saver Core](docs/TAI_SAVER_CORE.md)
