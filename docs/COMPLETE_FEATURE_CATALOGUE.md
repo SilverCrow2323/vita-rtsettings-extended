@@ -51,7 +51,7 @@ The UI must not expose raw plugin filenames as the primary user experience. It s
 - Validate before activation; the host-tested core rejects unsafe paths, traversal, invalid formats, unsupported sizes and unverified activation.
 - Detect duplicate and orphaned assets.
 - Delete only assets owned by Rt or explicitly selected by the user; never clean up unknown third-party files automatically.
-- Export/import asset bundles with manifests and checksums (**platform file-copy/hash adapter pending**).
+- **Implemented portable import/export:** staged import, streaming SHA-256, optional expected-hash comparison, metadata validation, atomic commit, destination read-back verification and verified atomic export. Vita filesystem callbacks and persistent manifest storage remain pending.
 - Transactional activation through a backend contract: verify the new active state and restore the previous asset or engine default on failure.
 
 ## Quick Menu
