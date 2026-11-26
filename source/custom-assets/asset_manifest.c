@@ -33,7 +33,6 @@ static uint64_t get_u64(const unsigned char *p) {
     for (i = 0; i < 8; ++i) v |= (uint64_t)p[i] << (i * 8);
     return v;
 }
-static int terminated(const char *value, size_t capacity) {\n    return value && memchr(value, '\\0', capacity) != NULL;\n}\nstatic int write_bytes(unsigned char *out, size_t cap, size_t *pos,
                        const void *data, size_t length) {
     if (*pos > cap || length > cap - *pos) return 0;
     if (length) memcpy(out + *pos, data, length);
