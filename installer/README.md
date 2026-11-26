@@ -47,3 +47,17 @@ Each module declares a stable ID, version, framework requirement, dependencies, 
 ## Implementation status
 
 This directory defines the expandable package contract and the first Tai Saver descriptor. It is not yet a compiled Vita installer VPK. The on-device installer UI, transaction engine, VitaSDK build and hardware validation remain separate implementation gates.
+
+
+## Host-side manifest validator and dependency planner
+
+The package example can be validated without installing anything:
+
+```sh
+python3 tools/validate_package.py
+python3 tools/validate_package.py --select tai-saver
+```
+
+The validator checks package identity and semantic versions, firmware-version syntax, module manifest identity, declared file ownership, safe relative paths, settings-schema existence, user-data path boundaries, data-preservation policy, dependency versions, conflicts and dependency cycles. It emits a deterministic install plan with dependency-first module order.
+
+The validator is a host-side planning tool. It does not write to a Vita, install payloads, replace files or provide rollback. Those responsibilities belong to the next transaction-engine milestone.

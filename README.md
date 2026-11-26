@@ -317,7 +317,9 @@ The service manager must coordinate shared resources and known conflicts. It mus
 
 **One installer. Install one section at a time—or install everything available.**
 
-The framework is shared; each Settings section is a separate module. The installer will offer:
+The framework is shared; each Settings section is a separate module. The installer package contract, JSON schemas and host-side validator/dependency planner are in place. Run `python3 installer/tools/validate_package.py` to validate the example package and print the resolved module order; use repeated `--select MODULE_ID` arguments to preview a selected installation. The current tool validates and plans only: it does not copy files to a Vita or claim that a transactional installer exists.
+
+The installer will offer:
 
 1. **Install Selected** — choose individual modules.
 2. **Install All** — select every compatible module included in the package.
@@ -456,7 +458,7 @@ The repository layout will expand as the service manager, plugin adapters, Setti
 
 ## Build and tests
 
-The current host-side C core can be built and tested with:
+The current host-side C core and installer manifest planner can be built and tested with:
 
 ```sh
 make
@@ -476,7 +478,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Snapshot verification, comparison and archive retention | Implemented; host-tested |
 | Guarded restore with Pre-Restore safety snapshot | Implemented; host-tested |
 | Boot lifecycle journal | Implemented; host-tested |
-| Expandable installer and module architecture | Specified |
+| Expandable installer and module architecture | Specified; host-side manifest validation and dependency planning implemented |
 | Preferences registry (visibility, ordering, category moves, persistence) | Implemented; host-tested |
 | Preferences native UI, named profiles and Sony menu integration | Pending |
 | System Tools application registry and launch shortcuts | Project target; implementation pending |
@@ -487,7 +489,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | USB streaming integration | Project target; backend compatibility work pending |
 | Storage, system, display, audio and power sections | Project target; implementation pending |
 | Staging recovery | Specified; implementation pending |
-| Installer transaction engine and VPK UI | Pending |
+| Installer transaction engine and VPK UI | Manifest validator/planner host prototype implemented; reversible file transactions and Vita UI pending |
 | VitaSDK cross-build validation | Pending |
 | Native Settings category and pages | Pending |
 | Vita startup/service integration | Pending |
