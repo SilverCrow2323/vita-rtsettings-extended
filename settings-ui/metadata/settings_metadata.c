@@ -26,3 +26,38 @@ int rtp_metadata_validate(const rtp_metadata_catalogue *c,const rtp_preferences 
   for(j=i+1;j<c->count;++j)if(strcmp(e->entry_id,c->entries[j].entry_id)==0)return RTP_META_DUPLICATE_ID;
  }return RTP_META_OK;
 }
+
+typedef struct {
+ const char *id,*title,*description,*category,*icon,*module;
+ unsigned int flags;
+} appearance_default;
+int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences){
+ static const appearance_default entries[]={
+  {"appearance-customization","Appearance & Customization","Customize startup presentation, supported interface elements and managed assets.","","palette","appearance",RTP_META_FLAG_NONE},
+  {"boot-animation","Boot Animation","Choose and manage a compatible animated startup sequence.","appearance-customization","film","appearance",RTP_META_FLAG_REQUIRES_BACKEND|RTP_META_FLAG_REQUIRES_REBOOT},
+  {"boot-splash","Boot Splash","Choose a compatible startup image and restore the original splash.","appearance-customization","image","appearance",RTP_META_FLAG_REQUIRES_BACKEND|RTP_META_FLAG_REQUIRES_REBOOT},
+  {"boot-sound","Boot Sound","Select a supported startup sound and check playback requirements.","appearance-customization","volume-2","appearance",RTP_META_FLAG_REQUIRES_BACKEND|RTP_META_FLAG_REQUIRES_REBOOT},
+  {"startup-warning","Startup Warning","Manage supported startup warning messages and presets.","appearance-customization","message-square-warning","appearance",RTP_META_FLAG_REQUIRES_BACKEND|RTP_META_FLAG_REQUIRES_REBOOT},
+  {"interface-customization","Interface Customization","Configure supported shell appearance and visual options.","appearance-customization","sliders-horizontal","appearance",RTP_META_FLAG_REQUIRES_BACKEND},
+  {"custom-assets-manager","Custom Assets Manager","Import, validate, organize and restore supported startup assets.","appearance-customization","images","appearance",RTP_META_FLAG_REQUIRES_BACKEND},
+  {"quick-menu","Quick Menu","Review the installed Quick Menu framework and supported extensions.","appearance-customization","layout-dashboard","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND},
+  {"quick-menu-widgets","Quick Menu Widgets","Manage compatible widgets and their supported options.","quick-menu","grid-2x2","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND},
+  {"quick-menu-shortcuts","Quick Menu Shortcuts","Configure supported Quick Menu shortcuts and launch actions.","quick-menu","keyboard","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND}
+ };
+ size_t i;
+ if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;
+ for(i=0;i<sizeof(entries)/sizeof(entries[0]);++i){
+  const appearance_default *e=&entries[i];
+  if(rtp_preferences_register(preferences,e->id,
+      (i==0||i==7)?"":e->category,
+      (i==0||i==7)?RTP_ENTRY_CATEGORY:RTP_ENTRY_SETTING,1,
+      (unsigned int)(20+i))!=RTP_PREFS_OK)return RTP_META_INVALID_ARGUMENT;
+  {
+   rtp_metadata_descriptor d;
+   memset(&d,0,sizeof(d));d.entry_id=e->id;d.title=e->title;d.description=e->description;
+   d.category_id=(i==0||i==7)?"":e->category;d.icon_key=e->icon;d.module_id=e->module;d.flags=e->flags;
+   if(rtp_metadata_register(catalogue,preferences,&d)!=RTP_META_OK)return RTP_META_INVALID_ARGUMENT;
+  }
+ }
+ return RTP_META_OK;
+}
