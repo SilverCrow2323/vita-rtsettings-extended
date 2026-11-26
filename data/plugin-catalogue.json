@@ -740,11 +740,216 @@
       "features": [
         "extension framework used by selected Quick Menu plugins"
       ],
-      "target_notes": "Required by FTP for Vita and Caffeine for Vita standalone installs. Their VPK installers may bundle it; the installer must detect an existing installation and avoid overwriting user modifications.",
+      "target_notes": "Required by FTP for Vita and Caffeine for Vita standalone installs. Their VPK installers may bundle it; the installer must detect an existing installation and avoid overwriting user modifications. Latest GitHub release endpoint returned V2.5 published 2022-05-16; framework is stable but not recently released, so validate add-on ABI and do not assume an active settings API.",
       "adapter": null,
       "source": "https://github.com/Ibrahim778/QuickMenuReborn",
       "release": "https://github.com/Ibrahim778/QuickMenuReborn",
       "release_date": "2.5 referenced by dependent plugin installers"
+    },
+    {
+      "id": "cbs-manager",
+      "name": "CBS-Manager",
+      "version": "upstream source; no tagged release verified",
+      "author": "Yoti",
+      "category": "boot-presentation",
+      "kind": "enso-boot-manager-and-settings-extension",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.65"
+        ],
+        "tested": [],
+        "offline_validated": [],
+        "reported": [],
+        "target_tested": false
+      },
+      "components": [
+        "CBSM boot integration",
+        "Boot Screen entry in Settings > Theme & Background",
+        "boot_splash.img",
+        "boot_animation.img",
+        "lboot_animation.img"
+      ],
+      "dependencies": [
+        "Ensō"
+      ],
+      "conflicts": [
+        "Custom Boot Splash",
+        "vita-bootanim",
+        "other boot splash/animation hooks"
+      ],
+      "features": [
+        "static boot splash",
+        "boot animation",
+        "console information animation",
+        "Settings-integrated Boot Screen page"
+      ],
+      "target_notes": "Upstream README describes integration into Ensō boot_config and taiHEN config. Original Sony boot logo remains visible. 3.65-update365 has a boot_config caveat. No tagged GitHub release was returned; inspect source/build provenance and back up both boot_config and taiHEN config before any adapter can install or modify it.",
+      "adapter": "appearance.cbs_manager",
+      "source": "https://github.com/Yoti/CBS-Manager",
+      "release": "https://github.com/Yoti/CBS-Manager",
+      "release_date": "untagged-source"
+    },
+    {
+      "id": "vita-bootanim",
+      "name": "vita-bootanim",
+      "version": "1.1",
+      "author": "SKGleba",
+      "category": "boot-presentation",
+      "kind": "enso-boot-animation-plugin-and-converter",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.73"
+        ],
+        "tested": [
+          "3.65"
+        ],
+        "offline_validated": [],
+        "reported": [],
+        "target_tested": false
+      },
+      "components": [
+        "bootanimations plugin",
+        "boot.rcf",
+        "mkanim converter"
+      ],
+      "dependencies": [
+        "Ensō"
+      ],
+      "conflicts": [
+        "CBS-Manager",
+        "Custom Boot Splash",
+        "other boot animation engines"
+      ],
+      "features": [
+        "custom boot animation",
+        "RCF conversion pipeline",
+        "L-trigger skip for faulty animations",
+        "dual-buffering option"
+      ],
+      "target_notes": "Community release notes report v1.1, test on 3.65 and Ensō support 3.60–3.73. Maximum animation size is 108 MiB. Treat the 3.65 claim as community-reported until target testing; do not install alongside CBSM or another boot animation hook.",
+      "adapter": "appearance.vita_bootanim",
+      "source": "https://github.com/SKGleba/VitaTools",
+      "release": "https://www.rinnegatamante.eu/vitadb/#/info/706",
+      "release_date": "2021-06-21"
+    },
+    {
+      "id": "custom-boot-splash",
+      "name": "Custom Boot Splash",
+      "version": "1.0",
+      "author": "Princess of Sleeping",
+      "category": "boot-presentation",
+      "kind": "enso-boot-splash-plugin",
+      "status": "alternative",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.65"
+        ],
+        "tested": [],
+        "offline_validated": [],
+        "reported": [],
+        "target_tested": false
+      },
+      "components": [
+        "custom_boot_splash.skprx",
+        "converted boot splash image"
+      ],
+      "dependencies": [
+        "Ensō"
+      ],
+      "conflicts": [
+        "CBS-Manager",
+        "vita-bootanim",
+        "other boot splash hooks"
+      ],
+      "features": [
+        "static custom boot splash"
+      ],
+      "target_notes": "Static image only. Original Sony boot logo cannot be hidden. Requires boot_config insertion and a converted image. Prefer CBS-Manager if its combined image/animation integration passes target validation; never stack boot hooks.",
+      "adapter": "appearance.custom_boot_splash",
+      "source": "https://github.com/Mag-Aegis/VitaSplashDrop",
+      "release": "https://github.com/Mag-Aegis/VitaSplashDrop",
+      "release_date": "source-review-2026-11-26"
+    },
+    {
+      "id": "vita-bootsound",
+      "name": "Vita-BootSound",
+      "version": "1.0",
+      "author": "teakhanirons",
+      "category": "boot-presentation",
+      "kind": "enso-boot-audio-plugin",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60"
+        ],
+        "tested": [],
+        "offline_validated": [],
+        "reported": [],
+        "target_tested": false
+      },
+      "components": [
+        "bootsound.suprx",
+        "bootsound.wav"
+      ],
+      "dependencies": [
+        "Ensō"
+      ],
+      "conflicts": [
+        "System Music audio hook on firmware above 3.60 (reported)",
+        "other boot audio hooks"
+      ],
+      "features": [
+        "custom WAV boot jingle"
+      ],
+      "target_notes": "Latest tagged release found is 1.0 (2018). WAV only; 1 MiB maximum, sample rate up to 48 kHz and at most two channels. Upstream documentation reports possible System Music audio-hook issues above 3.60. Do not recommend or activate by default on firmware 3.65 without physical audio regression testing.",
+      "adapter": "appearance.vita_bootsound",
+      "source": "https://github.com/teakhanirons/Vita-BootSound",
+      "release": "https://github.com/teakhanirons/Vita-BootSound/releases/tag/1.0",
+      "release_date": "2018-06-06"
+    },
+    {
+      "id": "custom-warning",
+      "name": "Custom Warning",
+      "version": "VitaTweaks CustomWarning release; exact binary version pending",
+      "author": "TheOfficialFloW",
+      "category": "boot-presentation",
+      "kind": "enso-startup-warning-plugin",
+      "status": "conditional",
+      "firmware": {
+        "declared": [
+          "3.60",
+          "3.65"
+        ],
+        "tested": [],
+        "offline_validated": [],
+        "reported": [],
+        "target_tested": false
+      },
+      "components": [
+        "custom_warning.suprx",
+        "custom_warning.txt"
+      ],
+      "dependencies": [
+        "Ensō"
+      ],
+      "conflicts": [
+        "other Ensō warning replacements"
+      ],
+      "features": [
+        "replace Ensō startup epilepsy warning",
+        "custom UTF-16LE warning text",
+        "empty BOM-only warning"
+      ],
+      "target_notes": "Upstream README documents ux0:tai/custom_warning.txt encoded as UTF-16LE with FF FE BOM. Text editing is feasible through a dedicated validated adapter. Verify exact release artifact, active tai config location and 3.65 behavior before writing. Preserve original warning and file.",
+      "adapter": "appearance.custom_warning",
+      "source": "https://github.com/TheOfficialFloW/VitaTweaks",
+      "release": "https://github.com/TheOfficialFloW/VitaTweaks/releases/tag/CustomWarning",
+      "release_date": "source-review-2026-11-26"
     }
   ],
   "provenance": {
@@ -757,6 +962,7 @@
       "https://www.psx-place.com/resources/categories/plugins.11/"
     ],
     "binary_hash_policy": "SHA-256 values copied from GitHub release asset digests. Missing digests must be calculated from the downloaded asset before installation.",
-    "verification_rule": "No plugin is target-verified until installed and tested on the PCH-1000 OLED running firmware 3.65 with current YAMT and SD2Vita."
+    "verification_rule": "No plugin is target-verified until installed and tested on the PCH-1000 OLED running firmware 3.65 with current YAMT and SD2Vita.",
+    "appearance_research": "CBS-Manager and VitaTweaks facts verified against upstream README; release endpoints checked 2026-11-26. vita-bootanim and Custom Boot Splash firmware/version facts are community-reported and require upstream artifact review."
   }
 }
