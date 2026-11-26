@@ -1,4 +1,5 @@
 #include "preferences.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +56,7 @@ static int parse_uint(const char *s,unsigned int *v){
  const char *p;char *end;unsigned long n;
  if(!s||!s[0]||!v)return 0;
  for(p=s;*p;++p)if(*p<'0'||*p>'9')return 0;
- n=strtoul(s,&end,10);if(*end||n>0xffffffffUL)return 0;
+ errno=0;n=strtoul(s,&end,10);if(errno==ERANGE||*end||n>0xffffffffUL)return 0;
  *v=(unsigned int)n;return 1;
 }
 int rtp_preferences_load(rtp_preferences *p,const char *path){

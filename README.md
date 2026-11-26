@@ -444,7 +444,8 @@ Other models, firmwares and storage configurations require independent testing. 
 ├── settings-ui/             # Settings page specifications
 ├── source/
 │   ├── tai-saver/           # Snapshot engine and SHA-256
-│   └── boot-monitor/         # Persistent boot lifecycle journal
+│   ├── boot-monitor/        # Persistent boot lifecycle journal
+│   └── preferences/         # Stable-ID menu registry and persistence
 ├── tai-saver/               # Feature specifications and schemas
 ├── tests/                   # Host-side regression tests
 ├── Makefile                 # Host build and tests

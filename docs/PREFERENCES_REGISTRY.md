@@ -12,6 +12,7 @@ This milestone implements the platform-independent registry and persistence core
 - Reset one entry or the full registry to registered defaults.
 - Save and load a versioned preferences file.
 - Load transactionally: malformed input leaves the caller's existing registry untouched.
+- Merge saved overrides into the current module catalogue, preserving defaults for reset and safely ignoring stale IDs.
 - Save through a sibling temporary file and rename so a failed write does not replace the previous preferences file.
 
 ## Data ownership and safety
@@ -29,7 +30,7 @@ vita-shell<TAB>system-tools<TAB>3<TAB>1<TAB>10
 ```
 Fields are stable ID, parent ID, entry kind, visible flag and order. The format is versioned; incompatible or malformed data is rejected instead of partially applied.
 
-Default values are supplied by the registered module catalogue at runtime. Persisted visibility/order values override defaults for known IDs. A later UI integration milestone will merge persisted choices with the installed module catalogue, ignoring removed IDs and assigning defaults to new entries.
+Default values are supplied by the registered module catalogue at runtime. Loading merges persisted overrides into the already registered catalogue: known IDs receive their saved visibility/order/parent; removed or unknown IDs are ignored; newly registered entries retain their current defaults. The default values remain intact, so Reset restores the module-declared defaults even after a load. An invalid parent override is ignored in favor of the current registered parent. A cycle or structurally invalid registry rejects the entire load without changing the caller's state.
 
 ## Build and tests
 Run `make test` and `make sanitize`. Host tests cover visibility/reset, ordering, parent movement, cycle rejection, duplicate/invalid IDs, save/load and transactional rejection of malformed files.
