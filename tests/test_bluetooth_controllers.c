@@ -29,7 +29,7 @@ int main(void){
  assert(snap.controllers[2].category_source==RTP_BT_CATEGORY_SOURCE_CLASS_OF_DEVICE);
  assert(rtp_bt_set_device_category(&snap,"phone",RTP_BT_CATEGORY_TABLET)==RTP_BT_OK);
  assert(snap.controllers[3].category==RTP_BT_CATEGORY_TABLET&&snap.controllers[3].category_source==RTP_BT_CATEGORY_SOURCE_USER);
- assert(strcmp(rtp_bt_device_category_name(snap.controllers[3].category),"phone")==0);
+ assert(strcmp(rtp_bt_device_category_name(snap.controllers[3].category),"tablet")==0);
  assert(rtp_bt_classify_device(0x000100)==RTP_BT_CATEGORY_COMPUTER);
  assert(rtp_bt_classify_device(0x000200)==RTP_BT_CATEGORY_PHONE);
  assert(rtp_bt_classify_device(0x000400)==RTP_BT_CATEGORY_AUDIO);
