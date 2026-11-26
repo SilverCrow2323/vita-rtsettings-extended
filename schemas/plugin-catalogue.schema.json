@@ -155,9 +155,39 @@
           },
           "release_date": {
             "type": "string"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "sha256",
+                "url"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "optional": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       }
+    },
+    "provenance": {
+      "type": "object"
     }
   }
 }

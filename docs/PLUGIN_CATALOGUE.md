@@ -3,7 +3,7 @@
 **Snapshot:** 26 November 2026  
 **Target profile:** PS Vita 1000 OLED · firmware 3.65 · Ensō · YAMT + SD2Vita
 
-This is the first normalized, machine-readable shortlist—not a dump of every plugin ever published. It records selected upstream projects, release versions, firmware evidence, dependencies, conflicts, target-specific caveats and future adapter IDs.
+This is the first normalized, machine-readable shortlist—not a dump of every plugin ever published. Five high-priority release packages now include upstream asset URLs and SHA-256 digests, copied from GitHub release metadata. It records selected upstream projects, release versions, firmware evidence, dependencies, conflicts, target-specific caveats and future adapter IDs.
 
 - Machine-readable data: [`data/plugin-catalogue.json`](../data/plugin-catalogue.json)
 - Validation schema: [`schemas/plugin-catalogue.schema.json`](../schemas/plugin-catalogue.schema.json)
@@ -85,6 +85,6 @@ Every record has a stable ID and can later be enriched with:
 - adapter ID and supported settings schema;
 - last verification timestamp and maintainer activity.
 
-The installer must resolve dependencies, inspect existing files/configuration, stage files, verify hashes, commit config changes atomically, write a transaction journal and support rollback. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
+The installer must resolve dependencies, inspect existing files/configuration, stage files, verify SHA-256 hashes, commit config changes atomically, write a transaction journal and support rollback. The current JSON stores hashes for Wi-Fi Turbo, vitastream, Turbo Storage, Bluetooth Turbo and VitaBrightEX. Missing digests must be calculated and verified before an installer can accept those packages. The plugin manager may inventory unknown plugins, but it must never invent settings controls for them.
 
 **Review state:** candidate data only. No plugin binaries have been downloaded or installed by this milestone, and no physical Vita test is claimed.

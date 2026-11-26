@@ -68,7 +68,29 @@
       "adapter": "network.wifi_turbo",
       "source": "https://github.com/juanjsebgarcia/vita-turbo-wifi",
       "release": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/tag/v0.7.2",
-      "release_date": "2026-11-14"
+      "release_date": "2026-11-14",
+      "artifacts": [
+        {
+          "name": "wifiturbo.suprx",
+          "sha256": "9cafafd210a2dafe6dfc519333ed5fcda2238146a7460bc926c9ad9446a10385",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/download/v0.7.2/wifiturbo.suprx"
+        },
+        {
+          "name": "wifiturbo_kernel.skprx",
+          "sha256": "5e03301fab9a635159234afcf724cf252014ae084370bb1217c27f9527a730a1",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/download/v0.7.2/wifiturbo_kernel.skprx"
+        },
+        {
+          "name": "wifiturbo_qm.suprx",
+          "sha256": "63a4c272cf3ba52f436d5921280cf76d3e6e8b98b2f5b6dd3494656dbf0ee871",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/download/v0.7.2/wifiturbo_qm.suprx"
+        },
+        {
+          "name": "wifiturbo_settings.suprx",
+          "sha256": "9aaf9945591e6a1c7a1ac1afc3fb1483ee0966a206371953c8088200997199bf",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-wifi/releases/download/v0.7.2/wifiturbo_settings.suprx"
+        }
+      ]
     },
     {
       "id": "vitastream",
@@ -120,7 +142,24 @@
       "adapter": "connectivity.usb_stream",
       "source": "https://github.com/devnoname120/vitastream",
       "release": "https://github.com/devnoname120/vitastream/releases/tag/v2.3",
-      "release_date": "2026-11-04"
+      "release_date": "2026-11-04",
+      "artifacts": [
+        {
+          "name": "vitastream.skprx",
+          "sha256": "cafb802a8d095c4ae4ac0b585a6f08a76d0edb0a9d85fda97fe57b6943462296",
+          "url": "https://github.com/devnoname120/vitastream/releases/download/v2.3/vitastream.skprx"
+        },
+        {
+          "name": "vitastream.cfg",
+          "sha256": "9fb8cefa33b18b903ce535422b567614ebcb3d7d49bc55a988c2b856f5067edf",
+          "url": "https://github.com/devnoname120/vitastream/releases/download/v2.3/vitastream.cfg"
+        },
+        {
+          "name": "firmware-compatibility.json",
+          "sha256": "4f9511b6517463e13677232e889664846ee48930a894ad17089a866b24f50235",
+          "url": "https://github.com/devnoname120/vitastream/releases/download/v2.3/firmware-compatibility.json"
+        }
+      ]
     },
     {
       "id": "turbo-storage",
@@ -172,7 +211,29 @@
       "adapter": "storage.turbo_storage",
       "source": "https://github.com/juanjsebgarcia/vita-turbo-storage",
       "release": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/tag/v0.4.0",
-      "release_date": "2026-11-05"
+      "release_date": "2026-11-05",
+      "artifacts": [
+        {
+          "name": "storageturbo_kernel.skprx",
+          "sha256": "c4dca0ba5201177f608352fd11ce254fde607cc79e9e452218ce42dc85ef6b19",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/download/v0.4.0/storageturbo_kernel.skprx"
+        },
+        {
+          "name": "storageturbo.suprx",
+          "sha256": "3d416b553233513f9617f0302ad360be8f5aacf39efc0f163e493159c56db33d",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/download/v0.4.0/storageturbo.suprx"
+        },
+        {
+          "name": "storageturbo_settings.suprx",
+          "sha256": "2d4d8e4b1df9b21bcfcd74a02cc9bc2288b96e925260a47422d72a112b424ab1",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/download/v0.4.0/storageturbo_settings.suprx"
+        },
+        {
+          "name": "storageturbo_qm.suprx",
+          "sha256": "517f7228af5ae8f83ee043222d0a3d3bb9789790523649ebccc5679745c01ed2",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-storage/releases/download/v0.4.0/storageturbo_qm.suprx"
+        }
+      ]
     },
     {
       "id": "bluetooth-turbo",
@@ -222,7 +283,42 @@
       "adapter": "devices.bluetooth_turbo",
       "source": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth",
       "release": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/tag/v0.2.0",
-      "release_date": "2026-11-23"
+      "release_date": "2026-11-23",
+      "artifacts": [
+        {
+          "name": "bluetoothturbo.suprx",
+          "sha256": "95641df43f49dbf37bc94f0ec658e2a1892bdfe90ddad309e8901333c7c73098",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo.suprx"
+        },
+        {
+          "name": "bluetoothturbo_kernel.skprx",
+          "sha256": "0d591572b05b0f383b8233b5ec0727af5f17e8d61cb8a0e0026b7fb28397e99e",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo_kernel.skprx"
+        },
+        {
+          "name": "bluetoothturbo_settings.suprx",
+          "sha256": "98b2114209c065593d7d1d46f3e9fe7fe4755e71086d86783e5ebd5390045346",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo_settings.suprx"
+        },
+        {
+          "name": "bluetoothturbo_aac.skprx",
+          "sha256": "b7409d4b4b041a21d8659ba6be1623a370fb80cf86f79bc7dedfaaba59f93b70",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo_aac.skprx",
+          "optional": true
+        },
+        {
+          "name": "bluetoothturbo_aptx.skprx",
+          "sha256": "f077a595a3062bb5e07a3523dba85b1f43cb09823eee6396b78751f17852cd0b",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo_aptx.skprx",
+          "optional": true
+        },
+        {
+          "name": "bluetoothturbo_ldac.skprx",
+          "sha256": "ffee2cba337f0e7fd08140c7242bd3da9b00805bc8477741be5e33401fea90c5",
+          "url": "https://github.com/juanjsebgarcia/vita-turbo-bluetooth/releases/download/v0.2.0/bluetoothturbo_ldac.skprx",
+          "optional": true
+        }
+      ]
     },
     {
       "id": "vitabright-ex",
@@ -269,7 +365,19 @@
       "adapter": "display.vitabright_ex",
       "source": "https://github.com/Zushikina-kun/VitaBrightEX",
       "release": "https://github.com/Zushikina-kun/VitaBrightEX/releases",
-      "release_date": "2026-08-18"
+      "release_date": "2026-08-18",
+      "artifacts": [
+        {
+          "name": "VitaBrightEX-v1.3.zip",
+          "sha256": "27703213d5b7a8272713c6d70f112b0228b96e925260a47422d72a112b424ab1",
+          "url": "https://github.com/Zushikina-kun/VitaBrightEX/releases/download/v1.3/VitaBrightEX-v1.3.zip"
+        },
+        {
+          "name": "VitaBrightEX-LUT-Editor-v4.2.vpk",
+          "sha256": "7e4123fb2a2d58db5bf0aeed657920974ba21a10c17ca9181b9b6e233b8222d8",
+          "url": "https://github.com/Zushikina-kun/VitaBrightEX/releases/download/v1.3/VitaBrightEX-LUT-Editor-v4.2.vpk"
+        }
+      ]
     },
     {
       "id": "psvshell-plus",
@@ -609,5 +717,17 @@
       "release": "https://github.com/RealYoti/StorageMgr",
       "release_date": "legacy-maintained"
     }
-  ]
+  ],
+  "provenance": {
+    "version_source": "Author's latest GitHub release API where available; otherwise project source/release page plus cross-check from GameBrew/Brewology.",
+    "discovery_sources": [
+      "https://github.com/ONElua/AutoPlugin2",
+      "https://github.com/DrDecki/VitaHomebrewDB",
+      "https://www.gamebrew.org/wiki/List_of_Vita_plugins",
+      "https://store.brewology.com/vita/plugins/",
+      "https://www.psx-place.com/resources/categories/plugins.11/"
+    ],
+    "binary_hash_policy": "SHA-256 values copied from GitHub release asset digests. Missing digests must be calculated from the downloaded asset before installation.",
+    "verification_rule": "No plugin is target-verified until installed and tested on the PCH-1000 OLED running firmware 3.65 with current YAMT and SD2Vita."
+  }
 }
