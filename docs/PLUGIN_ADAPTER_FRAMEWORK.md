@@ -37,3 +37,7 @@ The adapter never auto-confirms profile or HT40 changes. Wi-Fi Turbo reverts unc
 - Responses are passed through unchanged. Parsing the upstream status payload is a later protocol-versioned task.
 - Platform transport must enforce bounded reads, a timeout, one command per TCP connection and response NUL termination.
 - Host tests use a mock transport; this is not physical Vita/network validation.
+
+## Custom Warning adapter
+
+The second concrete adapter is Custom Warning from VitaTweaks. It follows the upstream lookup order (ux0 preset directory, ur0 preset directory, ux0 fixed file, ur0 fixed file), exposes fixed-message or random-preset mode, converts UTF-8 to UTF-16LE+BOM and writes through a backup/atomic-replace/read-back/rollback backend. The portable implementation is in `source/plugin-adapters/custom_warning_adapter.c`; tests use an in-memory filesystem. The Vita filesystem and plugin-active detector are still pending.
