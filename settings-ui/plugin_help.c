@@ -9,7 +9,7 @@ void rtp_plugin_centre_bind_help(rtp_plugin_centre_snapshot *snapshot,
     for (i=0;i<snapshot->count;++i) {
         const rtp_plugin_centre_row *row=&snapshot->rows[i];
         snapshot->rows[i].has_help =
-            row->plugin_id[0] != '\\0' &&
+            row->plugin_id[0] != '\0' &&
             rtp_plugin_help_find(help,row->plugin_id) != NULL;
     }
 }
@@ -65,8 +65,8 @@ rtp_plugin_help_result rtp_plugin_help_open(
     e=rtp_plugin_help_find(c,id);
     if(!e) { memset(p,0,sizeof(*p)); return RTP_HELP_NOT_FOUND; }
     p->entry=e; p->show_help_button=1;
-    p->has_source_link=e->source_url[0]!='\\0';
-    p->has_release_link=e->release_url[0]!='\\0';
+    p->has_source_link=e->source_url[0]!='\0';
+    p->has_release_link=e->release_url[0]!='\0';
     return RTP_HELP_OK;
 }
 rtp_plugin_help_result rtp_plugin_help_register_builtin(rtp_plugin_help_catalogue *c) {
