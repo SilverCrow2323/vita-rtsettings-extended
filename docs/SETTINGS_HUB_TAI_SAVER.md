@@ -38,4 +38,4 @@ All entries have stable IDs, explicit parent categories, deterministic ordering,
 
 This milestone adds the actual Settings registry and metadata tree to the existing renderer-neutral navigation model. It is not yet a Sony Settings application extension and does not render a native Vita screen. No taiHEN registration hook, Sony Settings binary patch, Vita VPK or physical-console test is claimed by this document.
 
-The next integration gate is the native Settings surface adapter and its installation mechanism. It must be demonstrated against the real Settings application before this tree is described as integrated into Sony Settings.
+The next integration gate is the native Settings surface adapter and its installation mechanism. It must be demonstrated against the real Settings application before this tree is described as integrated into Sony Settings. A VitaSDK cross-build job is being added for the portable framework library; this is not an application or VPK build.

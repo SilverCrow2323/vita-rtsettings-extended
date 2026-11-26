@@ -12,6 +12,7 @@ on:
       - "settings-ui/**"
       - "tests/**"
       - "tai-saver/**"
+      - "docs/**"
       - "Makefile"
       - "Makefile.vita"
       - ".github/workflows/ci.yml"
@@ -34,3 +35,23 @@ jobs:
           make test
       - name: Run AddressSanitizer and UndefinedBehaviorSanitizer
         run: make sanitize
+
+  vita-cross-build:
+    name: VitaSDK cross-build (static framework library)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build with the official VitaSDK container
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/src" \
+            -w /src \
+            vitasdk/vitasdk:latest \
+            make -f Makefile.vita clean all
+      - name: Upload VitaSDK library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtsettings-vitasdk-static-library
+          path: build-vita/librtsettings.a
+          if-no-files-found: error

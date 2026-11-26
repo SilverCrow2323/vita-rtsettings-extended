@@ -15,16 +15,39 @@ The C service is exposed by `include/tai_saver.h` and implemented in `source/tai
 | Restore | `ts_restore_snapshot` | Verifies the selected archive, snapshots the live source to Pre-Restore, stages the replacement and uses a rollback rename if installation fails. |
 | Rotate | `ts_apply_retention` | Removes only old, verified Automatic snapshots above the configured count. |
 
-## Settings Hub registration
+## Settings page
 
-The first feature navigation tree is now registered through `rtp_metadata_register_tai_saver()` and the shared Preferences UI model:
+Planned navigation: **Settings → Rt:Settings Extended → Tai Saver**
 
-- **Protection:** automatic backup control, manual backup action and read-only last result.
-- **Automatic Backup Policy:** retention settings.
-- **Snapshot Archives:** Automatic, Known-Good, Failed / KO and Pre-Restore views.
-- **Compare & Recovery:** compare, verify and restore actions.
+The native Settings page will expose four groups.
 
-Stable IDs, descriptions, icon keys, action kinds and backend-required/read-only flags are defined in `settings-ui/metadata/settings_metadata.c`. See [Settings Hub — Tai Saver](../docs/SETTINGS_HUB_TAI_SAVER.md).
+### Protection
+- Enable or disable automatic backup at boot.
+- Show the last backup result and timestamp.
+- Run a backup now.
+- Show source path and available storage information.
+
+### Automatic backup policy
+- Retention choices: 2, 3, 4, 5 or Custom.
+- Custom retention accepts a validated integer from 2 to 1000.
+- Display the number of current Automatic snapshots.
+- Explain that retention affects Automatic snapshots only.
+
+### Archive
+- Automatic snapshots.
+- Known-Good configurations.
+- Failed / KO configurations.
+- Pre-Restore safety snapshots.
+- Snapshot details: date, file count, total size, verification status and notes.
+- Compare two snapshots by file path and hash.
+- Mark an Automatic snapshot as Known-Good or Failed.
+- Explicitly delete an archive only after confirmation.
+
+### Recovery
+- Restore a selected verified snapshot.
+- Always create a verified Pre-Restore safety snapshot first.
+- Show the exact source archive and target path before confirmation.
+- Report success or failure with actionable details.
 
 ## Archive retention policy
 
@@ -64,14 +87,25 @@ Hash values are calculated from file contents, not filenames or timestamps. A ma
 
 The boot task will perform a snapshot only. It must not repair, rewrite, enable or disable taiHEN plugins and must not change `config.txt`.
 
-The core is ready to be called by a boot service, but the boot entry point and stale-staging recovery are not implemented yet. The future service must avoid modifying `ur0:tai`, check storage before copying, avoid blocking boot for an unbounded period and apply retention only after a new snapshot has been fully verified.
+The core is ready to be called by a boot service, but the boot entry point and stale-staging recovery are not implemented yet. The future service must:
+
+- avoid modifying `ur0:tai`;
+- invoke the core under its transaction lock;
+- check storage before copying;
+- record failure without presenting a partial snapshot as valid;
+- avoid blocking boot for an unbounded period;
+- apply retention only after a new snapshot has been fully verified.
+
+## Classification rule
+
+A Known-Good archive is not inferred from a successful copy. It means the user explicitly identified that configuration as working. Failed / KO is a diagnostic classification, not a claim that Tai Saver itself failed.
 
 ## Current limitations
 
 - Maximum 4096 regular files per snapshot; maximum path buffer 1023 bytes; maximum recursion depth 24.
 - Symlinks and special files are rejected rather than followed; source and archive roots cannot overlap.
-- The Settings Hub metadata/navigation tree is host-testable, but it is not yet a native Sony Settings extension.
-- The boot service, live Vita filesystem integration, native Settings renderer/registration, installer transaction engine and VPK packaging remain pending.
-- Host regression tests cover the portable core. A VitaSDK cross-build and physical-device validation are separate gates.
+- Manifests must match the directory snapshot ID, contain unique sorted relative paths and pass complete hash verification.
+- Host regression tests pass. A VitaSDK cross-build and physical-device validation are still pending.
+- Progress reporting, native Settings registration, VPK packaging and interrupted-staging quarantine are next implementation work.
 
-See [Settings Hub — Tai Saver](../docs/SETTINGS_HUB_TAI_SAVER.md) and [Tai Saver Core](../docs/TAI_SAVER_CORE.md).
+See [`docs/TAI_SAVER_CORE.md`](../docs/TAI_SAVER_CORE.md) for implementation details and tests.
