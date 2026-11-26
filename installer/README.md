@@ -18,7 +18,7 @@ rtsettings-extended/
 
 ## Installer behavior
 
-The eventual Vita installer UI will provide fresh install, add modules, independent framework/module updates, disable/remove module, repair owned files and a reviewable change list. Module selection is additive: new features appear as optional modules in later releases.
+The VPK will be an installer/repair utility, not a separate Settings launcher. The intended native integration is a user-mode taiHEN SUPRX loaded under the Settings title `*NPXS10015`, with a PAF XML adapter that preserves the stock Sony menu and adds Rt-owned pages. See [Native Sony Settings integration](../docs/NATIVE_SETTINGS_ADAPTER.md).
 
 ## Transaction model
 
@@ -46,4 +46,4 @@ Each module declares a stable ID, version, framework requirement, dependencies, 
 
 ## Implementation status
 
-This directory defines the expandable package contract and the first Tai Saver descriptor. It is not yet a compiled Vita installer VPK. The on-device installer UI, transaction engine, VitaSDK build and hardware validation remain separate implementation gates.
+This directory defines the expandable package contract and the first Tai Saver descriptor. The portable framework library now cross-builds with VitaSDK in CI, but that artifact is not a SUPRX and is not an installable VPK. The native Settings adapter, on-device installer UI, transaction engine, VPK packaging and hardware validation remain separate implementation gates.
