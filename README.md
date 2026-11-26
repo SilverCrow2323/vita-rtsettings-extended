@@ -671,7 +671,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Complete Settings Feature Catalogue](docs/COMPLETE_FEATURE_CATALOGUE.md)
 - [Settings Entry Catalogue](docs/FEATURE_CATALOGUE.md)
 - [Vita Plugin Research](docs/PLUGIN_RESEARCH.md)
-- [Boot Appearance Adapter Research](docs/PLUGIN_RESEARCH.md#verified-boot-presentation-candidates)
+- [Boot Appearance Adapter Decisions](docs/BOOT_APPEARANCE_ADAPTERS.md)
 - [Curated Vita Plugin Catalogue](docs/PLUGIN_CATALOGUE.md)
 - [Plugin catalogue JSON](data/plugin-catalogue.json)
 - [Plugin catalogue schema](schemas/plugin-catalogue.schema.json)
