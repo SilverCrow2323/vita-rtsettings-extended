@@ -1,4 +1,6 @@
 #include "vita_asset_fs.h"
+#include <psp2/io/fcntl.h>
+#include <psp2/io/stat.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
