@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="690" viewBox="0 0 1100 690" role="img" aria-labelledby="title desc">
+<title id="title">Rt:Settings Extended conceptual menu</title><desc id="desc">A non-functional visual mockup of the planned PlayStation Vita Settings extension menu.</desc>
+<defs><linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#172432"/><stop offset="1" stop-color="#0b121a"/></linearGradient></defs>
+<rect width="1100" height="690" rx="26" fill="#080d13"/><rect x="28" y="24" width="1044" height="642" rx="18" fill="url(#panel)" stroke="#42586b" stroke-width="2"/>
+<text x="76" y="88" fill="#eaf3fb" font-family="Arial,sans-serif" font-size="34" font-weight="700">Settings</text><text x="76" y="126" fill="#8ea6ba" font-family="Arial,sans-serif" font-size="17">Rt:Settings Extended  /  Main menu concept</text>
+<rect x="66" y="154" width="968" height="72" rx="8" fill="#18354b" stroke="#56b7ed" stroke-width="2"/><text x="102" y="199" fill="#ffffff" font-family="Arial,sans-serif" font-size="25" font-weight="700">Preferences</text><text x="980" y="199" text-anchor="end" fill="#8fd7ff" font-family="Arial,sans-serif" font-size="18">›</text>
+<g font-family="Arial,sans-serif" font-size="24" fill="#d9e5ee">
+<path d="M66 242h968" stroke="#314454"/><text x="102" y="289">Tai Saver</text><text x="980" y="289" text-anchor="end" fill="#8da7ba">›</text>
+<path d="M66 314h968" stroke="#314454"/><text x="102" y="361">Connectivity</text><text x="980" y="361" text-anchor="end" fill="#8da7ba">›</text>
+<path d="M66 386h968" stroke="#314454"/><text x="102" y="433">Plugin Control Centre</text><text x="980" y="433" text-anchor="end" fill="#8da7ba">›</text>
+<path d="M66 458h968" stroke="#314454"/><text x="102" y="505">Storage &amp; Devices</text><text x="980" y="505" text-anchor="end" fill="#8da7ba">›</text>
+<path d="M66 530h968" stroke="#314454"/><text x="102" y="577">System Information &amp; Diagnostics</text><text x="980" y="577" text-anchor="end" fill="#8da7ba">›</text>
+</g>
+<text x="76" y="631" fill="#7891a5" font-family="Arial,sans-serif" font-size="15">CONCEPT ART · NOT A SCREENSHOT · ACTUAL ENTRIES DEPEND ON INSTALLED MODULES</text></svg>
