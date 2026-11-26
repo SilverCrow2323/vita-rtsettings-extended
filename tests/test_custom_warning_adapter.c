@@ -88,7 +88,11 @@ int main(void){
  assert(rtcw_write_preset(&b,"ux0","new.txt","New preset",1)==RTCW_OK);
  assert(rtcw_write_preset(&b,"ux0","../escape","bad",1)==RTCW_ERR_ARGUMENT);
  assert(rtcw_write_preset(&b,"ux0","hello.txt","duplicate",1)==RTCW_ERR_MODE);
- fs.active=0;assert(rtcw_read_state(&b,&state)==RTCW_ERR_PLUGIN_DISABLED);
+ fs.dir_ux0=1;fs.count_ux0=0;fs.dir_ur0=1;fs.count_ur0=1;strcpy(fs.names_ur0[0],"fallback.txt");
+ assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_FIXED_FILE&&strcmp(state.mount,"ux0")==0);
+ {int fixed=find_file(&fs,"ux0:tai/custom_warning.txt");assert(fixed>=0);fs.files[fixed].exists=0;}
+ assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_PRESET_ROTATION&&strcmp(state.mount,"ur0")==0);
+ fs.dir_ux0=0;fs.dir_ur0=0;fs.active=0;assert(rtcw_read_state(&b,&state)==RTCW_ERR_PLUGIN_DISABLED);
  fs.active=1;fs.dir_ux0=0;fs.count_ux0=0;
  memset(fs.files,0,sizeof(fs.files));
  assert(rtcw_read_state(&b,&state)==RTCW_OK&&state.mode==RTCW_MODE_DEFAULT);
