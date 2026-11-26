@@ -9,13 +9,15 @@ A dedicated **Connectivity → Bluetooth & Controllers** page will unify control
 | Driver | Role | Project policy |
 |---|---|---|
 | VitaControl | Broad Bluetooth controller provider | Preferred provider candidate: DS3, DS4, DualSense, DualSense Edge, Xbox One and Switch Pro are listed upstream |
-| MiniVitaTV | Makes Vita behave like PS TV for official DS3/DS4; up to four local controllers | Alternative mode only; never load alongside another external-controller provider |
+| MiniVitaTV | Makes Vita behave like PS TV for official DS3/DS4; up to four local controllers | Alternative PS-TV mode; may be combined with 8BitVita only |
 | ds34vita | DS3/DS4/DualSense provider | Legacy/alternative provider; never load alongside VitaControl or MiniVitaTV |
 | ds3vita / ds4vita | Older individual providers | Inventory and migration guidance only; avoid as default when a maintained combined provider is available |
+| X1Vita | Xbox One 1708-specific provider | Legacy alternative; not compatible with other DS-family drivers; newer Xbox Series / BLE controllers are not supported by the Vita Bluetooth hardware |
+| 8BitVita | 8BitDo-specific provider | Optional specialized provider; upstream documents compatibility with MiniVitaTV and up to two simultaneous controllers |
 | reVita | Remapping and profiles | Optional companion layer, not a Bluetooth transport driver |
 | ds4Touch / DS34Motion | Optional DS4 touch / motion support | Separate enhancement adapters; only expose features when installed and compatible |
 
-The preferred default is **VitaControl + optional reVita**, subject to target-device validation. MiniVitaTV is a distinct PS-TV compatibility/local-multiplayer mode, not a toggle to stack on top of VitaControl. Driver selection must remain exclusive and require an explicit plan and reboot where required.
+The preferred default is **VitaControl + optional reVita**, subject to target-device validation. MiniVitaTV is a distinct PS-TV compatibility/local-multiplayer mode and conflicts with VitaControl. Its documented 8BitVita pairing is the only multi-provider exception currently accepted by the project. Driver selection must require an explicit plan and reboot where required.
 
 ## Intended user experience
 
@@ -31,7 +33,7 @@ The preferred default is **VitaControl + optional reVita**, subject to target-de
 
 1. The native Sony Bluetooth pairing flow remains the pairing authority.
 2. Never install, enable, disable or reorder a kernel plugin based only on a filename guess. Require recognized plugin IDs and a reviewed adapter.
-3. Exactly one external-controller driver provider may be active at a time: VitaControl, MiniVitaTV, ds34vita, ds3vita or ds4vita. reVita is not in this mutually exclusive group.
+3. Controller providers are mutually exclusive by default. The explicitly documented exception is the MiniVitaTV + 8BitVita combination. VitaControl, MiniVitaTV, ds34vita, ds3vita, ds4vita and X1Vita must not be stacked together. reVita is a remapping companion, not a Bluetooth transport driver.
 4. MiniVitaTV has a distinct PS-TV behavior profile and can affect native Vita controls and application compatibility. It must be an explicit mode, not the default.
 5. Do not promise battery, rumble, touchpad, gyro or trigger support for every controller. Display only capabilities reported by a verified backend and tested per device/provider.
 6. No controller pairing, unpairing, Bluetooth radio reset or plugin mutation is implemented by the current host model.
@@ -65,5 +67,7 @@ It accepts observations supplied by a future backend. It does not scan Bluetooth
 - [ds34vita](https://github.com/MERLev/ds34vita) — combined DS3/DS4 controller driver.
 - [reVita](https://github.com/MERLev/reVita) — input remapping, touch/gyro handling, profiles and external-controller integration.
 - [reVita external controller compatibility notes](https://github.com/MERLev/reVita/wiki/External-Controllers) — practical provider comparison and limitations.
+- [X1Vita](https://github.com/Ibrahim778/X1Vita) — Xbox One 1708 compatibility and limitations.
+- [8BitVita](https://github.com/shadowknight1620/8BitVita) — 8BitDo model list and MiniVitaTV compatibility.
 
 Upstream capabilities are research inputs, not guarantees for every Vita firmware, controller revision or installed plugin combination. Project support status will be recorded separately from upstream claims.

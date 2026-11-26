@@ -17,6 +17,13 @@ int main(void){
  assert(snap.controllers[0].battery_percent==82);
  assert(snap.controllers[1].battery_percent==-1);
  assert(strcmp(rtp_bt_provider_name(snap.controllers[0].provider),"vitacontrol")==0);
+ {
+  rtp_bt_controller_observation eightbit={"8bitdo","8BitDo Pro 2",RTP_BT_8BITDO,
+   RTP_BT_CONNECTED,RTP_BT_PROVIDER_8BITVITA,RTP_BT_CAP_BUTTONS|RTP_BT_CAP_ANALOG_STICKS,-1,1};
+  assert(rtp_bt_snapshot_build(&eightbit,1,&snap)==RTP_BT_OK);
+  assert(strcmp(rtp_bt_device_kind_name(snap.controllers[0].kind),"8bitdo")==0);
+  assert(strcmp(rtp_bt_provider_name(snap.controllers[0].provider),"8bitvita")==0);
+ }
  assert(rtp_bt_snapshot_build(NULL,1,&snap)==RTP_BT_INVALID_ARGUMENT);
  assert(rtp_bt_snapshot_build(devices,9,&snap)==RTP_BT_CAPACITY);
  {
