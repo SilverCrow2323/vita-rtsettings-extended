@@ -56,7 +56,7 @@ typedef struct {
     char verification_note[RTP_HELP_TEXT_MAX+1];
 } rtp_plugin_help_entry;
 
-typedef struct {
+typedef struct rtp_plugin_help_catalogue {
     size_t count;
     rtp_plugin_help_entry entries[RTP_HELP_MAX_ENTRIES];
 } rtp_plugin_help_catalogue;
