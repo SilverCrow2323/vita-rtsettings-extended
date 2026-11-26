@@ -7,6 +7,6 @@ A platform-neutral controller for the Preferences profile-management screens.
 - Applies profiles through the existing merge-safe Layout Profiles core and resets navigation to the root.
 - Requires a separate confirmation step before deletion; Back/cancel never deletes.
 - Keeps stable profile IDs separate from editable display names.
-- Exposes immutable view snapshots for the eventual Vita renderer.
+- Exposes immutable view snapshots for the eventual Vita renderer.\n- Provides directional Up/Down/Confirm/Back input transitions, with cursor state reflected in the view model.
 
 The controller does not draw graphics, persist files by itself, or perform service/plugin actions. Call the existing profile save/load APIs at the application persistence boundary.
