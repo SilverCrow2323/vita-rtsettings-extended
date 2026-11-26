@@ -172,34 +172,42 @@ rtcw_result rtcw_read_state(const rtcw_backend *b, rtcw_state *out) {
     if (active == 0) return RTCW_ERR_PLUGIN_DISABLED;
     if (active != 1) return RTCW_ERR_BACKEND;
     for (i = 0; i < 2; ++i) {
-        if (build_path(dir, sizeof(dir), mounts[i], "custom_warning") != RTCW_OK) return RTCW_ERR_CAPACITY;
         memset(names, 0, sizeof(names));
-        count = 0; listed = b->list_directory(b->context, dir, names, RTCW_MAX_PRESETS, &count);
+        if (build_path(dir, sizeof(dir), mounts[i], "custom_warning") != RTCW_OK) return RTCW_ERR_CAPACITY;
+        count = 0;
+        listed = b->list_directory(b->context, dir, names, RTCW_MAX_PRESETS, &count);
         if (listed < 0 || count > RTCW_MAX_PRESETS) return RTCW_ERR_BACKEND;
         if (listed == 1 && count > 0) {
             size_t j;
-            out->mode = RTCW_MODE_PRESET_ROTATION; strcpy(out->mount, mounts[i]);
-            strcpy(out->path, dir); out->preset_count = count;
+            out->mode = RTCW_MODE_PRESET_ROTATION;
+            strcpy(out->mount, mounts[i]);
+            strcpy(out->path, dir);
+            out->preset_count = count;
             for (j = 0; j < count; ++j) {
                 if (!safe_name(names[j])) return RTCW_ERR_BACKEND;
                 strcpy(out->preset_names[j], names[j]);
             }
             return RTCW_OK;
         }
-    }
-    for (i = 0; i < 2; ++i) {
+        /* The upstream plugin falls back to this mount's fixed file before trying the next mount. */
         if (build_path(file, sizeof(file), mounts[i], "custom_warning.txt") != RTCW_OK) return RTCW_ERR_CAPACITY;
         size = 0;
         {
-            int r = b->read_file(b->context, file, raw, sizeof(raw), &size);
-            if (r < 0) return RTCW_ERR_BACKEND;
-            if (r == 0) continue;
-            if (r != 1 || size > sizeof(raw)) return RTCW_ERR_BACKEND;
+            int read_status = b->read_file(b->context, file, raw, sizeof(raw), &size);
+            if (read_status < 0) return RTCW_ERR_BACKEND;
+            if (read_status == 1) {
+                if (size > sizeof(raw)) return RTCW_ERR_BACKEND;
+                out->mode = RTCW_MODE_FIXED_FILE;
+                strcpy(out->mount, mounts[i]);
+                strcpy(out->path, file);
+                return rtcw_decode_utf16le(raw, size, out->current_text,
+                                           sizeof(out->current_text), &out->current_text_bytes);
+            }
+            if (read_status != 0) return RTCW_ERR_BACKEND;
         }
-        out->mode = RTCW_MODE_FIXED_FILE; strcpy(out->mount, mounts[i]); strcpy(out->path, file);
-        return rtcw_decode_utf16le(raw, size, out->current_text, sizeof(out->current_text), &out->current_text_bytes);
     }
-    out->mode = RTCW_MODE_DEFAULT; strcpy(out->mount, "ux0");
+    out->mode = RTCW_MODE_DEFAULT;
+    strcpy(out->mount, "ux0");
     return build_path(out->path, sizeof(out->path), "ux0", "custom_warning.txt");
 }
 
