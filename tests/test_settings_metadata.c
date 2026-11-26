@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+static int debug_key(const char *s){size_t i;if(!s||!s[0])return 0;for(i=0;s[i];++i){unsigned char x=(unsigned char)s[i];if(!((x>=97&&x<=122)||(x>=48&&x<=57)||x==45||x==95||x==46))return 0;}return 1;}
 int main(void){
  rtp_preferences p;rtp_preferences_ui ui;rtp_metadata_catalogue c;rtp_metadata_descriptor d;rtp_screen_page page;const rtp_metadata_entry *e;
  rtp_preferences_init(&p);rtp_metadata_init(&c);
@@ -16,7 +17,7 @@ int main(void){
  rtp_metadata_init(&c);d.entry_id="ftp-service";d.category_id="not-a-category";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_INVALID_CATEGORY);
  d.category_id="connectivity";d.title="";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_INVALID_TEXT);
  d.title="FTP Server";assert(rtp_metadata_register(&c,&p,&d)==RTP_META_OK);
- fprintf(stderr,"metadata validation=%d id=%s module=%s title=%s nulls=%d,%d,%d,%d",rtp_metadata_validate(&c,&p),c.entries[0].entry_id,c.entries[0].module_id,c.entries[0].title,memchr(c.entries[0].title,0,sizeof(c.entries[0].title))!=0,memchr(c.entries[0].description,0,sizeof(c.entries[0].description))!=0,memchr(c.entries[0].category_id,0,sizeof(c.entries[0].category_id))!=0,memchr(c.entries[0].icon_key,0,sizeof(c.entries[0].icon_key))!=0);assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
+ fprintf(stderr,"metadata validation=%d id=%s module=%s title=%s keys=%d,%d title0=%d nulls=%d,%d,%d,%d",rtp_metadata_validate(&c,&p),c.entries[0].entry_id,c.entries[0].module_id,c.entries[0].title,debug_key(c.entries[0].entry_id),debug_key(c.entries[0].module_id),(unsigned char)c.entries[0].title[0],memchr(c.entries[0].title,0,sizeof(c.entries[0].title))!=0,memchr(c.entries[0].description,0,sizeof(c.entries[0].description))!=0,memchr(c.entries[0].category_id,0,sizeof(c.entries[0].category_id))!=0,memchr(c.entries[0].icon_key,0,sizeof(c.entries[0].icon_key))!=0);assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
  rtp_preferences_init(&p);rtp_metadata_init(&c);
  assert(rtp_metadata_register_appearance(&c,&p)==RTP_META_OK);
  assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
