@@ -185,7 +185,11 @@ The UI must not expose raw plugin filenames as the primary user experience. It s
 - Service/boot status and recovery guidance.
 - Exportable diagnostic bundle with privacy-aware path handling.
 
-## Custom Assets Manager implementation status\n\nThe portable C99 registry and activation/rollback boundary are implemented in `include/custom_assets.h` and `source/custom-assets/custom_assets.c`. Host tests cover validation, duplicate detection, path traversal, audio constraints, ownership, protected backups, activation read-back, rollback and rollback failure. This does not yet implement Vita filesystem import/export, hash calculation, format conversion, CBSM/bootanim/BootSound/Custom Warning backends, or the native Settings page.\n\n## Plugin and version selection policy
+## Custom Assets Manager implementation status
+
+The portable C99 registry and activation/rollback boundary are implemented in `include/custom_assets.h` and `source/custom-assets/custom_assets.c`. Host tests cover validation, duplicate detection, path traversal, audio constraints, ownership, protected backups, activation read-back, rollback and rollback failure. This does not yet implement Vita filesystem import/export, hash calculation, format conversion, CBSM/bootanim/BootSound/Custom Warning backends, or the native Settings page.
+
+## Plugin and version selection policy
 
 1. Discover candidates from AutoPlugin II, VitaHomebrewDB, GameBrew, PSX-Place and community release threads.
 2. Verify each candidate against the original author's repository, release notes, tags and binary assets.
