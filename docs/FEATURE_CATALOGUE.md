@@ -9,7 +9,7 @@ This is the concise status index for user-facing Rt:Settings Extended entries. T
 | Tai Saver | Automatic backup, retention, verification, comparison and recovery for ur0:tai | Host core implemented; Vita filesystem/startup integration pending |
 | Boot Journal | Startup lifecycle and recovery events | Host core implemented; Vita integration pending |
 | Framework & Modules | Install, update, repair, disable and remove modular sections | Architecture specified; transaction engine/UI pending |
-| Appearance & Customization | Boot animation/splash, boot sound, custom warning, interface appearance and asset library | Shared asset registry and transactional activation core implemented; Custom Warning UTF-16LE adapter host-tested; import/export and Vita backends pending |
+| Appearance & Customization | Boot animation/splash, boot sound, custom warning, interface appearance and asset library | Shared registry, staged import, SHA-256 verification, verified export and activation/rollback implemented; Custom Warning adapter host-tested; Vita filesystem backend pending |
 | Quick Menu | Framework detection, widgets/add-ons, layout, shortcuts and supported behavior controls | Research/specification; adapter pending |
 | Connectivity | USB and FTP preferences, status and service lifecycle | Portable lifecycle core implemented; Vita backends pending |
 | USB Streaming | Backend detection, streaming state and transport options | Research/compatibility work; implementation pending |
