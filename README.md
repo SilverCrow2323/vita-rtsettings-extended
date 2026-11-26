@@ -622,7 +622,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 | Boot Sound controls | Research/specification; implementation pending |
 | Custom Warning UTF-16LE adapter (read, validate, write, verify, rollback) | Implemented; host regression coverage added; Vita plugin/filesystem integration pending |
 | Custom Assets Manager registry, metadata validation and transactional activation/rollback | Implemented; host regression and sanitizer coverage added |
-| Asset import/export, filesystem hashing and platform adapters | Pending; backend-specific work required |
+| Custom Assets Manager staged import, SHA-256 verification and atomic export API | Implemented; host-tested; Vita filesystem backend and manifest persistence pending |
 | Quick Menu / QuickMenuReborn framework and add-on management | Research/specification; adapter pending |
 | Interface Customization | Project target; implementation pending |
 | USB persistent connection service | Lifecycle core exists; Vita backend/UI pending |
