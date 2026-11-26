@@ -1,15 +1,16 @@
 CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
-CPPFLAGS ?= -Iinclude -Isource/tai-saver
+CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
 
-CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c
-CORE_OBJECTS := build/tai_saver.o build/sha256.o
-LIBRARY := build/libtai_saver.a
+CORE_SOURCES := source/tai-saver/tai_saver.c source/tai-saver/sha256.c source/boot-monitor/boot_journal.c
+CORE_OBJECTS := build/tai_saver.o build/sha256.o build/boot_journal.o
+LIBRARY := build/librtsettings.a
 TEST_BINARY := build/test_tai_saver
+BOOT_TEST_BINARY := build/test_boot_journal
 SANITIZER_BINARY := build/test_tai_saver_san
 
 .PHONY: all test sanitize clean
@@ -24,6 +25,9 @@ build/tai_saver.o: source/tai-saver/tai_saver.c include/tai_saver.h source/tai-s
 build/sha256.o: source/tai-saver/sha256.c source/tai-saver/sha256.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+build/boot_journal.o: source/boot-monitor/boot_journal.c include/boot_journal.h include/tai_saver.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIBRARY): $(CORE_OBJECTS)
 	$(AR) rcs $@ $(CORE_OBJECTS)
 	$(RANLIB) $@
@@ -31,8 +35,12 @@ $(LIBRARY): $(CORE_OBJECTS)
 $(TEST_BINARY): tests/test_tai_saver.c $(LIBRARY) include/tai_saver.h source/tai-saver/sha256.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-test: $(TEST_BINARY)
+$(BOOT_TEST_BINARY): tests/test_boot_journal.c $(LIBRARY) include/boot_journal.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
+
+test: $(TEST_BINARY) $(BOOT_TEST_BINARY)
 	./$(TEST_BINARY)
+	./$(BOOT_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)

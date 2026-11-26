@@ -27,6 +27,7 @@ Tai Saver protects the configuration in `ur0:tai`.
 - `docs/` — architecture, boot integration and Settings integration contracts.
 - `include/` — public C interfaces.
 - `source/tai-saver/` — Tai Saver engine and SHA-256 implementation.
+- `source/boot-monitor/` — boot lifecycle journal.
 - `tai-saver/` — feature specification and JSON schemas.
 - `settings-ui/` — native Settings page design.
 - `tests/` — host-side regression tests.
@@ -43,7 +44,7 @@ A VitaSDK static-library build recipe is provided in `Makefile.vita`. The Vita c
 
 ## Current development status
 
-**Implemented and host-tested:** Tai Saver C core, SHA-256 manifests, snapshot verification, comparison, archive classification, Automatic-only retention and guarded restore with Pre-Restore snapshot.
+**Implemented and host-tested:** Tai Saver C core, SHA-256 manifests, snapshot verification, comparison, archive classification, Automatic-only retention, guarded restore with Pre-Restore snapshot, and the Boot Journal lifecycle state machine.
 
 **Next:** stale-staging recovery, VitaSDK cross-build validation, boot lifecycle adapter, native Settings category/page and packaging.
 
