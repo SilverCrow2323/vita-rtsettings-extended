@@ -68,45 +68,38 @@ static int read_bytes(const unsigned char *in, size_t length, size_t *pos,
     if (amount) memcpy(out, in + *pos, amount);
     *pos += amount; return 1;
 }
-static void registry_to_observations(const rta_asset_registry *r,
-                                     rta_asset_observation o[RTA_MAX_ASSETS]) {
-    size_t i;
-    memset(o, 0, sizeof(*o) * RTA_MAX_ASSETS);
-    for (i = 0; i < r->count; ++i) {
-        const rta_asset *a = &r->assets[i];
-        o[i].id=a->id; o[i].title=a->title; o[i].path=a->path;
-        o[i].owner=a->owner; o[i].source=a->source; o[i].format=a->format;
-        o[i].sha256=a->sha256; o[i].type=a->type; o[i].state=a->state;
-        o[i].size_bytes=a->size_bytes; o[i].width=a->width; o[i].height=a->height;
-        o[i].duration_ms=a->duration_ms; o[i].sample_rate_hz=a->sample_rate_hz;
-        o[i].channels=a->channels; o[i].managed=a->managed;
-        o[i].compatible=a->compatible; o[i].hash_verified=a->hash_verified;
-        o[i].protected_asset=a->protected_asset;
-    }
-}
 
 rta_result rta_asset_manifest_encode(const rta_asset_registry *registry,
                                      unsigned char *buffer, size_t capacity,
                                      size_t *written) {
-    rta_asset_observation observations[RTA_MAX_ASSETS];
-    rta_asset_registry checked;
-    size_t pos = HEADER_SIZE, i;
+    size_t pos = HEADER_SIZE, i, j;
     unsigned char numeric[31], digest[32];
     ts_sha256_ctx hash;
     if (!registry || !buffer || !written) return RTA_ERR_ARGUMENT;
     *written = 0;
     if (registry->count > RTA_MAX_ASSETS) return RTA_ERR_CAPACITY;
     if (capacity > RTA_MANIFEST_MAX_SIZE) capacity = RTA_MANIFEST_MAX_SIZE;
-    registry_to_observations(registry, observations);
-    if (rta_asset_registry_build(observations, registry->count, &checked) != RTA_OK)
-        return RTA_ERR_INVALID_ASSET;
     if (capacity < HEADER_SIZE + TRAILER_SIZE) return RTA_ERR_CAPACITY;
     memcpy(buffer, MAGIC, sizeof(MAGIC));
     put_u16(buffer + 4, RTA_MANIFEST_VERSION);
     put_u16(buffer + 6, (uint16_t)registry->count);
     put_u32(buffer + 8, 0);
     for (i = 0; i < registry->count; ++i) {
-        const rta_asset *a = &checked.assets[i];
+        const rta_asset *a = &registry->assets[i];
+        rta_asset_observation o;
+        memset(&o, 0, sizeof(o));
+        o.id=a->id; o.title=a->title; o.path=a->path; o.owner=a->owner;
+        o.source=a->source; o.format=a->format; o.sha256=a->sha256;
+        o.type=a->type; o.state=a->state; o.size_bytes=a->size_bytes;
+        o.width=a->width; o.height=a->height; o.duration_ms=a->duration_ms;
+        o.sample_rate_hz=a->sample_rate_hz; o.channels=a->channels;
+        o.managed=a->managed; o.compatible=a->compatible;
+        o.hash_verified=a->hash_verified; o.protected_asset=a->protected_asset;
+        if (rta_asset_validate(&o) != RTA_OK) return RTA_ERR_INVALID_ASSET;
+        for (j = 0; j < i; ++j) {
+            if (strcmp(registry->assets[j].id, a->id) == 0) return RTA_ERR_DUPLICATE_ID;
+            if (strcmp(registry->assets[j].path, a->path) == 0) return RTA_ERR_DUPLICATE_PATH;
+        }
         numeric[0]=(unsigned char)a->type; numeric[1]=(unsigned char)a->state;
         numeric[2]=(unsigned char)((a->managed ? 1U : 0U) |
                      (a->compatible ? 2U : 0U) | (a->hash_verified ? 4U : 0U) |
