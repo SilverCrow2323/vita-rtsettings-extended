@@ -47,15 +47,53 @@ int rtp_preferences_save(const rtp_preferences *p,const char *path){
  if(fflush(f)!=0)goto fail;if(fclose(f)!=0){remove(tmp);return RTP_PREFS_IO_ERROR;}if(rename(tmp,path)!=0){remove(tmp);return RTP_PREFS_IO_ERROR;}return RTP_PREFS_OK;
 fail:fclose(f);remove(tmp);return RTP_PREFS_IO_ERROR;
 }
-static int parse_uint(const char *s,unsigned int *v){char *end;unsigned long n;if(!s||!s[0]||!v)return 0;n=strtoul(s,&end,10);if(*end||n>0xffffffffUL)return 0;*v=(unsigned int)n;return 1;}
+static int parse_uint(const char *s,unsigned int *v){
+ const char *p;char *end;unsigned long n;if(!s||!s[0]||!v)return 0;
+ for(p=s;*p;++p)if(*p<'0'||*p>'9')return 0;
+ n=strtoul(s,&end,10);if(*end||n>0xffffffffUL)return 0;*v=(unsigned int)n;return 1;
+}
 int rtp_preferences_load(rtp_preferences *p,const char *path){
- FILE *f;rtp_preferences tmp;char line[RTP_LINE_MAX];if(!p||!path||!path[0])return RTP_PREFS_INVALID_ARGUMENT;f=fopen(path,"rb");if(!f)return RTP_PREFS_IO_ERROR;rtp_preferences_init(&tmp);
+ FILE *f;rtp_preferences stored,merged;char line[RTP_LINE_MAX];
+ if(!p||!path||!path[0])return RTP_PREFS_INVALID_ARGUMENT;
+ if(validate_tree(p)!=RTP_PREFS_OK)return RTP_PREFS_INVALID_DATA;
+ f=fopen(path,"rb");if(!f)return RTP_PREFS_IO_ERROR;
+ rtp_preferences_init(&stored);
  if(!fgets(line,sizeof(line),f)||strcmp(line,RTP_FILE_HEADER)!=0){fclose(f);return RTP_PREFS_INVALID_DATA;}
- while(fgets(line,sizeof(line),f)){char *v[5],*cur;unsigned int kind,visible,order;size_t i;
-  if(!strchr(line,'\n')&&!feof(f)){fclose(f);return RTP_PREFS_INVALID_DATA;}line[strcspn(line,"\r\n")]='\0';if(!line[0])continue;v[0]=line;cur=line;
-  for(i=1;i<5;++i){cur=strchr(cur,'\t');if(!cur){fclose(f);return RTP_PREFS_INVALID_DATA;}*cur++='\0';v[i]=cur;}
-  if(strchr(v[4],'\t')||!valid_id(v[0],0)||!valid_id(v[1],1)||!parse_uint(v[2],&kind)||!parse_uint(v[3],&visible)||!parse_uint(v[4],&order)||kind<1||kind>4||visible>1||tmp.count>=RTP_MAX_ENTRIES||find_index(&tmp,v[0])!=RTP_MAX_ENTRIES){fclose(f);return RTP_PREFS_INVALID_DATA;}
-  if(rtp_preferences_register(&tmp,v[0],v[1],(rtp_entry_kind)kind,(int)visible,order)!=RTP_PREFS_OK){fclose(f);return RTP_PREFS_INVALID_DATA;}
+ while(fgets(line,sizeof(line),f)){
+  char *v[5],*cur;unsigned int kind,visible,order;size_t i;rtp_menu_entry e;
+  if(!strchr(line,'\\n')&&!feof(f)){fclose(f);return RTP_PREFS_INVALID_DATA;}
+  line[strcspn(line,"\\r\\n")]='\\0';if(!line[0])continue;v[0]=line;cur=line;
+  for(i=1;i<5;++i){cur=strchr(cur,'\\t');if(!cur){fclose(f);return RTP_PREFS_INVALID_DATA;}*cur++='\\0';v[i]=cur;}
+  if(strchr(v[4],'\\t')||!valid_id(v[0],0)||!valid_id(v[1],1)||
+     !parse_uint(v[2],&kind)||!parse_uint(v[3],&visible)||!parse_uint(v[4],&order)||
+     kind<1||kind>4||visible>1||stored.count>=RTP_MAX_ENTRIES||
+     find_index(&stored,v[0])!=RTP_MAX_ENTRIES){fclose(f);return RTP_PREFS_INVALID_DATA;}
+  memset(&e,0,sizeof(e));strcpy(e.id,v[0]);strcpy(e.parent_id,v[1]);
+  e.kind=(rtp_entry_kind)kind;e.visible=(int)visible;e.order=order;
+  stored.entries[stored.count++]=e;
  }
- if(ferror(f)){fclose(f);return RTP_PREFS_IO_ERROR;}fclose(f);if(validate_tree(&tmp)!=RTP_PREFS_OK)return RTP_PREFS_INVALID_DATA;*p=tmp;return RTP_PREFS_OK;
+ if(ferror(f)){fclose(f);return RTP_PREFS_IO_ERROR;}fclose(f);
+ merged=*p;
+ /* Merge persisted overrides onto the current module catalogue. Unknown IDs are stale and ignored. */
+ {
+  size_t i;
+  for(i=0;i<stored.count;++i){
+   size_t target=find_index(&merged,stored.entries[i].id);
+   if(target!=RTP_MAX_ENTRIES){
+    size_t parent;
+    if(merged.entries[target].kind!=stored.entries[i].kind)return RTP_PREFS_INVALID_DATA;
+    merged.entries[target].visible=stored.entries[i].visible;
+    merged.entries[target].order=stored.entries[i].order;
+    if(stored.entries[i].parent_id[0]== '\\0'){
+     merged.entries[target].parent_id[0]='\\0';
+    }else{
+     parent=find_index(&merged,stored.entries[i].parent_id);
+     if(parent!=RTP_MAX_ENTRIES&&merged.entries[parent].kind==RTP_ENTRY_CATEGORY)
+      strcpy(merged.entries[target].parent_id,stored.entries[i].parent_id);
+    }
+   }
+  }
+ }
+ if(validate_tree(&merged)!=RTP_PREFS_OK)return RTP_PREFS_INVALID_DATA;
+ *p=merged;return RTP_PREFS_OK;
 }
