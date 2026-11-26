@@ -1,6 +1,18 @@
 #include "plugin_help.h"
+#include "plugin_control_centre.h"
 #include <string.h>
 
+void rtp_plugin_centre_bind_help(rtp_plugin_centre_snapshot *snapshot,
+                                 const rtp_plugin_help_catalogue *help) {
+    size_t i;
+    if (!snapshot || !help || snapshot->count > RTP_PLUGIN_CENTRE_MAX) return;
+    for (i=0;i<snapshot->count;++i) {
+        const rtp_plugin_centre_row *row=&snapshot->rows[i];
+        snapshot->rows[i].has_help =
+            row->plugin_id[0] != '\\0' &&
+            rtp_plugin_help_find(help,row->plugin_id) != NULL;
+    }
+}
 static int valid_id(const char *s) {
     size_t i;
     if (!s || !s[0]) return 0;
