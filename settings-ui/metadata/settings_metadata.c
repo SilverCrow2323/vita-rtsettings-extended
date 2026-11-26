@@ -49,7 +49,7 @@ int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_prefe
  for(i=0;i<sizeof(entries)/sizeof(entries[0]);++i){
   const appearance_default *e=&entries[i];
   if(rtp_preferences_register(preferences,e->id,
-      (i==0||i==7)?"":e->category,
+      (i==0)?"":(i==7)?"appearance-customization":e->category,
       (i==0||i==7)?RTP_ENTRY_CATEGORY:RTP_ENTRY_SETTING,1,
       (unsigned int)(20+i))!=RTP_PREFS_OK)return RTP_META_INVALID_ARGUMENT;
   {
