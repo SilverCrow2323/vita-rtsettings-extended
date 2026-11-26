@@ -56,7 +56,7 @@ These are research candidates, not an approved one-click install set. Version se
 
 ## Target profile shortlist
 
-See [Plugin Catalogue](PLUGIN_CATALOGUE.md) for all 16 normalized records, versions, adapter IDs, dependencies, conflicts and per-plugin caveats. Key decisions for the PCH-1000 OLED / 3.65 / YAMT setup:
+See [Plugin Catalogue](PLUGIN_CATALOGUE.md) for all 22 normalized records, versions, adapter IDs, dependencies, conflicts and per-plugin caveats. Key decisions for the PCH-1000 OLED / 3.65 / YAMT setup:
 
 - Wi-Fi Turbo 0.7.2: 3.65 physically tested by the author.
 - vitastream 2.3: offline validated for 3.65, physical retail test documented on 3.60 only.
