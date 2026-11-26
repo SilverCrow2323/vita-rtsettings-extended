@@ -50,7 +50,7 @@ int main(void) {
         invalid.assets[0].hash_verified=0;
         assert(rta_asset_manifest_encode(&invalid,buffer,sizeof(buffer),&length)==RTA_OK);
         assert(rta_asset_manifest_decode(buffer,length,&decoded)==RTA_OK);
-        assert(!decoded.assets[0].hash_verified && decoded.assets[0].sha256[0]=='\\0');
+        assert(!decoded.assets[0].hash_verified && decoded.assets[0].sha256[0]=='\0');
     }
     memset(&memory,0,sizeof(memory)); io.context=&memory; io.read=store_read; io.replace_atomic=store_write;
     assert(rta_asset_manifest_save(&source,&io,"ur0:data/rt/assets/manifest.rtam",buffer,sizeof(buffer))==RTA_OK);
