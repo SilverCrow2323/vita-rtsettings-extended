@@ -153,6 +153,44 @@ class InstallerTransactionTests(unittest.TestCase):
             engine.apply(plan)
         self.assertEqual(list(outside.iterdir()), [])
 
+    def test_rollback_preflights_every_file_before_restoring_any(self):
+        engine = InstallerEngine(self.root)
+        transaction_id = engine.apply(self.make_plan("install", "1.0.0", [
+            ("settings/demo/a.ini", b"first"),
+            ("settings/demo/b.ini", b"second"),
+        ]))
+        (self.root / "settings/demo/b.ini").write_bytes(b"externally changed")
+        with self.assertRaisesRegex(TransactionError, "modified"):
+            engine.rollback(transaction_id)
+        self.assertEqual((self.root / "settings/demo/a.ini").read_bytes(), b"first")
+        self.assertEqual((self.root / "settings/demo/b.ini").read_bytes(), b"externally changed")
+
+    def test_rollback_refuses_a_registry_changed_after_commit(self):
+        engine = InstallerEngine(self.root)
+        transaction_id = engine.apply(self.make_plan("install", "1.0.0", [
+            ("settings/demo/config.ini", b"installed"),
+        ]))
+        registry = self.root / ".rtse/registry.json"
+        registry.write_text('{"schema_version":1,"modules":{}}', encoding="utf-8")
+        with self.assertRaisesRegex(TransactionError, "registry was modified"):
+            engine.rollback(transaction_id)
+        self.assertEqual((self.root / "settings/demo/config.ini").read_bytes(), b"installed")
+
+    def test_rollback_uses_fresh_temp_and_does_not_follow_restore_symlink(self):
+        engine = InstallerEngine(self.root)
+        transaction_id = engine.apply(self.make_plan("install", "1.0.0", [
+            ("settings/demo/config.ini", b"installed"),
+        ]))
+        target = self.root / "settings/demo/config.ini"
+        outside = self.base / "outside.txt"
+        outside.write_bytes(b"must remain untouched")
+        restore_link = target.with_name(target.name + ".rtse-restore")
+        restore_link.symlink_to(outside)
+        engine.rollback(transaction_id)
+        self.assertFalse(target.exists())
+        self.assertEqual(outside.read_bytes(), b"must remain untouched")
+        self.assertTrue(restore_link.is_symlink())
+
     def test_rejects_path_traversal_in_module_plan(self):
         engine = InstallerEngine(self.root)
         plan = self.make_plan("install", "1.0.0", [
