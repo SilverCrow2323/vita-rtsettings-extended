@@ -6,7 +6,7 @@ RANLIB := $(PREFIX)ranlib
 CPPFLAGS += -DRTSE_PLATFORM_VITA -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters
 CFLAGS += -std=c99 -O2 -Wall -Wextra -Wpedantic -fno-strict-aliasing
 
-OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/wifi_turbo_adapter.o
+OBJECTS := build-vita/tai_saver.o build-vita/sha256.o build-vita/boot_journal.o build-vita/preferences.o build-vita/layout_profiles.o build-vita/preferences_ui.o build-vita/settings_metadata.o build-vita/settings_screen.o build-vita/plugin_inventory.o build-vita/plugin_compatibility.o build-vita/plugin_control_centre.o build-vita/storage_devices.o build-vita/wifi_turbo_adapter.o
 LIBRARY := build-vita/librtsettings.a
 
 .PHONY: all clean
@@ -58,6 +58,9 @@ build-vita/wifi_turbo_adapter.o: source/plugin-adapters/wifi_turbo_adapter.c inc
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build-vita/plugin_control_centre.o: settings-ui/plugin_control_centre.c settings-ui/plugin_control_centre.h include/plugin_inventory.h include/plugin_compatibility.h | build-vita
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+build-vita/storage_devices.o: settings-ui/storage_devices.c settings-ui/storage_devices.h | build-vita
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(LIBRARY): $(OBJECTS)
