@@ -1,52 +1,58 @@
 # Rt:Settings Extended
 
-A native-settings extension project for PlayStation Vita.
+A modular extension for the native PlayStation Vita **Settings** application.
 
-Rt:Settings Extended extends the existing **Settings** application with additional, integrated categories and pages. It is not a separate SPDW control panel.
+Rt:Settings Extended adds integrated feature categories and pages. It is not a separate SPDW control panel.
 
 ## Project goals
 
 - Add native-feeling Settings pages with consistent navigation and terminology.
 - Keep each feature modular, independently configurable and safe to disable.
 - Prefer reversible operations, explicit status reporting and recovery paths.
-- Keep user-facing interface text in English.
+- Keep all user-facing interface text in English.
 
 ## First feature: Tai Saver
 
 Tai Saver protects the configuration in `ur0:tai`.
 
 - Automatic snapshots with configurable retention (2, 3, 4, 5 or Custom).
-- Separate Known-Good, Failed / KO and Pre-Restore archives.
+- Separate Automatic, Known-Good, Failed / KO and Pre-Restore archives.
 - Per-file SHA-256 hashes and JSON manifests.
 - Snapshot integrity verification and file-level comparison.
 - Restore with a verified Pre-Restore safety snapshot and rollback path.
-- Automatic rotation applies only to verified Automatic snapshots. Known-Good, Failed and Pre-Restore archives are never silently removed by that rotation.
+- Automatic rotation applies only to verified Automatic snapshots.
 
 ## Repository layout
 
-- `docs/` — architecture and implementation notes.
+- `docs/` — architecture, boot integration and Settings integration contracts.
 - `include/` — public C interfaces.
 - `source/tai-saver/` — Tai Saver engine and SHA-256 implementation.
 - `tai-saver/` — feature specification and JSON schemas.
-- `settings-ui/` — native Settings integration design.
+- `settings-ui/` — native Settings page design.
 - `tests/` — host-side regression tests.
 
 ## Build and test
 
-Build the host static library and run the regression suite:
-
 ```sh
 make
 make test
-make sanitize  # optional; requires AddressSanitizer/UBSan support
+make sanitize
 ```
 
-A VitaSDK static-library build recipe is provided in `Makefile.vita`. It still requires a successful cross-build and testing on a physical or emulated target before a VPK or compatibility claim is made.
+A VitaSDK static-library build recipe is provided in `Makefile.vita`. The Vita cross-build, boot adapter, native Settings registration, VPK packaging and physical-device validation are separate milestones. Do not interpret a successful host CI run as proof of Vita compatibility.
 
-## Development status
+## Current development status
 
-The Tai Saver C core is implemented and host-tested. The boot plugin entry point, native Settings registration/page, stale-staging recovery, VPK packaging and on-device validation are still pending. See [`docs/TAI_SAVER_CORE.md`](docs/TAI_SAVER_CORE.md) for the API, safety rules, limits and current test coverage.
+**Implemented and host-tested:** Tai Saver C core, SHA-256 manifests, snapshot verification, comparison, archive classification, Automatic-only retention and guarded restore with Pre-Restore snapshot.
+
+**Next:** stale-staging recovery, VitaSDK cross-build validation, boot lifecycle adapter, native Settings category/page and packaging.
+
+See:
+- [Tai Saver Core](docs/TAI_SAVER_CORE.md)
+- [Boot Integration](docs/BOOT_INTEGRATION.md)
+- [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
+- [Tai Saver page specification](settings-ui/TAI_SAVER_PAGE.md)
 
 ## Primary validation target
 
-PlayStation Vita 1000, firmware 3.65 Ensō, SD2Vita with YAMT. Other Vita models and firmware configurations require separate testing.
+PlayStation Vita 1000, firmware 3.65 Ensō, SD2Vita with YAMT. Other models and firmware configurations require separate testing.
