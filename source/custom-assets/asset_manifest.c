@@ -253,3 +253,34 @@ rta_result rta_asset_manifest_load(const rta_asset_manifest_io *io,
     if (length > capacity) return RTA_ERR_CAPACITY;
     return rta_asset_manifest_decode(scratch, length, registry);
 }
+
+
+rta_result rta_asset_manifest_load_recover(const rta_asset_manifest_io *io,
+                                           const char *primary_path,
+                                           const char *backup_path,
+                                           unsigned char *scratch, size_t capacity,
+                                           rta_asset_registry *registry,
+                                           int *used_backup) {
+    rta_result primary_result;
+    rta_result backup_result;
+    rta_asset_registry candidate;
+    if (!io || !io->read || !primary_path || !backup_path ||
+        !scratch || !registry || !used_backup ||
+        strcmp(primary_path, backup_path) == 0)
+        return RTA_ERR_ARGUMENT;
+    *used_backup = 0;
+    primary_result = rta_asset_manifest_load(io, primary_path, scratch,
+                                             capacity, &candidate);
+    if (primary_result == RTA_OK) {
+        *registry = candidate;
+        return RTA_OK;
+    }
+    backup_result = rta_asset_manifest_load(io, backup_path, scratch,
+                                            capacity, &candidate);
+    if (backup_result == RTA_OK) {
+        *registry = candidate;
+        *used_backup = 1;
+        return RTA_OK;
+    }
+    return primary_result;
+}

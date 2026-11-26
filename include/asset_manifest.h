@@ -41,6 +41,13 @@ rta_result rta_asset_manifest_load(const rta_asset_manifest_io *io,
                                    const char *path,
                                    unsigned char *scratch, size_t capacity,
                                    rta_asset_registry *registry);
+/* Validate primary first, then backup; output changes only after valid decode. */
+rta_result rta_asset_manifest_load_recover(const rta_asset_manifest_io *io,
+                                           const char *primary_path,
+                                           const char *backup_path,
+                                           unsigned char *scratch, size_t capacity,
+                                           rta_asset_registry *registry,
+                                           int *used_backup);
 
 #ifdef __cplusplus
 }

@@ -3,17 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE]; size_t length; int fail_write; int fail_read; int corrupt_write; } mem_store;
+typedef struct { unsigned char data[RTA_MANIFEST_MAX_SIZE], backup[RTA_MANIFEST_MAX_SIZE]; size_t length, backup_length; int fail_write, fail_read, corrupt_write; } mem_store;
 static int store_read(void *ctx,const char *path,unsigned char *out,size_t cap,size_t *len) {
-    mem_store *m=(mem_store *)ctx; (void)path;
-    if (m->fail_read || m->length>cap) return -1;
-    memcpy(out,m->data,m->length); *len=m->length; return 0;
+    mem_store *m=(mem_store *)ctx; const unsigned char *src; size_t n;
+    if (m->fail_read) return -1;
+    if (strcmp(path,"manifest.bak")==0) { src=m->backup; n=m->backup_length; }
+    else { src=m->data; n=m->length; }
+    if (n>cap) return -1;
+    memcpy(out,src,n); *len=n; return 0;
 }
 static int store_write(void *ctx,const char *path,const unsigned char *data,size_t len) {
-    mem_store *m=(mem_store *)ctx; (void)path;
+    mem_store *m=(mem_store *)ctx; unsigned char *dst; size_t *stored;
     if (m->fail_write || len>sizeof(m->data)) return -1;
-    memcpy(m->data,data,len); m->length=len;
-    if (m->corrupt_write && m->length > 20) m->data[20] ^= 0x20;
+    if (strcmp(path,"manifest.bak")==0) { dst=m->backup; stored=&m->backup_length; }
+    else { dst=m->data; stored=&m->length; }
+    memcpy(dst,data,len); *stored=len;
+    if (m->corrupt_write && *stored>20) dst[20]^=0x20;
     return 0;
 }
 static void make_registry(rta_asset_registry *r) {
@@ -72,6 +77,20 @@ int main(void) {
     memory.fail_write=0;
     memory.fail_read=1;
     assert(rta_asset_manifest_load(&io,"manifest",buffer,sizeof(buffer),&decoded)==RTA_ERR_BACKEND);
-    puts("Asset manifest codec and persistence contract tests passed.");
+    memory.fail_read=0;
+    /* Corrupt primary is rejected; a separate validated backup is accepted. */
+    assert(store_write(&memory,"manifest.bak",buffer,length)==0);
+    memory.data[20]^=0x40;
+    {
+        int used_backup=0;
+        memset(&decoded,0xA5,sizeof(decoded));
+        assert(rta_asset_manifest_load_recover(&io,"manifest","manifest.bak",
+               buffer,sizeof(buffer),&decoded,&used_backup)==RTA_OK);
+        assert(used_backup==1 && decoded.count==1);
+        assert(strcmp(decoded.assets[0].id,"boot-splash-1")==0);
+        assert(rta_asset_manifest_load_recover(&io,"same","same",buffer,
+               sizeof(buffer),&decoded,&used_backup)==RTA_ERR_ARGUMENT);
+    }
+    puts("Asset manifest codec, persistence and recovery tests passed.");
     return 0;
 }

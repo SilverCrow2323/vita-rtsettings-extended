@@ -40,3 +40,18 @@ A VitaSDK-specific, read-only bridge now provides the bounded reader used by the
 ## Tests
 
 `tests/test_custom_assets.c` covers registry validation, duplicate IDs/paths, path traversal, type size limits, successful activation, failed activation verification with rollback, rollback failure, external asset refusal, protected backup refusal and deletion failure/success.
+
+
+## Startup recovery
+
+The portable manifest layer now includes a recovery loader that validates the
+primary manifest first and falls back to a separately retained backup only when
+the primary cannot be read or fails decoding/integrity validation. The caller
+receives an explicit `used_backup` flag; the destination registry changes only
+after one complete copy validates. If both copies fail, the primary failure is
+returned to preserve the original diagnostic context.
+
+Host regression tests simulate a corrupted primary and a valid backup. This
+primitive does not create or rotate backups itself: the platform persistence
+backend must preserve the previous manifest before replacing the primary. Vita
+backup rotation and crash-recovery integration remain pending.
