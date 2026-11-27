@@ -61,6 +61,28 @@ static void draw_text(float x, float y, unsigned int color, const char *s) {
     vita2d_pgf_draw_text(ui_font, (int)x, (int)y, color, 1.0f, s);
 }
 
+static void startup_animation(void) {
+    int frame;
+    for (frame = 0; frame < 42; ++frame) {
+        float pulse = 18.0f + (float)(frame % 14) * 2.0f;
+        int progress = (frame + 1) * 900 / 42;
+        vita2d_start_drawing();
+        vita2d_clear_screen();
+        vita2d_draw_rectangle(0, 0, SCREEN_W, SCREEN_H, DARK);
+        vita2d_draw_rectangle(0, 0, SCREEN_W, 3, CYAN);
+        vita2d_draw_fill_circle(480.0f, 210.0f, pulse + 10.0f, 0xff1b3448u);
+        vita2d_draw_fill_circle(480.0f, 210.0f, pulse, CYAN);
+        vita2d_draw_fill_circle(480.0f, 210.0f, 10.0f, DARK);
+        draw_text(365, 310, WHITE, "RT / VITA COCKPIT");
+        draw_text(390, 345, MUTED, "INITIALIZING SYSTEM");
+        vita2d_draw_rectangle(30, 470, 900, 5, PANEL);
+        vita2d_draw_rectangle(30, 470, (float)progress, 5, CYAN);
+        vita2d_end_drawing();
+        vita2d_swap_buffers();
+        sceKernelDelayThread(16000);
+    }
+}
+
 static void draw_shell(void) {
     unsigned int i;
     char line[160];
@@ -83,7 +105,7 @@ static void draw_shell(void) {
 
     for (i = 0; i < COMPONENT_COUNT; ++i) {
         float y = 166.0f + (float)i * 48.0f;
-        unsigned int bg = ((int)i == selected && page == 1) ? 0xff263c50u : PANEL;
+        unsigned int bg = ((int)i == selected && page == 0) ? 0xff263c50u : PANEL;
         vita2d_draw_rectangle(30, y - 25, 900, 40, bg);
         draw_text(48, y, ((int)i == selected && page == 1) ? CYAN : WHITE, components[i].name);
         draw_text(610, y, components[i].installed ? GREEN : AMBER,
