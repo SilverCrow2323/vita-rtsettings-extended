@@ -28,6 +28,8 @@ int rtfs_open(const char *path, unsigned flags, unsigned mode) {
     if (flags & RTFS_OPEN_CREATE) native_flags |= SCE_O_CREAT;
     if (flags & RTFS_OPEN_EXCLUSIVE) native_flags |= SCE_O_EXCL;
     if (flags & RTFS_OPEN_TRUNCATE) native_flags |= SCE_O_TRUNC;
+    if (flags & RTFS_OPEN_WRITE_LOCK) native_flags |= SCE_O_WRLOCK;
+    if (flags & RTFS_OPEN_NOWAIT) native_flags |= SCE_O_NOWAIT;
     return sceIoOpen(path, native_flags, (SceMode)mode);
 }
 
@@ -58,6 +60,18 @@ int rtfs_stat_path(const char *path, rtfs_stat *out) {
     out->type = (rtfs_type)vita_type(st.st_mode);
     out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
     out->mtime = 0; /* SceDateTime is not flattened into a guessed Unix timestamp. */
+    return 0;
+}
+int rtfs_stat_fd(int fd, rtfs_stat *out) {
+    SceIoStat st;
+    int result;
+    if (!out) return -1;
+    memset(&st, 0, sizeof(st));
+    result = sceIoGetstatByFd(fd, &st);
+    if (result < 0) return result;
+    out->type = (rtfs_type)vita_type(st.st_mode);
+    out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
+    out->mtime = 0;
     return 0;
 }
 int rtfs_mkdir(const char *path, unsigned mode) { return sceIoMkdir(path, (SceMode)mode); }
@@ -134,7 +148,15 @@ int rtfs_open(const char *path, unsigned flags, unsigned mode) {
     if (flags & RTFS_OPEN_CREATE) f |= O_CREAT;
     if (flags & RTFS_OPEN_EXCLUSIVE) f |= O_EXCL;
     if (flags & RTFS_OPEN_TRUNCATE) f |= O_TRUNC;
-    { int fd = open(path, f, (mode_t)mode); return fd < 0 ? neg_errno() : fd; }
+    { int fd = open(path, f, (mode_t)mode);
+      if (fd < 0) return neg_errno();
+      if (flags & RTFS_OPEN_WRITE_LOCK) {
+          struct flock lock;
+          memset(&lock, 0, sizeof(lock)); lock.l_type = F_WRLCK; lock.l_whence = SEEK_SET;
+          if (fcntl(fd, (flags & RTFS_OPEN_NOWAIT) ? F_SETLK : F_SETLKW, &lock) != 0) { int error = neg_errno(); (void)close(fd); return error; }
+      }
+      return fd;
+    }
 }
 int64_t rtfs_read(int fd, void *buffer, size_t capacity) {
     ssize_t n;
@@ -158,6 +180,15 @@ int rtfs_stat_path(const char *path, rtfs_stat *out) {
     struct stat st;
     if (!path || !out) return -1;
     if (lstat(path, &st) != 0) return neg_errno();
+    out->type = host_type(st.st_mode);
+    out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
+    out->mtime = st.st_mtime < 0 ? 0 : (uint64_t)st.st_mtime;
+    return 0;
+}
+int rtfs_stat_fd(int fd, rtfs_stat *out) {
+    struct stat st;
+    if (!out) return -1;
+    if (fstat(fd, &st) != 0) return neg_errno();
     out->type = host_type(st.st_mode);
     out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
     out->mtime = st.st_mtime < 0 ? 0 : (uint64_t)st.st_mtime;
