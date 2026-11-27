@@ -860,7 +860,7 @@ static ts_result create_snapshot_locked(const char *source_dir, const char *stor
     ts_manifest manifest;
     char class_name[32], class_dir[TS_PATH_MAX], staging_dir[TS_PATH_MAX];
     char stage_path[TS_PATH_MAX], final_path[TS_PATH_MAX], payload[TS_PATH_MAX];
-    struct stat st;
+    rtfs_stat st;
     struct tm tm_utc;
     time_t now;
     uint32_t removed = 0;
@@ -869,7 +869,7 @@ static ts_result create_snapshot_locked(const char *source_dir, const char *stor
     memset(out, 0, sizeof(*out));
     if (!source_dir || !storage_root || !ts_archive_class_name(archive_class) ||
         (archive_class == TS_ARCHIVE_AUTOMATIC && retention < 2)) return TS_ERR_ARGUMENT;
-    if (lstat(source_dir, &st) != 0 || !S_ISDIR(st.st_mode)) return TS_ERR_NOT_FOUND;
+    if (rtfs_stat_path(source_dir, &st) != 0 || st.type != RTFS_TYPE_DIRECTORY) return TS_ERR_NOT_FOUND;
     if (mkdir_p(storage_root) != 0 || class_directory(archive_class, class_name, sizeof(class_name)) != 0 ||
         path_join(class_dir, sizeof(class_dir), storage_root, class_name) != 0 || mkdir_p(class_dir) != 0 ||
         path_join(staging_dir, sizeof(staging_dir), storage_root, "staging") != 0 || mkdir_p(staging_dir) != 0)
@@ -896,8 +896,10 @@ static ts_result create_snapshot_locked(const char *source_dir, const char *stor
     if (path_join(stage_path, sizeof(stage_path), staging_dir, manifest.snapshot_id) != 0 ||
         path_join(final_path, sizeof(final_path), class_dir, manifest.snapshot_id) != 0 ||
         path_join(payload, sizeof(payload), stage_path, "payload") != 0) { result = TS_ERR_ARGUMENT; goto done; }
-    if (lstat(stage_path, &st) == 0 || lstat(final_path, &st) == 0) { result = TS_ERR_EXISTS; goto done; }
-    if (mkdir(stage_path, 0700) != 0) { result = TS_ERR_IO; goto done; }
+    if (rtfs_stat_path(stage_path, &st) == 0 || rtfs_stat_path(final_path, &st) == 0) {
+        result = TS_ERR_EXISTS; goto done;
+    }
+    if (rtfs_mkdir(stage_path, 0700) != 0) { result = TS_ERR_IO; goto done; }
     if (copy_manifest_payload(source_dir, payload, &manifest) != 0) {
         (void)remove_tree(stage_path);
         result = TS_ERR_SOURCE_CHANGED;
@@ -913,7 +915,7 @@ static ts_result create_snapshot_locked(const char *source_dir, const char *stor
         result = TS_ERR_INTEGRITY;
         goto done;
     }
-    if (rename(stage_path, final_path) != 0) {
+    if (rtfs_rename(stage_path, final_path) != 0) {
         (void)remove_tree(stage_path);
         result = TS_ERR_IO;
         goto done;
@@ -966,22 +968,23 @@ ts_result ts_verify_snapshot(const char *snapshot_dir, ts_snapshot_info *out) {
 static ts_result apply_retention_locked(const char *storage_root, unsigned keep_count, uint32_t *removed_count) {
     typedef struct { char id[TS_ID_MAX]; } snapshot_name;
     char automatic_dir[TS_PATH_MAX], path[TS_PATH_MAX];
-    DIR *dir;
-    struct dirent *entry;
+    rtfs_dir dir;
+    rtfs_dirent entry;
     snapshot_name *items = NULL;
     size_t count = 0, capacity = 0, i;
     uint32_t removed = 0;
     ts_result result = TS_OK;
+    int read_result, close_result, dir_open = 0;
     if (removed_count) *removed_count = 0;
     if (!valid_directory_path(storage_root) || keep_count < 2 || keep_count > 1000) return TS_ERR_ARGUMENT;
     if (path_join(automatic_dir, sizeof(automatic_dir), storage_root, "automatic") != 0 || mkdir_p(automatic_dir) != 0)
         return TS_ERR_IO;
-    dir = opendir(automatic_dir);
-    if (!dir) return TS_ERR_IO;
-    while ((entry = readdir(dir)) != NULL) {
+    if (rtfs_dir_open(&dir, automatic_dir) != 0) return TS_ERR_IO;
+    dir_open = 1;
+    while ((read_result = rtfs_dir_read(&dir, &entry)) > 0) {
         ts_snapshot_info info;
-        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") || !valid_id(entry->d_name)) continue;
-        if (path_join(path, sizeof(path), automatic_dir, entry->d_name) != 0) continue;
+        if (!strcmp(entry.name, ".") || !strcmp(entry.name, "..") || !valid_id(entry.name)) continue;
+        if (path_join(path, sizeof(path), automatic_dir, entry.name) != 0) continue;
         if (ts_verify_snapshot(path, &info) != TS_OK || info.archive_class != TS_ARCHIVE_AUTOMATIC) continue;
         if (count == capacity) {
             size_t next_capacity = capacity ? capacity * 2 : 8;
@@ -989,11 +992,12 @@ static ts_result apply_retention_locked(const char *storage_root, unsigned keep_
             if (!next) { result = TS_ERR_MEMORY; goto done; }
             items = next; capacity = next_capacity;
         }
-        memcpy(items[count].id, entry->d_name, strlen(entry->d_name) + 1U);
+        memcpy(items[count].id, entry.name, strlen(entry.name) + 1U);
         ++count;
     }
-    (void)closedir(dir);
-    dir = NULL;
+    close_result = rtfs_dir_close(&dir);
+    dir_open = 0;
+    if (read_result < 0 || close_result != 0) { result = TS_ERR_IO; goto done; }
     /* Snapshot IDs begin with UTC timestamps, so lexical order is chronological. */
     for (i = 0; i < count; ++i) {
         size_t j;
@@ -1013,7 +1017,7 @@ static ts_result apply_retention_locked(const char *storage_root, unsigned keep_
         ++removed;
     }
 done:
-    if (dir) (void)closedir(dir);
+    if (dir_open) (void)rtfs_dir_close(&dir);
     free(items);
     if (removed_count) *removed_count = removed;
     return result;
