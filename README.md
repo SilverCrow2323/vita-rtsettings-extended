@@ -15,6 +15,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [The overall vision](#the-overall-vision)
 - [The Settings experience](#the-settings-experience)
 - [Native integration and dedicated Settings categories](#native-integration-and-dedicated-settings-categories)
+- [PS Vita AI Knowledge Skills audit](#ps-vita-ai-knowledge-skills-audit)
 - [Preferences and menu customization](#preferences-and-menu-customization)
 - [Preferences registry implementation](#preferences-registry-implementation)
 - [User-facing Settings metadata](#user-facing-settings-metadata)
@@ -52,6 +53,10 @@ All user-facing interface text is being moved to stable translation keys. The ne
 ## Plugin Intelligence and compatibility rules
 
 The compatibility evaluator now supports a bounded, caller-owned rule registry. Verified adapters can register missing-dependency and conflict rules without changing the evaluator's central source. Rules produce read-only blocking/review findings; they never modify taiHEN configuration or automatically disable plugins. Conflict duplicates are detected symmetrically, dependency rules fail closed, and unknown plugins remain inventory-only. See [Plugin Compatibility Rule Registry](settings-ui/PLUGIN_COMPATIBILITY_RULES.md) and [Rt Plugin Strategy](docs/PLUGIN_STRATEGY.md).
+
+## PS Vita AI Knowledge Skills audit
+
+The project maintains a source-aware adoption review of the external [PS-Vita-Ai-knowledge-Skills](https://github.com/Syscallh00k/PS-Vita-Ai-knowledge-Skills) collection. We use it for taiHEN lifecycle, VitaSDK packaging, filesystem, ABI and diagnostics research, while independently verifying platform claims before implementation. See [the technical audit and adoption plan](docs/PS_VITA_AI_KNOWLEDGE_AUDIT.md).
 
 ## The overall vision
 
