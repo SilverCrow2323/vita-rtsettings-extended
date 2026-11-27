@@ -720,6 +720,7 @@ A passing host CI run validates only the tests actually executed by that workflo
 - [Boot Integration](docs/BOOT_INTEGRATION.md)
 - [Native Settings Integration](docs/SETTINGS_NATIVE_INTEGRATION.md)
 - [Native Sony Settings Adapter Design](docs/NATIVE_SETTINGS_ADAPTER.md)
+- [Sony Settings placement policy](docs/SONY_SETTINGS_PLACEMENT.md)
 - [Preferences Registry](docs/PREFERENCES_REGISTRY.md)
 - [Layout Profiles](docs/LAYOUT_PROFILES.md)
 - [Preferences UI Model](settings-ui/PREFERENCES_UI_MODEL.md)
