@@ -190,7 +190,7 @@ int rtfs_dir_read(rtfs_dir *dir, rtfs_dirent *out) {
     if (!n || n >= sizeof(out->name)) return -1;
     memset(out, 0, sizeof(*out));
     memcpy(out->name, entry->d_name, n + 1);
-    if (snprintf(path, sizeof(path), "%s/%s", dir->path, entry->d_name) < 0) return -1;
+    { int written = snprintf(path, sizeof(path), "%s/%s", dir->path, entry->d_name); if (written < 0 || (size_t)written >= sizeof(path)) return -1; }
     if (lstat(path, &st) == 0) {
         out->type = host_type(st.st_mode);
         out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
