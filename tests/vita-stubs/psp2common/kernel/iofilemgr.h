@@ -8,6 +8,7 @@
 #define SCE_O_TRUNC 0x0400
 #define SCE_O_EXCL 0x0800
 #define SCE_O_WRLOCK 0x0020
+#define SCE_O_NBLOCK 0x0004
 #define SCE_O_NOWAIT 0x8000
 #define SCE_SEEK_SET 0
 #define SCE_SEEK_CUR 1
