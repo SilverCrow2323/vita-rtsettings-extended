@@ -2,15 +2,18 @@
 
 ## Product model
 
-Rt:Settings Extended ships as one expandable maintenance installer. The installer owns the framework and discovers feature modules from the package manifest. New Settings pages are added as modules in later releases; users do not need a different installer for each feature.
+Rt:Vita Cockpit is the LiveArea installation, configuration, update and maintenance front end for the Rt ecosystem. It detects installed Rt:Components, lets users select all compatible modules or individual sections, explains dependencies and conflicts, and provides recovery tools.
 
-The VPK is not the user-facing Settings experience. Once installed, daily use happens inside the Sony Settings application.
+Rt:Settings Extended is the native Sony Settings experience installed and maintained by Cockpit. It owns the persistent Settings pages and services; it is not a second launcher.
+
+Rt Manager always lives at **Settings → Rt:Settings Extended → Preferences & Settings Management → Rt Manager**.
 
 ## Native Settings placement
 
 Features are not forced into one Rt menu. They are placed in existing Sony categories when that is the natural owner and a verified insertion point exists:
 - Devices: Bluetooth/controller extensions and non-conflicting storage diagnostics;
 - Network: integrations for existing network tools such as Wi-Fi Turbo, without duplicating their pages;
+- Sound & Display: validated display and audio controls;
 - Rt:Settings Extended: Tai Saver, generic plugin management, compatibility, diagnostics, profiles and cross-system tools.
 
 YAMT retains ownership of its storage-specific controls. HENkaku and other third-party plugins retain ownership of their pages. The full placement and safety matrix is in [Sony Settings placement policy](../docs/SONY_SETTINGS_PLACEMENT.md).
@@ -18,18 +21,25 @@ YAMT retains ownership of its storage-specific controls. HENkaku and other third
 ## Package layout
 
 ```text
-rtsettings-extended/
-├── package.json
-├── modules/tai-saver/module.json
-├── framework/payload/
-└── installer/
+rt-ecosystem/
+├── cockpit/                 # VitaSDK LiveArea app and VPK
+├── package.json             # package/release manifest
+├── modules/<module-id>/     # independently selectable modules
+├── framework/payload/       # shared native framework payload
+└── installer/               # schemas and package contracts
 ```
+
+## Runtime split
+
+Cockpit's core is C/VitaSDK. Lua may be embedded for optional, non-critical presentation scripting, but the installer, filesystem transactions, trust verification, taiHEN configuration handling, recovery and SUPRX lifecycle must not depend on a separately installed Lua runtime.
+
+The Cockpit startup animation is distinct from an Ensō boot animation. The latter is managed only by an optional boot adapter that validates the format and engine, backs up current files and requires a recovery path.
 
 ## Installer behavior
 
 The intended native integration is a user-mode taiHEN SUPRX loaded under the Settings title `*NPXS10015`, with PAF XML adapters that preserve stock Sony menus and add Rt-owned pages. See [Native Sony Settings integration](../docs/NATIVE_SETTINGS_ADAPTER.md).
 
-The installer must:
+The write-capable installer must:
 1. validate package and module manifests;
 2. check firmware, framework compatibility, dependencies and conflicts;
 3. inspect the existing installation and identify Rt-owned files;
@@ -53,6 +63,6 @@ Never overwrite or delete files not declared as owned by this package.
 
 ## Implementation status
 
-The package contract is specified, and the portable framework library cross-builds with VitaSDK in CI. That library is not a SUPRX and is not an installable VPK.
+The portable framework library and the first Cockpit read-only audit shell are separate deliverables. The initial Cockpit shell detects registry records and displays component details; it does not yet install modules or edit taiHEN.
 
-The actual Rt SUPRX, embedded native page resources, installer UI, config transaction engine, VPK packaging and physical-device validation are still implementation gates. Do not distribute an empty placeholder VPK or label a portable-library artifact as an installer. A VPK release must contain a working Settings integration and a tested maintenance installer.
+The complete transaction engine, trusted online update index, Rt SUPRX, embedded native page resources, write-capable first module and physical-console validation remain implementation gates. A VPK must be described by its actual capability: a Cockpit shell VPK is not yet the full Rt ecosystem installer.
