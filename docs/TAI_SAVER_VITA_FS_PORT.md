@@ -13,7 +13,7 @@ The Vita branch uses VitaSDK user-mode I/O APIs:
 
 The API deliberately exposes byte counts for reads and writes. Callers must handle short I/O rather than assuming a request completes in one call. Directory iteration returns 1 for an entry, 0 for end-of-directory, and a negative error. Vita error codes are preserved where the underlying API supplies them.
 
-The host implementation uses POSIX and is covered by `tests/test_rt_fs.c`. The adapter is included in both the host framework build and the VitaSDK static-library build recipe.
+The host implementation uses POSIX and is covered by `tests/test_rt_fs.c`. The native Vita branch is also exercised through mocked VitaSDK headers and API functions in `tests/test_rt_fs_vita.c`, including short reads/writes, raw error propagation, directory entry/end/error behavior and free-space query failures. Both suites are wired into `make test` and their own ASan/UBSan targets. The adapter is included in both the host framework build and the VitaSDK static-library build recipe.
 
 ## Safety boundaries
 
@@ -35,8 +35,10 @@ The next implementation step is to route the entire Tai Saver core through an in
 - [x] Header and host implementation added.
 - [x] Vita implementation uses documented VitaSDK user-mode APIs.
 - [x] Host regression test added and wired into `make test`.
-- [ ] Host regression and sanitizer CI green on this commit.
-- [ ] VitaSDK cross-build green on this commit.
+- [x] Host regression suite and Vita-native API mock suite wired into CI.
+- [x] Dedicated host and Vita-native API mock sanitizer targets wired into CI.
+- [ ] Latest commit's host regression and sanitizer CI green.
+- [ ] Latest commit's VitaSDK cross-build green.
 - [ ] Tai Saver core migrated to the adapter; no direct POSIX/stdio filesystem calls remain in the Vita build.
 - [ ] Failure injection for short reads/writes, sync, close, directory read/close, rename, mkdir, remove and storage-query errors.
 - [ ] Physical validation on Vita 1000 / firmware 3.65 Ensō.
