@@ -1,13 +1,13 @@
-#ifndef TEST_VITA_STUB_FCNTL_H
-#define TEST_VITA_STUB_FCNTL_H
-#include <stddef.h>
-#include <stdint.h>
-typedef int SceUID;
-typedef uint32_t SceSize;
-typedef int64_t SceOff;
-typedef uint32_t SceMode;
-#define SCE_O_RDONLY 0x0001
-SceUID sceIoOpen(const char *file, int flags, SceMode mode);
-int sceIoPread(SceUID fd, void *data, SceSize size, SceOff offset);
-int sceIoClose(SceUID fd);
+#ifndef TEST_VITA_IO_FCNTL_H
+#define TEST_VITA_IO_FCNTL_H
+#include <psp2common/kernel/iofilemgr.h>
+SceUID sceIoOpen(const char *, int, SceMode);
+int sceIoClose(SceUID);
+SceSSize sceIoRead(SceUID, void *, SceSize);
+SceSSize sceIoWrite(SceUID, const void *, SceSize);
+SceOff sceIoLseek(SceUID, SceOff, int);
+int sceIoSyncByFd(SceUID, int);
+int sceIoPread(SceUID, void *, SceSize, SceOff);
+int sceIoRemove(const char *);
+int sceIoRename(const char *, const char *);
 #endif
