@@ -4,14 +4,17 @@ CC := arm-vita-eabi-gcc
 CFLAGS := -O2 -Wall -Wextra -Wpedantic -std=c99
 CPPFLAGS := -I$(VITASDK)/arm-vita-eabi/include
 LDFLAGS := -Wl,-q
-LIBS := -lvita2d -lSceCtrl_stub -lSceIofilemgr_stub -lSceLibKernel_stub -lSceGxm_stub -lSceDisplay_stub -lScePgf_stub -lSceSysmodule_stub -lSceSharedFb_stub -lSceAppMgr_stub -lSceCommonDialog_stub -lm
+LIBS := -lvita2d -lSceCtrl_stub -lSceIofilemgr_stub -lSceLibKernel_stub -lSceGxm_stub -lSceDisplay_stub -lScePgf_stub -lSceSysmodule_stub -lSceCommonDialog_stub -lm
 
 all: $(TARGET).vpk
 
 main.o: main.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-eboot.elf: main.o
+vita2d_user_app_compat.o: vita2d_user_app_compat.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+eboot.elf: main.o vita2d_user_app_compat.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 eboot.bin: eboot.elf
