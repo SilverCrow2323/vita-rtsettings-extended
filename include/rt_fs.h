@@ -32,6 +32,7 @@ typedef struct {
 typedef struct {
     intptr_t handle;
     void *opaque;
+    char path[1024];
 } rtfs_dir;
 
 enum {
