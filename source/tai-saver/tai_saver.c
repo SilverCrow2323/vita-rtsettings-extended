@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "tai_saver.h"
 #include "sha256.h"
+#include "rt_fs.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -165,10 +166,9 @@ static int snapshot_path_matches_id(const char *snapshot_dir, const char *snapsh
 }
 
 static int mkdir_one(const char *path) {
-    struct stat st;
-    if (mkdir(path, 0700) == 0) return 0;
-    if (errno != EEXIST) return -1;
-    if (lstat(path, &st) != 0 || !S_ISDIR(st.st_mode)) return -1;
+    rtfs_stat st;
+    if (rtfs_mkdir(path, 0700) == 0) return 0;
+    if (rtfs_stat_path(path, &st) != 0 || st.type != RTFS_TYPE_DIRECTORY) return -1;
     return 0;
 }
 
@@ -190,68 +190,43 @@ static int mkdir_p(const char *path) {
 }
 
 static int remove_tree(const char *path) {
-    struct stat st;
-    DIR *dir;
-    struct dirent *entry;
+    rtfs_stat st;
+    rtfs_dir dir;
+    rtfs_dirent entry;
     char child[TS_PATH_MAX];
-    if (lstat(path, &st) != 0) return errno == ENOENT ? 0 : -1;
-    if (!S_ISDIR(st.st_mode)) return unlink(path);
-    dir = opendir(path);
-    if (!dir) return -1;
-    while ((entry = readdir(dir)) != NULL) {
-        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
-        if (path_join(child, sizeof(child), path, entry->d_name) != 0 || remove_tree(child) != 0) {
-            (void)closedir(dir);
+    int result, close_result;
+    if (rtfs_stat_path(path, &st) != 0) return -1;
+    if (st.type != RTFS_TYPE_DIRECTORY) return rtfs_remove(path);
+    if (rtfs_dir_open(&dir, path) != 0) return -1;
+    while ((result = rtfs_dir_read(&dir, &entry)) > 0) {
+        if (!strcmp(entry.name, ".") || !strcmp(entry.name, "..")) continue;
+        if (path_join(child, sizeof(child), path, entry.name) != 0 || remove_tree(child) != 0) {
+            (void)rtfs_dir_close(&dir);
             return -1;
         }
     }
-    (void)closedir(dir);
-    return rmdir(path);
+    close_result = rtfs_dir_close(&dir);
+    if (result < 0 || close_result != 0) return -1;
+    return rtfs_rmdir(path);
 }
 
 static int acquire_lock(const char *root, int *lock_fd) {
     char path[TS_PATH_MAX];
     int fd;
-    if (!root || !lock_fd || mkdir_p(root) != 0 || path_join(path, sizeof(path), root, ".tai-saver.lock") != 0)
-        return -1;
-#if defined(RTSE_PLATFORM_VITA)
-    /* Hold a non-shared write lock; NOWAIT makes concurrent operations fail promptly. */
-    /* WRLOCK is the non-shared write lock; NOWAIT prevents a boot task from hanging. */
-    fd = sceIoOpen(path, SCE_O_RDWR | SCE_O_CREAT | SCE_O_WRLOCK | SCE_O_NOWAIT,
-                   SCE_S_IRUSR | SCE_S_IWUSR);
-#else
-    {
-        struct flock lock;
-        fd = open(path, O_CREAT | O_RDWR, 0600);
-        if (fd < 0) return -1;
-        memset(&lock, 0, sizeof(lock));
-        lock.l_type = F_WRLCK;
-        lock.l_whence = SEEK_SET;
-        if (fcntl(fd, F_SETLK, &lock) != 0) {
-            (void)close(fd);
-            return -1;
-        }
-    }
-#endif
+    if (!root || !lock_fd || mkdir_p(root) != 0 ||
+        path_join(path, sizeof(path), root, ".tai-saver.lock") != 0) return -1;
+    fd = rtfs_open(path, RTFS_OPEN_WRITE | RTFS_OPEN_CREATE |
+                   RTFS_OPEN_WRITE_LOCK | RTFS_OPEN_NOWAIT, 0600);
     if (fd < 0) return -1;
     *lock_fd = fd;
     return 0;
 }
 static void release_lock(int fd) {
-    if (fd < 0) return;
-#if defined(RTSE_PLATFORM_VITA)
-    (void)sceIoClose(fd);
-#else
-    (void)close(fd);
-#endif
+    if (fd >= 0) (void)rtfs_close(fd);
 }
 
 static int sync_output_fd(int fd) {
-#if defined(RTSE_PLATFORM_VITA)
-    return sceIoSyncByFd(fd, 0);
-#else
-    return fsync(fd);
-#endif
+    return rtfs_sync(fd);
 }
 
 static int class_directory(ts_archive_class archive_class, char *out, size_t size) {
@@ -330,9 +305,9 @@ static int compare_entry_path(const void *a, const void *b) {
 
 static int scan_directory(const char *base, const char *relative, ts_manifest *manifest, unsigned depth) {
     char directory[TS_PATH_MAX], child_path[TS_PATH_MAX], child_relative[TS_PATH_MAX];
-    DIR *dir;
-    struct dirent *entry;
-    struct stat st;
+    rtfs_dir dir;
+    rtfs_dirent entry;
+    int result, close_result;
     if (depth > 24) return -1;
     if (*relative) {
         if (path_join(directory, sizeof(directory), base, relative) != 0) return -1;
@@ -340,57 +315,52 @@ static int scan_directory(const char *base, const char *relative, ts_manifest *m
         if (strlen(base) >= sizeof(directory)) return -1;
         (void)snprintf(directory, sizeof(directory), "%s", base);
     }
-    dir = opendir(directory);
-    if (!dir) return -1;
-    while ((entry = readdir(dir)) != NULL) {
+    if (rtfs_dir_open(&dir, directory) != 0) return -1;
+    while ((result = rtfs_dir_read(&dir, &entry)) > 0) {
         size_t rel_len;
-        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
+        if (!strcmp(entry.name, ".") || !strcmp(entry.name, "..")) continue;
         if (*relative) {
-            if (path_join(child_relative, sizeof(child_relative), relative, entry->d_name) != 0) goto fail;
+            if (path_join(child_relative, sizeof(child_relative), relative, entry.name) != 0) goto fail;
         } else {
-            if (strlen(entry->d_name) >= sizeof(child_relative)) goto fail;
-            (void)snprintf(child_relative, sizeof(child_relative), "%s", entry->d_name);
+            if (strlen(entry.name) >= sizeof(child_relative)) goto fail;
+            (void)snprintf(child_relative, sizeof(child_relative), "%s", entry.name);
         }
-        if (!valid_relative_path(child_relative) || path_join(child_path, sizeof(child_path), base, child_relative) != 0)
-            goto fail;
-        if (lstat(child_path, &st) != 0) goto fail;
-        if (S_ISDIR(st.st_mode)) {
+        if (!valid_relative_path(child_relative) ||
+            path_join(child_path, sizeof(child_path), base, child_relative) != 0) goto fail;
+        if (entry.type == RTFS_TYPE_DIRECTORY) {
             if (scan_directory(base, child_relative, manifest, depth + 1) != 0) goto fail;
-        } else if (S_ISREG(st.st_mode)) {
-            if (append_file(manifest, child_relative, (uint64_t)st.st_size) != 0) goto fail;
+        } else if (entry.type == RTFS_TYPE_FILE) {
+            if (append_file(manifest, child_relative, entry.size) != 0) goto fail;
         } else {
-            (void)closedir(dir);
+            (void)rtfs_dir_close(&dir);
             return -2;
         }
         rel_len = strlen(child_relative);
         if (rel_len >= TS_PATH_MAX) goto fail;
     }
-    (void)closedir(dir);
-    return 0;
+    close_result = rtfs_dir_close(&dir);
+    return result < 0 || close_result != 0 ? -1 : 0;
 fail:
-    (void)closedir(dir);
+    (void)rtfs_dir_close(&dir);
     return -1;
 }
 
 static int hash_file(const char *path, uint64_t *size_out, char hash_out[65]) {
     int fd;
     uint8_t buffer[TS_COPY_BUFFER], digest[32];
-    ssize_t got;
+    int64_t got;
     uint64_t total = 0;
     ts_sha256_ctx ctx;
-    fd = open(path, O_RDONLY);
+    fd = rtfs_open(path, RTFS_OPEN_READ, 0);
     if (fd < 0) return -1;
     ts_sha256_init(&ctx);
-    while ((got = read(fd, buffer, sizeof(buffer))) > 0) {
-        if (UINT64_MAX - total < (uint64_t)got) {
-            (void)close(fd);
-            return -1;
-        }
+    while ((got = rtfs_read(fd, buffer, sizeof(buffer))) > 0) {
+        if (UINT64_MAX - total < (uint64_t)got) { (void)rtfs_close(fd); return -1; }
         total += (uint64_t)got;
         ts_sha256_update(&ctx, buffer, (size_t)got);
     }
     {
-        int close_result = close(fd);
+        int close_result = rtfs_close(fd);
         if (got < 0 || close_result != 0) return -1;
     }
     ts_sha256_final(&ctx, digest);
@@ -401,45 +371,43 @@ static int hash_file(const char *path, uint64_t *size_out, char hash_out[65]) {
 
 static int copy_file_hash(const char *source, const char *destination, uint64_t expected_size, char hash_out[65]) {
     int in_fd = -1, out_fd = -1;
-    struct stat before, opened, after;
+    rtfs_stat before, opened, after;
     uint8_t buffer[TS_COPY_BUFFER], digest[32];
-    ssize_t got;
+    int64_t got;
     uint64_t total = 0;
     ts_sha256_ctx ctx;
-    int saved_errno = 0;
-    if (lstat(source, &before) != 0 || !S_ISREG(before.st_mode)) return -1;
-    in_fd = open(source, O_RDONLY);
-    if (in_fd < 0 || fstat(in_fd, &opened) != 0 || !S_ISREG(opened.st_mode) ||
-        opened.st_size != before.st_size || opened.st_ino != before.st_ino) goto fail;
-    out_fd = open(destination, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (rtfs_stat_path(source, &before) != 0 || before.type != RTFS_TYPE_FILE) return -1;
+    in_fd = rtfs_open(source, RTFS_OPEN_READ, 0);
+    if (in_fd < 0 || rtfs_stat_fd(in_fd, &opened) != 0 ||
+        opened.type != RTFS_TYPE_FILE || opened.size != before.size) goto fail;
+    out_fd = rtfs_open(destination, RTFS_OPEN_WRITE | RTFS_OPEN_CREATE | RTFS_OPEN_EXCLUSIVE, 0600);
     if (out_fd < 0) goto fail;
     ts_sha256_init(&ctx);
-    while ((got = read(in_fd, buffer, sizeof(buffer))) > 0) {
-        ssize_t offset = 0;
+    while ((got = rtfs_read(in_fd, buffer, sizeof(buffer))) > 0) {
+        size_t offset = 0;
         if (UINT64_MAX - total < (uint64_t)got) goto fail;
         ts_sha256_update(&ctx, buffer, (size_t)got);
         total += (uint64_t)got;
-        while (offset < got) {
-            ssize_t written = write(out_fd, buffer + offset, (size_t)(got - offset));
+        while (offset < (size_t)got) {
+            int64_t written = rtfs_write(out_fd, buffer + offset, (size_t)got - offset);
             if (written <= 0) goto fail;
-            offset += written;
+            offset += (size_t)written;
         }
     }
-    if (got < 0 || fstat(in_fd, &after) != 0 || after.st_size != before.st_size ||
-        after.st_mtime != before.st_mtime || after.st_ino != before.st_ino || total != expected_size ||
-        sync_output_fd(out_fd) != 0) goto fail;
+    if (got < 0 || rtfs_stat_fd(in_fd, &after) != 0 ||
+        after.type != before.type || after.size != before.size ||
+        (before.mtime && after.mtime != before.mtime) ||
+        total != expected_size || rtfs_sync(out_fd) != 0) goto fail;
     ts_sha256_final(&ctx, digest);
     ts_sha256_hex(digest, hash_out);
-    if (close(out_fd) != 0) { out_fd = -1; goto fail; }
+    if (rtfs_close(out_fd) != 0) { out_fd = -1; goto fail; }
     out_fd = -1;
-    if (close(in_fd) != 0) { in_fd = -1; return -1; }
+    if (rtfs_close(in_fd) != 0) { in_fd = -1; return -1; }
     return 0;
 fail:
-    saved_errno = errno;
-    if (out_fd >= 0) (void)close(out_fd);
-    if (in_fd >= 0) (void)close(in_fd);
-    (void)unlink(destination);
-    errno = saved_errno;
+    if (out_fd >= 0) (void)rtfs_close(out_fd);
+    if (in_fd >= 0) (void)rtfs_close(in_fd);
+    (void)rtfs_remove(destination);
     return -1;
 }
 
@@ -777,29 +745,16 @@ done:
 
 static int storage_has_space(const char *root, uint64_t bytes, uint32_t files) {
     uint64_t available, needed;
+    const char *colon;
+    char device[16];
+    size_t length;
     needed = bytes + bytes / 20U + (uint64_t)files * 512U + 65536U;
-#if defined(RTSE_PLATFORM_VITA)
-    {
-        char device[16];
-        const char *colon = strchr(root, ':');
-        size_t length;
-        SceIoDevInfo info;
-        if (!colon) return -1;
-        length = (size_t)(colon - root) + 1U;
-        if (length >= sizeof(device)) return -1;
-        memcpy(device, root, length);
-        device[length] = '\0';
-        if (sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(info)) < 0 || info.free_size < 0) return -1;
-        available = (uint64_t)info.free_size;
-    }
-#else
-    {
-        struct statvfs info;
-        if (statvfs(root, &info) != 0) return -1;
-        if (info.f_frsize && info.f_bavail > UINT64_MAX / info.f_frsize) available = UINT64_MAX;
-        else available = (uint64_t)info.f_bavail * (uint64_t)info.f_frsize;
-    }
-#endif
+    if (!root || !(colon = strchr(root, ':'))) return -1;
+    length = (size_t)(colon - root) + 1U;
+    if (!length || length >= sizeof(device)) return -1;
+    memcpy(device, root, length);
+    device[length] = '\0';
+    if (rtfs_free_bytes(device, &available) != 0) return -1;
     return available >= needed ? 0 : -1;
 }
 
