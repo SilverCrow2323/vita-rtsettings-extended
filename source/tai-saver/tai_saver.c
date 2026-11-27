@@ -423,61 +423,122 @@ static int ensure_parent(const char *path) {
     return mkdir_p(temp);
 }
 
-static int json_write_string(FILE *file, const char *text) {
+typedef struct {
+    int fd;
+    unsigned char buffer[4096];
+    size_t used;
+} ts_writer;
+
+static int writer_flush(ts_writer *writer) {
+    size_t offset = 0;
+    while (offset < writer->used) {
+        int64_t written = rtfs_write(writer->fd, writer->buffer + offset, writer->used - offset);
+        if (written <= 0) return -1;
+        offset += (size_t)written;
+    }
+    writer->used = 0;
+    return 0;
+}
+
+static int writer_bytes(ts_writer *writer, const void *data, size_t length) {
+    const unsigned char *bytes = (const unsigned char *)data;
+    while (length) {
+        size_t available = sizeof(writer->buffer) - writer->used;
+        size_t amount = length < available ? length : available;
+        memcpy(writer->buffer + writer->used, bytes, amount);
+        writer->used += amount;
+        bytes += amount;
+        length -= amount;
+        if (writer->used == sizeof(writer->buffer) && writer_flush(writer) != 0) return -1;
+    }
+    return 0;
+}
+
+static int writer_printf(ts_writer *writer, const char *format, ...) {
+    char text[2048];
+    int length;
+    va_list ap;
+    va_start(ap, format);
+    length = vsnprintf(text, sizeof(text), format, ap);
+    va_end(ap);
+    if (length < 0 || (size_t)length >= sizeof(text)) return -1;
+    return writer_bytes(writer, text, (size_t)length);
+}
+
+static int json_write_string(ts_writer *writer, const char *text) {
     const unsigned char *p = (const unsigned char *)(text ? text : "");
-    if (fputc('"', file) == EOF) return -1;
+    if (writer_bytes(writer, "\"", 1) != 0) return -1;
     for (; *p; ++p) {
+        const char *escaped = NULL;
+        char encoded[6];
+        size_t length = 0;
         switch (*p) {
-            case '"': if (fputs("\\\"", file) == EOF) return -1; break;
-            case '\\': if (fputs("\\\\", file) == EOF) return -1; break;
-            case '\b': if (fputs("\\b", file) == EOF) return -1; break;
-            case '\f': if (fputs("\\f", file) == EOF) return -1; break;
-            case '\n': if (fputs("\\n", file) == EOF) return -1; break;
-            case '\r': if (fputs("\\r", file) == EOF) return -1; break;
-            case '\t': if (fputs("\\t", file) == EOF) return -1; break;
+            case '"': escaped = "\\\""; break;
+            case '\\': escaped = "\\\\"; break;
+            case '\b': escaped = "\\b"; break;
+            case '\f': escaped = "\\f"; break;
+            case '\n': escaped = "\\n"; break;
+            case '\r': escaped = "\\r"; break;
+            case '\t': escaped = "\\t"; break;
             default:
                 if (*p < 0x20) {
-                    if (fprintf(file, "\\u%04x", (unsigned)*p) < 0) return -1;
-                } else if (fputc(*p, file) == EOF) return -1;
+                    int n = snprintf(encoded, sizeof(encoded), "\\u%04x", (unsigned)*p);
+                    if (n != 6) return -1;
+                    length = 6;
+                } else {
+                    encoded[0] = (char)*p;
+                    length = 1;
+                }
         }
+        if (escaped) {
+            length = strlen(escaped);
+            if (writer_bytes(writer, escaped, length) != 0) return -1;
+        } else if (writer_bytes(writer, encoded, length) != 0) return -1;
     }
-    return fputc('"', file) == EOF ? -1 : 0;
+    return writer_bytes(writer, "\"", 1);
 }
 
 static int manifest_write(const char *snapshot_dir, const ts_manifest *manifest) {
     char path[TS_PATH_MAX], temp[TS_PATH_MAX];
-    FILE *file;
+    ts_writer writer;
     uint32_t i;
-    int fd, ok = 0;
+    int fd, ok = 0, close_result;
     if (path_join(path, sizeof(path), snapshot_dir, "manifest.json") != 0 ||
         path_join(temp, sizeof(temp), snapshot_dir, "manifest.json.tmp") != 0) return -1;
-    (void)unlink(temp);
-    fd = open(temp, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    (void)rtfs_remove(temp);
+    fd = rtfs_open(temp, RTFS_OPEN_WRITE | RTFS_OPEN_CREATE | RTFS_OPEN_EXCLUSIVE, 0600);
     if (fd < 0) return -1;
-    file = fdopen(fd, "w");
-    if (!file) { (void)close(fd); (void)unlink(temp); return -1; }
-    if (fprintf(file, "{\n  \"schema_version\": %u,\n  \"snapshot_id\": ", manifest->schema_version) < 0 ||
-        json_write_string(file, manifest->snapshot_id) != 0 || fputs(",\n  \"created_at\": ", file) == EOF ||
-        json_write_string(file, manifest->created_at) != 0 || fputs(",\n  \"source_path\": ", file) == EOF ||
-        json_write_string(file, manifest->source_path) != 0 || fputs(",\n  \"archive_class\": ", file) == EOF ||
-        json_write_string(file, ts_archive_class_name(manifest->archive_class)) != 0 ||
-        fputs(",\n  \"completion_state\": ", file) == EOF || json_write_string(file, manifest->completion_state) != 0 ||
-        fprintf(file, ",\n  \"file_count\": %u,\n  \"total_bytes\": %" PRIu64 ",\n  \"files\": [\n", manifest->file_count, manifest->total_bytes) < 0)
-        goto done;
+    memset(&writer, 0, sizeof(writer));
+    writer.fd = fd;
+    if (writer_printf(&writer, "{\\n  \\"schema_version\\": %u,\\n  \\"snapshot_id\\": ", manifest->schema_version) != 0 ||
+        json_write_string(&writer, manifest->snapshot_id) != 0 ||
+        writer_bytes(&writer, ",\\n  \\"created_at\\": ", 18) != 0 ||
+        json_write_string(&writer, manifest->created_at) != 0 ||
+        writer_bytes(&writer, ",\\n  \\"source_path\\": ", 19) != 0 ||
+        json_write_string(&writer, manifest->source_path) != 0 ||
+        writer_bytes(&writer, ",\\n  \\"archive_class\\": ", 21) != 0 ||
+        json_write_string(&writer, ts_archive_class_name(manifest->archive_class)) != 0 ||
+        writer_bytes(&writer, ",\\n  \\"completion_state\\": ", 25) != 0 ||
+        json_write_string(&writer, manifest->completion_state) != 0 ||
+        writer_printf(&writer, ",\\n  \\"file_count\\": %u,\\n  \\"total_bytes\\": %" PRIu64 ",\\n  \\"files\\": [\\n",
+                      manifest->file_count, manifest->total_bytes) != 0) goto done;
     for (i = 0; i < manifest->file_count; ++i) {
-        if (fprintf(file, "    {\"relative_path\": ") < 0 || json_write_string(file, manifest->files[i].path) != 0 ||
-            fprintf(file, ", \"size_bytes\": %" PRIu64 ", \"sha256\": ", manifest->files[i].size) < 0 ||
-            json_write_string(file, manifest->files[i].sha256) != 0 ||
-            fprintf(file, "}%s\n", (i + 1 == manifest->file_count) ? "" : ",") < 0) goto done;
+        if (writer_bytes(&writer, "    {\\"relative_path\\": ", 22) != 0 ||
+            json_write_string(&writer, manifest->files[i].path) != 0 ||
+            writer_printf(&writer, ", \\"size_bytes\\": %" PRIu64 ", \\"sha256\\": ", manifest->files[i].size) != 0 ||
+            json_write_string(&writer, manifest->files[i].sha256) != 0 ||
+            writer_printf(&writer, "}%s\\n", (i + 1 == manifest->file_count) ? "" : ",") != 0) goto done;
     }
-    if (fputs("  ],\n  \"notes\": ", file) == EOF || json_write_string(file, manifest->notes) != 0 || fputs("\n}\n", file) == EOF)
-        goto done;
-    if (fflush(file) != 0 || sync_output_fd(fileno(file)) != 0) goto done;
+    if (writer_bytes(&writer, "  ],\\n  \\"notes\\": ", 17) != 0 ||
+        json_write_string(&writer, manifest->notes) != 0 ||
+        writer_bytes(&writer, "\\n}\\n", 4) != 0 ||
+        writer_flush(&writer) != 0 || rtfs_sync(fd) != 0) goto done;
     ok = 1;
 done:
-    if (fclose(file) != 0) ok = 0;
-    if (!ok) { (void)unlink(temp); return -1; }
-    if (rename(temp, path) != 0) { (void)unlink(temp); return -1; }
+    close_result = rtfs_close(fd);
+    if (close_result != 0) ok = 0;
+    if (!ok) { (void)rtfs_remove(temp); return -1; }
+    if (rtfs_rename(temp, path) != 0) { (void)rtfs_remove(temp); return -1; }
     return 0;
 }
 
@@ -634,24 +695,36 @@ static int parse_class(const char *value, ts_archive_class *out) {
 
 static int manifest_read(const char *snapshot_dir, ts_manifest *manifest) {
     char path[TS_PATH_MAX], *json = NULL, value[TS_PATH_MAX];
-    FILE *file;
-    long length;
+    rtfs_stat file_stat;
+    size_t length, total = 0;
+    int fd = -1;
+    int64_t got;
     json_token *tokens = NULL;
     int token_count = 0, root = 0, t, files_idx, i;
     uint64_t number;
     uint32_t parsed_count = 0, expected_count = 0;
     memset(manifest, 0, sizeof(*manifest));
     if (path_join(path, sizeof(path), snapshot_dir, "manifest.json") != 0) return -1;
-    file = fopen(path, "rb");
-    if (!file) return -1;
-    if (fseek(file, 0, SEEK_END) != 0 || (length = ftell(file)) < 0 ||
-        (unsigned long)length > TS_MAX_MANIFEST_BYTES || fseek(file, 0, SEEK_SET) != 0) goto fail;
-    json = (char *)malloc((size_t)length + 1);
+    if (rtfs_stat_path(path, &file_stat) != 0 || file_stat.type != RTFS_TYPE_FILE ||
+        file_stat.size > TS_MAX_MANIFEST_BYTES || file_stat.size > SIZE_MAX - 1U) return -1;
+    length = (size_t)file_stat.size;
+    fd = rtfs_open(path, RTFS_OPEN_READ, 0);
+    if (fd < 0) return -1;
+    json = (char *)malloc(length + 1U);
     if (!json) goto fail;
-    if (fread(json, 1, (size_t)length, file) != (size_t)length) goto fail;
+    while (total < length) {
+        got = rtfs_read(fd, json + total, length - total);
+        if (got <= 0) goto fail;
+        total += (size_t)got;
+    }
+    {
+        unsigned char extra;
+        got = rtfs_read(fd, &extra, 1);
+        if (got != 0) goto fail;
+    }
+    if (rtfs_close(fd) != 0) { fd = -1; goto fail; }
+    fd = -1;
     json[length] = '\0';
-    if (fclose(file) != 0) { file = NULL; goto fail; }
-    file = NULL;
     tokens = (json_token *)calloc(TS_JSON_TOKEN_LIMIT, sizeof(json_token));
     if (!tokens || json_parse(json, tokens, (int)TS_JSON_TOKEN_LIMIT, &token_count) != 0 || tokens[root].type != JT_OBJECT) goto fail;
 #define GET_STRING(field, target, target_size) do { t = object_get(json, tokens, token_count, root, field); if (t < 0 || token_string(json, &tokens[t], target, target_size) != 0) goto fail; } while (0)
@@ -712,7 +785,7 @@ static int manifest_read(const char *snapshot_dir, ts_manifest *manifest) {
     free(tokens); free(json);
     return 0;
 fail:
-    if (file) fclose(file);
+    if (fd >= 0) (void)rtfs_close(fd);
     free(tokens); free(json); manifest_free(manifest);
     return -1;
 }
