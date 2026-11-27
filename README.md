@@ -28,6 +28,7 @@ This is not intended to be another standalone homebrew launcher or a small colle
 - [Bluetooth & Controller Control Centre](#bluetooth--controller-control-centre)
 - [Localization and language support](#localization-and-language-support)
 - [Vita filesystem bridge for Custom Assets](#vita-filesystem-bridge-for-custom-assets)
+- [Tai Saver Vita filesystem porting layer](#tai-saver-vita-filesystem-porting-layer)
 - [Vita plugin research](#vita-plugin-research)
 - [Curated Vita plugin catalogue](#curated-vita-plugin-catalogue)
 - [Plugin inventory and adapter registry](#plugin-inventory-and-adapter-registry)
@@ -75,7 +76,7 @@ The extended Settings experience should bring together:
 
 The design principle is simple: **one Settings application, one consistent interface, many integrated capabilities.**
 
-We will build this in layers. Sony-owned Settings pages will not be patched indiscriminately. The first integration target is our own Rt:Settings Extended category, with clear navigation to each installed section. Extending or injecting controls into Sony-owned pages is a separate reverse-engineering and compatibility task.
+We will build this in layers. Features that naturally belong to an existing Sony category (for example Bluetooth/storage under Devices or network utilities under Network) should be integrated there only when a verified insertion point and callback lifecycle exist. Cross-system functions such as Tai Saver and generic plugin diagnostics belong under Rt:Settings Extended. Existing YAMT/HENkaku/third-party pages retain their ownership; we do not duplicate or hijack them. Each Sony-page integration is an independent compatibility task.
 
 ## The Settings experience
 
@@ -247,6 +248,12 @@ See [Adrenaline Control Centre](settings-ui/ADRENALINE_CONTROL_CENTRE.md).
 ## Storage & Devices snapshot model
 
 The first Storage & Devices core now converts platform-reported observations into a bounded, renderer-neutral snapshot: SD2Vita, Sony Memory Card, internal and USB device kinds; mount state; mount point; total/free capacity; read-only state; free-space percentage; and duplicate mount-point warnings. Invalid capacity data and duplicate stable IDs are rejected. The model never probes, mounts, formats or changes storage itself. The Vita device-enumeration adapter and YAMT mapping detection remain pending. See [Storage & Devices model](settings-ui/STORAGE_DEVICES.md).
+
+## Tai Saver Vita filesystem porting layer
+
+A C99 filesystem boundary is now available in `include/rt_fs.h` with host and Vita implementations in `source/platform/rt_fs.c`. The Vita implementation uses documented user-mode `sceIo*` functions for file and directory I/O, metadata, device free-space queries and file synchronization. Short reads/writes are represented as byte counts; directory iteration distinguishes entry, end-of-directory and error. The host implementation has a dedicated regression test and sanitizer target.
+
+Important: the Tai Saver core has not yet been migrated to this boundary and still contains POSIX/stdio filesystem operations. This is the first platform-porting layer, not a completed live Vita backup backend. No atomic rename, no-clobber or durability guarantee is inferred from Vita's APIs. See [Tai Saver Vita filesystem porting layer](docs/TAI_SAVER_VITA_FS_PORT.md).
 
 ## Vita filesystem bridge for Custom Assets
 
