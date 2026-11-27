@@ -6,7 +6,7 @@ Rt:Settings Extended aims to turn the native Vita Settings application into a co
 
 This is not intended to be another standalone homebrew launcher or a small collection of unrelated tweaks. The goal is to make the Settings application the central place where users can inspect, configure and manage the capabilities installed on their Vita.
 
-> **Development status:** active development. Tai Saver's portable snapshot engine, Settings Hub navigation tree and boot journal are implemented and host-tested. The shared framework library now cross-builds with VitaSDK in CI. The native Sony Settings adapter, live Tai Saver filesystem/startup service, installer VPK and physical-device validation remain under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
+> **Development status:** active development. Tai Saver's portable snapshot engine, Settings Hub navigation tree and boot journal are implemented and host-tested. The shared framework library now cross-builds with VitaSDK in CI. The Tai Saver snapshot core now routes filesystem operations through a Vita-native I/O boundary. The Boot Journal/startup adapter, native Sony Settings integration, installer VPK and physical-device validation remain under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
 
 ---
 
