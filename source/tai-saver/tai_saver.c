@@ -3,24 +3,13 @@
 #include "sha256.h"
 #include "rt_fs.h"
 
-#include <dirent.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#if !defined(RTSE_PLATFORM_VITA)
-#include <sys/statvfs.h>
-#endif
-#include <sys/types.h>
-#if defined(RTSE_PLATFORM_VITA)
-#include <psp2/io/devctl.h>
-#include <psp2/io/fcntl.h>
-#endif
 #include <time.h>
 #include <unistd.h>
 
@@ -818,16 +807,20 @@ done:
 
 static int storage_has_space(const char *root, uint64_t bytes, uint32_t files) {
     uint64_t available, needed;
+    needed = bytes + bytes / 20U + (uint64_t)files * 512U + 65536U;
+#if defined(RTSE_PLATFORM_VITA)
     const char *colon;
     char device[16];
     size_t length;
-    needed = bytes + bytes / 20U + (uint64_t)files * 512U + 65536U;
     if (!root || !(colon = strchr(root, ':'))) return -1;
     length = (size_t)(colon - root) + 1U;
     if (!length || length >= sizeof(device)) return -1;
     memcpy(device, root, length);
     device[length] = '\0';
     if (rtfs_free_bytes(device, &available) != 0) return -1;
+#else
+    if (!root || rtfs_free_bytes(root, &available) != 0) return -1;
+#endif
     return available >= needed ? 0 : -1;
 }
 
