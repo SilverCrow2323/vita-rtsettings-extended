@@ -2,29 +2,48 @@
 
 ## Status
 
-This is the integration contract for Rt:Settings Extended. It separates what the project wants from what has actually been demonstrated on the target firmware.
+This contract defines a hybrid native Settings architecture: features are placed inside existing Sony categories when they naturally belong there and can be extended safely; cross-system tools live under the dedicated **Rt:Settings Extended** category. This is not yet implemented by the Rt SUPRX adapter.
 
 ## User-facing target
 
 ```text
 Settings
+├── Devices
+│   ├── Bluetooth & Controllers (Rt extension, only after backend validation)
+│   └── Storage Devices (YAMT remains owner of its controls; Rt adds non-conflicting diagnostics)
+├── Network
+│   └── Wi-Fi Turbo (existing upstream page; Rt must not duplicate it)
 └── Rt:Settings Extended
-    └── Tai Saver
+    ├── Tai Saver
+    ├── Plugin Control Centre
+    ├── Plugin Compatibility
+    ├── System Diagnostics
+    ├── Preferences & Profiles
+    └── cross-system tools without a suitable Sony owner
 ```
 
-The first release adds a dedicated Rt:Settings Extended category and a Tai Saver subpage. It does not replace Sony settings and does not inject arbitrary controls into Sony-owned pages.
+The exact Sony XML page identifiers and insertion points must be inspected on firmware 3.65. The labels above describe intended destinations, not guessed internal identifiers.
+
+## Placement rules
+
+- **Devices → Bluetooth & Controllers:** intended for controller inventory and supported device controls. The current Rt model has no live Vita discovery, pairing or input backend; do not expose operational controls yet.
+- **Devices → Storage Devices:** YAMT already owns its storage-specific UI. Rt may add read-only diagnostics or non-conflicting actions only after live storage enumeration and a verified insertion point exist.
+- **Network → Wi-Fi Turbo:** upstream Wi-Fi Turbo demonstrates this native location. Rt must integrate through its typed adapter and must not create a second page.
+- **Rt → Tai Saver:** backup and recovery of taiHEN configuration has no natural Sony category. It remains a dedicated Rt page.
+- **Rt → Plugin Control Centre / Compatibility:** generic plugin inventory and compatibility are cross-system functions. Do not hijack HENkaku Settings or third-party plugin pages.
+- **Other features:** use an existing Sony page only when the feature genuinely belongs there and the target page has a verified extension point. Otherwise use Rt.
+
+See [Sony Settings placement policy](SONY_SETTINGS_PLACEMENT.md) for the full placement matrix and acceptance gates.
 
 ## Integration phases
 
 ### Phase A — dedicated category and pages
 
 - Register one Rt:Settings Extended entry in the existing Settings application.
-- Open a dedicated root page listing installed feature modules.
-- Register Tai Saver as the first module.
+- Open a dedicated root page listing only installed, available feature modules.
+- Register Tai Saver as the first module after its live backend and callbacks are complete.
 - Keep module metadata separate from the backup engine.
 - Hide or disable unavailable actions with an explicit reason; never display fake success.
-
-This is the first native UI target.
 
 ### Phase B — module registry
 
@@ -38,11 +57,16 @@ Each module declares:
 
 The framework owns navigation and lifecycle. Modules own their settings and service calls. A module must not directly patch another module's data.
 
-### Phase C — extending existing Sony pages
+### Phase C — existing Sony page integrations
 
-Adding individual controls inside Sony-owned pages is a separate, compatibility-sensitive feature. It requires page-construction hooks, stable control identifiers, callback ownership and lifecycle testing for each target page.
+Each existing Sony page is a separate integration with its own:
+- exact target process/module and XML layout identity;
+- bounded insertion point and preservation test;
+- callback ownership and lifetime;
+- firmware-specific compatibility checks;
+- hook cleanup and repeated open/close tests.
 
-Do not treat page regrouping as proof that individual rows can be injected into arbitrary Sony pages. Do not move or rewrite Sony-owned controls. Phase C is not a dependency for the first release.
+Never replace an entire Sony XML layout with a reduced copy. Never move or rewrite Sony-owned controls. Do not add a page to Devices or Network merely because the feature sounds related.
 
 ## Settings page behavior
 
@@ -64,8 +88,6 @@ Tai Saver configuration:
 - diagnostic verbosity.
 
 Integrity verification and Pre-Restore safety snapshots are mandatory invariants, not user-disableable preferences.
-
-Configuration writes must be transactional: validate a complete new document, write a temporary file, sync it, then rename. On malformed settings, preserve the original file and load safe defaults with a visible warning.
 
 ## Error and status model
 
@@ -93,27 +115,21 @@ An archive is eligible for restore only after a fresh verification. A successful
 - If Settings crashes or page registration fails, the framework must fail closed without modifying Sony settings data.
 - Any hook must be guarded by version checks and a compatibility test; unsupported firmware must leave the original Settings flow untouched.
 
-## Research and validation gate
+## Installer and VPK gate
 
-Before implementing the native page, audit the selected Settings-page registration mechanism and record:
-1. exact target process/module and plugin load section;
-2. page registration API or hook points;
-3. ownership and lifetime of page/control objects;
-4. callback threading rules;
-5. cleanup behavior when Settings closes;
-6. firmware-specific differences;
-7. a test that opens and closes Settings repeatedly without leaks or crashes.
-
-The project may use a proven page-registration framework as a reference, but must not copy assumptions from a plugin regrouping feature into a general-purpose Sony-page injection claim.
+The VPK is a maintenance installer, not a Settings launcher. It may be packaged only when it includes a real SUPRX/resource payload and an installer that validates payload hashes, previews the exact `*NPXS10015` config change, requests explicit approval, preserves unrelated lines, backs up the original, rolls back failures and removes only Rt-owned files on uninstall. A static framework library or empty SUPRX placeholder is not an installable Settings extension.
 
 ## Acceptance criteria
 
 - [ ] Rt:Settings Extended appears as a dedicated Settings category.
-- [ ] Tai Saver opens as a dedicated page.
+- [ ] Tai Saver opens as a dedicated page after its backend is complete.
 - [ ] Navigation returns cleanly to Sony Settings.
 - [ ] Settings remains responsive during backup/verify/restore.
 - [ ] Every action calls the shared C service API.
 - [ ] Invalid configuration is handled without overwriting the original.
 - [ ] Unsupported firmware fails closed.
 - [ ] Disabling/removing the framework restores the original Settings behavior.
-- [ ] No Sony-owned setting is moved, replaced or silently modified.
+- [ ] Existing Sony pages retain all original entries and behavior.
+- [ ] Every additional Sony-page integration has its own lifecycle and regression tests.
+- [ ] VPK install/update/repair/uninstall and rollback pass package-level tests.
+- [ ] Physical validation on Vita 1000 / 3.65 Ensō is recorded.
