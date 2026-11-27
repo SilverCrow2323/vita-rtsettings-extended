@@ -470,7 +470,7 @@ static int json_write_string(ts_writer *writer, const char *text) {
     if (writer_bytes(writer, "\"", 1) != 0) return -1;
     for (; *p; ++p) {
         const char *escaped = NULL;
-        char encoded[6];
+        char encoded[7];
         size_t length = 0;
         switch (*p) {
             case '"': escaped = "\\\""; break;
@@ -510,28 +510,28 @@ static int manifest_write(const char *snapshot_dir, const ts_manifest *manifest)
     if (fd < 0) return -1;
     memset(&writer, 0, sizeof(writer));
     writer.fd = fd;
-    if (writer_printf(&writer, "{\\n  \\"schema_version\\": %u,\\n  \\"snapshot_id\\": ", manifest->schema_version) != 0 ||
+    if (writer_printf(&writer, "{\n  \"schema_version\": %u,\n  \"snapshot_id\": ", manifest->schema_version) != 0 ||
         json_write_string(&writer, manifest->snapshot_id) != 0 ||
-        writer_bytes(&writer, ",\\n  \\"created_at\\": ", 18) != 0 ||
+        writer_printf(&writer, ",\n  \"created_at\": ") != 0 ||
         json_write_string(&writer, manifest->created_at) != 0 ||
-        writer_bytes(&writer, ",\\n  \\"source_path\\": ", 19) != 0 ||
+        writer_printf(&writer, ",\n  \"source_path\": ") != 0 ||
         json_write_string(&writer, manifest->source_path) != 0 ||
-        writer_bytes(&writer, ",\\n  \\"archive_class\\": ", 21) != 0 ||
+        writer_printf(&writer, ",\n  \"archive_class\": ") != 0 ||
         json_write_string(&writer, ts_archive_class_name(manifest->archive_class)) != 0 ||
-        writer_bytes(&writer, ",\\n  \\"completion_state\\": ", 25) != 0 ||
+        writer_printf(&writer, ",\n  \"completion_state\": ") != 0 ||
         json_write_string(&writer, manifest->completion_state) != 0 ||
-        writer_printf(&writer, ",\\n  \\"file_count\\": %u,\\n  \\"total_bytes\\": %" PRIu64 ",\\n  \\"files\\": [\\n",
+        writer_printf(&writer, ",\n  \"file_count\": %u,\n  \"total_bytes\": %" PRIu64 ",\n  \"files\": [\n",
                       manifest->file_count, manifest->total_bytes) != 0) goto done;
     for (i = 0; i < manifest->file_count; ++i) {
-        if (writer_bytes(&writer, "    {\\"relative_path\\": ", 22) != 0 ||
+        if (writer_printf(&writer, "    {\"relative_path\": ") != 0 ||
             json_write_string(&writer, manifest->files[i].path) != 0 ||
-            writer_printf(&writer, ", \\"size_bytes\\": %" PRIu64 ", \\"sha256\\": ", manifest->files[i].size) != 0 ||
+            writer_printf(&writer, ", \"size_bytes\": %" PRIu64 ", \"sha256\": ", manifest->files[i].size) != 0 ||
             json_write_string(&writer, manifest->files[i].sha256) != 0 ||
-            writer_printf(&writer, "}%s\\n", (i + 1 == manifest->file_count) ? "" : ",") != 0) goto done;
+            writer_printf(&writer, "}%s\n", (i + 1 == manifest->file_count) ? "" : ",") != 0) goto done;
     }
-    if (writer_bytes(&writer, "  ],\\n  \\"notes\\": ", 17) != 0 ||
+    if (writer_printf(&writer, "  ],\n  \"notes\": ") != 0 ||
         json_write_string(&writer, manifest->notes) != 0 ||
-        writer_bytes(&writer, "\\n}\\n", 4) != 0 ||
+        writer_printf(&writer, "\n}\n") != 0 ||
         writer_flush(&writer) != 0 || rtfs_sync(fd) != 0) goto done;
     ok = 1;
 done:
