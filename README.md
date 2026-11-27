@@ -734,3 +734,12 @@ A passing host CI run validates only the tests actually executed by that workflo
 ---
 
 **Long-term objective:** make Rt:Settings Extended the complete, modular Settings environment for the Vita—covering connectivity, USB, FTP, streaming, plugin configuration, storage, startup, system controls, backup and diagnostics—with one expandable installer and no compromise on safety.
+
+
+## Rt:Vita Cockpit
+
+The project now includes the first standalone Cockpit shell for PS Vita. Cockpit is the LiveArea installer/maintenance front end; the daily control experience remains inside Sony Settings. Its first build provides a branded animated startup, a read-only Rt component registry audit, component details and help overlays. The write-capable module installer, updater, SUPRX integration and boot-animation engine adapters are separate milestones.
+
+- [Rt:Vita Cockpit architecture](docs/RT_VITA_COCKPIT.md)
+- [Cockpit component model](docs/COCKPIT_COMPONENT_MODEL.md)
+- [Cockpit VPK build workflow](.github/workflows/cockpit-vpk.yml)
