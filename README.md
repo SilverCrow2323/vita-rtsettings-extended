@@ -86,50 +86,29 @@ The following is the logical information architecture. Exact placement and label
 
 ```text
 Settings
-├── Network
-│   └── Supported connectivity extensions
-├── Sound & Display
-│   └── Supported display, graphics and audio extensions
-├── System
-│   └── Supported system and startup extensions
-├── Appearance & Customization               [new Rt category]
-│   ├── Boot Animation / Boot Splash
-│   ├── Boot Sound
-│   ├── Startup Warning
-│   ├── Interface & Asset Manager
-│   └── Quick Menu Customization
-├── Advanced Options                         [new Rt category]
-│   ├── Connectivity Options
-│   ├── Bluetooth & Controllers
-│   ├── Plugin Feature Settings
-│   ├── Runtime Configuration
-│   ├── Boot Configuration
-│   ├── Service Management
-│   ├── Compatibility Options
-│   └── Experimental Features
-├── System Tools                             [new Rt category]
-│   ├── VitaShell                            [only when detected]
-│   ├── File Explorer                        [only when detected]
-│   ├── Application Manager                  [only when detected]
-│   ├── System Monitor                       [only when detected]
-│   └── Other registered tools
-├── Preferences                              [new Rt category]
-│   ├── Menu Layout
-│   ├── Visibility
-│   ├── Ordering
-│   ├── Profiles
-│   └── Reset & Backup
-└── Rt:Settings Extended                     [framework and module hub]
+├── Network                                  [Sony category]
+│   ├── Existing Sony network settings
+│   └── Supported network extensions         [only at verified insertion points]
+├── Devices                                  [Sony category]
+│   ├── Existing Sony device settings
+│   ├── Bluetooth & Controllers              [Rt extension, backend required]
+│   └── Storage diagnostics                  [non-conflicting with YAMT]
+├── Sound & Display                          [Sony category]
+│   └── Relevant display/audio extensions    [only where technically appropriate]
+├── System                                   [Sony category]
+│   └── Relevant startup/system extensions   [only where technically appropriate]
+└── Rt:Settings Extended                     [cross-system hub]
     ├── Overview
-    ├── Framework & Modules
-    ├── Connectivity
-    ├── Plugin Control Centre
-    ├── Storage & Devices
-    ├── System & Startup
-    ├── Display & Audio
-    ├── Power & Performance
     ├── Tai Saver
-    └── System Information & Diagnostics
+    │   ├── Protection & Status
+    │   ├── Automatic Backup Policy
+    │   ├── Snapshot Archives
+    │   └── Compare & Recovery
+    ├── Plugin Control Centre
+    ├── Plugin Compatibility
+    ├── System Diagnostics
+    ├── Preferences & Profiles
+    └── Cross-system tools without a natural Sony owner
 ```
 
 The diagram is a target layout, not a claim that every entry is already implemented or that every Sony page can be extended without reverse engineering. The framework should prefer placing a control in its natural existing Sony category when a stable, compatible integration point exists. Otherwise, it should create a clearly named Rt category rather than force an awkward placement.
