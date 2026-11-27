@@ -39,8 +39,8 @@ The next implementation step is to route the entire Tai Saver core through an in
 - [x] Dedicated host and Vita-native API mock sanitizer targets wired into CI.
 - [ ] Latest commit's host regression and sanitizer CI green.
 - [ ] Latest commit's VitaSDK cross-build green.
-- [ ] Tai Saver core migrated to the adapter; no direct POSIX/stdio filesystem calls remain in the Vita build.
-- [ ] Failure injection for short reads/writes, sync, close, directory read/close, rename, mkdir, remove and storage-query errors.
+- [x] Tai Saver snapshot core migrated to the adapter; no direct POSIX/stdio filesystem calls remain in `tai_saver.c`.
+- [ ] Failure injection against the migrated Tai Saver core for short reads/writes, sync, close, directory read/close, rename, mkdir, remove and storage-query errors.
 - [ ] Physical validation on Vita 1000 / firmware 3.65 Ensō.
 
 ## Header references inspected
