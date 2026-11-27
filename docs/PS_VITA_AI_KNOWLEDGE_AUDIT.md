@@ -187,3 +187,81 @@ Repository inspected: [sillysquiredev/vita-packages](https://github.com/sillysqu
 - [SDL3 PVR recipe](https://github.com/sillysquiredev/vita-packages/blob/main/sdl3_pvr_psp2/VITABUILD)
 
 **Rt conclusion:** this repository is valuable as a collection of Vita-targeted dependency build examples and reproducibility patterns. It does not supply a ready-made Settings plugin or VPK installer for Rt, and it does not change the Macro-section 01 gate: Tai Saver's native Vita I/O, the Settings SUPRX/page integration, and the installable VPK still need to be implemented and validated in this project.
+
+
+## Additional primary references and Settings integration case study
+
+### VitaSDK API documentation and headers
+
+Primary reference points:
+
+- [VitaSDK API documentation](https://docs.vitasdk.org/index.html) — generated from the VitaSDK `vita-headers` project; documents user and kernel exports.
+- [User file-control API](https://docs.vitasdk.org/group__SceFcntlUser.html) — `sceIoOpen/Close/Read/Write/Pread/Pwrite/Lseek/Remove/Rename/Sync/SyncByFd`.
+- [User directory API](https://docs.vitasdk.org/group__SceDirEntUser.html) — `sceIoDopen/Dread/Dclose`.
+- [User stat API](https://docs.vitasdk.org/group__SceStatUser.html) — `sceIoMkdir/Rmdir/Getstat/GetstatByFd/Chstat`.
+- [VitaSDK toolchain overview](https://vitasdk.org/) and [CMake toolchain macros](https://github.com/vitasdk/vita-toolchain/blob/master/cmake_toolchain/vita.cmake).
+
+The headers/docs confirm that user-mode native I/O exposes the calls required by Tai Saver. Important return contracts include: open/dopen return a non-negative descriptor on success; read/write return byte counts; directory read returns 0 at end, positive when an entry is available, and negative on error; close calls can fail. The docs describe `sceIoSyncByFd`'s flag as unknown. Therefore we must not assign stronger durability semantics to it than the header/documentation supports. Likewise, the API reference says rename changes a name; it does not promise atomic replacement, no-clobber behavior, or parent-directory durability.
+
+Implementation consequences:
+
+- Use `sceIoDopen/Dread/Dclose` rather than assuming POSIX `opendir/readdir/closedir` behavior.
+- Use `SceIoDirent.d_name[256]` and `d_stat` with explicit bounds and file-type checks; never trust an entry name as a path without validating it.
+- Treat a positive short read/write as partial progress and loop until the requested byte count is satisfied or a defined terminal condition/error occurs.
+- Preserve the native negative error code for diagnostics; do not collapse every failure into a generic POSIX errno.
+- Check close results, and report a close failure even if preceding reads/writes succeeded.
+- Use `sceIoGetstat` for metadata and explicitly distinguish regular files/directories from unsupported entry types.
+- Keep the native user-mode `SceIofilemgr_stub` API separate from kernel `ksceIo*` APIs. Rt's Settings/Tai Saver process must not link kernel APIs without a proven kernel-side requirement.
+
+The API reference is generated from reverse-engineered headers, not Sony's public SDK. Pin the exact VitaSDK/vita-headers revision used for each build and inspect the actual header declarations used by CI. A documentation page alone does not establish behavior on every storage driver or firmware.
+
+### Native Settings case study: Wi-Fi Turbo
+
+Inspected repository: [juanjsebgarcia/vita-turbo-wifi](https://github.com/juanjsebgarcia/vita-turbo-wifi), source commit `6c5b25dd48d6710cfa68bad410709f28f67da2c3`. Its README declares an MIT licence and reports console testing on firmware 3.60, 3.65 and 3.68. This is a valuable real-world implementation reference for the exact `NPXS10015` integration goal, but its claims and NIDs remain scoped to that project's supported builds and must be independently checked before use.
+
+Files inspected:
+
+- [Settings frontend](https://github.com/juanjsebgarcia/vita-turbo-wifi/blob/6c5b25dd48d6710cfa68bad410709f28f67da2c3/settings_app/wifiturbo_settings.c)
+- [Settings module entry/lifecycle](https://github.com/juanjsebgarcia/vita-turbo-wifi/blob/6c5b25dd48d6710cfa68bad410709f28f67da2c3/settings_app/settings_main.c)
+- [README, installation and firmware claims](https://github.com/juanjsebgarcia/vita-turbo-wifi/blob/6c5b25dd48d6710cfa68bad410709f28f67da2c3/README.md)
+- [MIT licence](https://github.com/juanjsebgarcia/vita-turbo-wifi/blob/6c5b25dd48d6710cfa68bad410709f28f67da2c3/LICENSE)
+
+Observed design:
+
+1. A dedicated user-mode `.suprx` is loaded under `*NPXS10015`; the Settings-specific code is separated from the resident SceShell plugin to avoid consuming memory in processes that do not need the page.
+2. Its entry point obtains module information, avoids duplicate loading, installs hooks, and releases hook references in `module_stop`.
+3. It hooks the Settings app's `sceKernelLoadStartModule` import and waits until `system_settings_core.suprx` is loaded before installing the remaining UI hooks.
+4. It hooks `scePafMiscLoadXmlLayout` in `SceSettings`, identifies the Network page layout and splices a nested `setting_list` fragment into the existing layout. It does not replace the entire Settings root layout.
+5. It hooks Registry Manager get/set/info/string operations for a private namespace, so the standard Settings controls can display and persist values through the page's normal row model.
+6. It resolves selected Settings-core row enable/disable/show exports at runtime and wraps the Network page's button/focus callbacks for dynamic rows.
+7. It supplies translated strings through a PAF text lookup hook and uses a separate module-owned buffer for the injected layout.
+
+What Rt can adopt as architectural patterns:
+
+- A dedicated `rtsettings.suprx` loaded only by `NPXS10015`.
+- A staged lifecycle: module start → identify target process/module → wait for Settings core → install individually checked hooks → render a minimal page → release every hook on stop.
+- Add a child page into an existing Settings category instead of copying/replacing Sony's full root XML.
+- Keep Rt-owned preferences in an isolated namespace and use normal Settings controls only when the exact Registry callback contract is verified.
+- Keep injected XML, strings and callback state in plugin-owned memory with explicit lifetime management.
+- Start with one harmless read-only row, then add a controlled action and worker/progress UI only after the basic page survives repeated open/close cycles.
+
+What must not be copied blindly:
+
+- The hard-coded NIDs, module names, hook signatures and callback indices are firmware/build-specific evidence. Re-derive them from the exact target firmware's imports/exports and pinned source; confirm ABI arity and calling convention.
+- The example's Settings-core row exports are private/internal interfaces, not a stable VitaSDK API. Treat them as optional capabilities and fail closed if resolution fails.
+- PAF XML grammar, plugin context names, callback array indices, text encoding and buffer ownership are undocumented internals. Validate each against the actual 3.65 target.
+- The example project includes kernel and resident components for its Wi-Fi functionality. Rt's Settings page must not inherit those dependencies automatically; use a user-mode-only page if its required actions can be served by the Tai Saver backend.
+- Its README's hardware testing is evidence for that project, not proof for Rt. Our own physical Vita 1000 / 3.65 Ensō acceptance remains mandatory.
+
+The case study changes our research priority: the next native-integration task should be a minimal `NPXS10015` SUPRX proof with no functional filesystem actions and no speculative hook offsets. Only after module identity, hook installation/release, and a harmless injected row are verified should Tai Saver controls be connected.
+
+### Broader PS Vita reverse-engineering references
+
+- [PS Vita Developer Wiki](https://www.psdevwiki.com/vita/Main_Page) — hardware, storage, filesystem, modules, VPK, SELF, Registry, Settings, firmware-specific material.
+- [Settings application overview](https://www.psdevwiki.com/vita/LiveArea:Settings) — identifies the Settings title as `NPXS10015` and lists its built-in categories.
+- [Registry overview](https://www.psdevwiki.com/vita/Registry) — describes the system Registry and its configuration domains.
+- [VPK format overview](https://www.psdevwiki.com/vita/VPK) — documents the ZIP-based archive layout used by homebrew packages.
+- [PS Vita SDK specification (community open SDK proposal)](https://wiki.henkaku.xyz/images/a/a2/Vita_SDK_specifications.pdf) — ELF/SELF, imports/exports and NID-related background; this is a community specification, not Sony's official SDK manual.
+- [PS Vita development wiki for AI-assisted work](https://github.com/robin994/PSVita-Dev-Wiki) — broad standalone notes covering VitaSDK, graphics, plugins, debugging, memory and deployment. Treat it as a secondary guide and verify claims against headers/source.
+
+These sources are complementary rather than interchangeable: VitaSDK headers establish declarations and documented signatures; pinned source establishes implementation patterns; PSDevWiki/HENkaku materials provide reverse-engineering context; only target-console tests establish Rt's actual runtime behavior.
