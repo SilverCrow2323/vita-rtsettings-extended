@@ -66,3 +66,51 @@ No VPK may silently edit taiHEN configuration or install a partial plugin.
 - [ ] Physical-console verification on firmware 3.65 Ensō.
 
 Until the remaining gates pass, this project must describe the Settings Hub as a registered portable navigation model, not as an installed Sony Settings extension.
+
+## Product requirement: first-class Rt root category
+
+The product target is a first-class **Rt:Settings Extended** entry in the top-level Sony Settings category list, alongside existing system extensions such as HENkaku Settings. It must not be delivered as a separate LiveArea bubble or as a launcher that imitates Settings.
+
+The root category opens an Rt-owned native page and then navigates into feature pages. The initial page hierarchy is:
+
+- **Rt:Settings Extended** (top-level Settings entry)
+  - Settings Hub / Overview
+  - Tai Saver
+    - Protection & Status
+    - Automatic Backup Policy
+    - Snapshot Archives
+    - Compare & Recovery
+  - Plugin Control Centre
+  - Plugin Compatibility
+  - Bluetooth & Controllers
+  - Storage & Devices
+  - Appearance & Customization
+  - System Diagnostics
+  - Preferences & Profiles
+
+This is the desired product hierarchy, not a claim that every listed page is already implemented. Each item must be registered only when its page and callbacks exist; unsupported actions must be visibly disabled or marked unavailable rather than rendered as working controls.
+
+### Integration patterns and distinctions
+
+- **HENkaku Settings** is a useful product-level reference for exposing plugin-owned options inside the system Settings application.
+- **YAMT** is a particularly useful implementation reference: its README explicitly documents a user-mode yamt.suprx under *NPXS10015, with its storage UI under Settings → Devices → Storage Devices. Its installer also configures the required kernel-side storage component separately. Rt must not inherit YAMT's kernel dependency; our first macro-section should remain user-mode unless a specific feature proves otherwise.
+- **h-encore** is a useful source-level reference for the root Settings XML and PAF callback interception.
+- **VitaTweaks** is not a uniform Settings integration pattern. The inspected collection includes standalone *main SUPRX tweaks such as NoLockScreen, Download Enabler, NoTrophyMsg and Custom Warning. These plugins alter system behavior but do not, by themselves, demonstrate a native Settings category. We must distinguish a plugin loaded by taiHEN from a plugin that actually registers a Settings page.
+
+### Root-entry insertion safety
+
+The root entry must be added to the existing Sony system_settings_plugin layout while preserving all stock categories and extension entries. Do not replace the root XML with a copied static template. The implementation must:
+
+1. identify the exact target layout and module instance;
+2. parse or safely locate the intended insertion point with bounded checks;
+3. preserve original XML bytes and all unrelated nodes;
+4. avoid duplicate Rt entries after Settings core reloads or repeated page openings;
+5. maintain valid PAF ownership/lifetime for injected XML and text resources;
+6. remove hooks and transient state when the Settings core unloads;
+7. fail closed and leave the stock Settings UI untouched if any required interface cannot be validated.
+
+The first on-device proof is deliberately small: show one Rt root entry, open one read-only Rt page, close/reopen Settings repeatedly, and verify clean unload/reload. Only after this is stable should the Tai Saver page and its event bridge be connected.
+
+### Installer and user experience
+
+The VPK is an installer/maintenance tool, not the user-facing Settings experience. It installs the verified SUPRX/resources and proposes the exact taiHEN configuration change for explicit approval. Once installed, day-to-day use happens entirely from the Sony Settings application. Update, repair and uninstall must remove only Rt-owned files/configuration and preserve user backup archives.
