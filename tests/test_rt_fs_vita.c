@@ -20,6 +20,7 @@ SceSSize sceIoWrite(SceUID fd, const void *b, SceSize n) { (void)fd;(void)b; ret
 SceOff sceIoLseek(SceUID fd, SceOff off, int whence) { (void)fd;(void)off;(void)whence;return seek_result; }
 int sceIoSyncByFd(SceUID fd, int flag) { (void)fd;(void)flag;return sync_result; }
 int sceIoGetstat(const char *p, SceIoStat *st) { (void)p;*st=mock_stat;return stat_result; }
+int sceIoGetstatByFd(SceUID fd, SceIoStat *st) { (void)fd;*st=mock_stat;return stat_result; }
 int sceIoMkdir(const char *p,SceMode m) {(void)p;(void)m;return mkdir_result;}
 int sceIoRemove(const char *p) {(void)p;return remove_result;}
 int sceIoRmdir(const char *p) {(void)p;return rmdir_result;}
@@ -38,8 +39,8 @@ int sceIoDevctl(const char *d,unsigned int cmd,void *in,int il,void *out,int ol)
 
 int main(void) {
     char buf[8]={0}; rtfs_stat st; rtfs_dir d; rtfs_dirent e; uint64_t free_bytes=0; int fd;
-    fd=rtfs_open("ur0:data/test",RTFS_OPEN_READ|RTFS_OPEN_WRITE|RTFS_OPEN_CREATE|RTFS_OPEN_EXCLUSIVE|RTFS_OPEN_TRUNCATE,0600);
-    assert(fd==7 && open_flags==(SCE_O_RDWR|SCE_O_CREAT|SCE_O_EXCL|SCE_O_TRUNC) && open_mode==0600);
+    fd=rtfs_open("ur0:data/test",RTFS_OPEN_READ|RTFS_OPEN_WRITE|RTFS_OPEN_CREATE|RTFS_OPEN_EXCLUSIVE|RTFS_OPEN_TRUNCATE|RTFS_OPEN_WRITE_LOCK|RTFS_OPEN_NOWAIT,0600);
+    assert(fd==7 && open_flags==(SCE_O_RDWR|SCE_O_CREAT|SCE_O_EXCL|SCE_O_TRUNC|SCE_O_WRLOCK|SCE_O_NOWAIT) && open_mode==0600);
     assert(rtfs_read(fd,buf,sizeof(buf))==3 && !memcmp(buf,"RRR",3));
     assert(rtfs_write(fd,"abcdef",6)==2);
     assert(rtfs_seek(fd,0,0)==seek_result);
@@ -48,6 +49,7 @@ int main(void) {
 
     memset(&mock_stat,0,sizeof(mock_stat));mock_stat.st_mode=SCE_S_IFDIR;mock_stat.st_size=100;
     assert(rtfs_stat_path("ur0:data",&st)==0 && st.type==RTFS_TYPE_DIRECTORY && st.size==100);
+    assert(rtfs_stat_fd(fd,&st)==0 && st.type==RTFS_TYPE_DIRECTORY && st.size==100);
     stat_result=-42;assert(rtfs_stat_path("ur0:missing",&st)==-42);stat_result=0;
     assert(rtfs_mkdir("ur0:data",0700)==0);
     assert(rtfs_remove("ur0:file")==0 && rtfs_rmdir("ur0:dir")==0 && rtfs_rename("a","b")==0);
