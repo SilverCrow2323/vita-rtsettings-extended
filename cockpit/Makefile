@@ -4,7 +4,7 @@ CC := arm-vita-eabi-gcc
 CFLAGS := -O2 -Wall -Wextra -Wpedantic -std=c99
 CPPFLAGS := -I$(VITASDK)/arm-vita-eabi/include
 LDFLAGS := -Wl,-q
-LIBS := -lvita2d -lSceCtrl_stub -lSceIofilemgr_stub -lSceKernel_stub -lSceSysmodule_stub
+LIBS := -lvita2d -lSceCtrl_stub -lSceIofilemgr_stub -lSceLibKernel_stub -lSceGxm_stub -lSceDisplay_stub -lScePgf_stub -lSceSysmodule_stub
 
 all: $(TARGET).vpk
 
