@@ -20,7 +20,7 @@ The current AutoPlugin II README describes its supported lists as the active ent
 - AUTOPLUG2/plugins/plugins.lua — Vita catalogue;
 - AUTOPLUG2/plugins/plugins_psp.lua — PSP/Adrenaline catalogue.
 
-At the inspected repository revision, the Vita catalogue contains **160 entries across kernel, shell/main and title-specific sections**. This count includes selectable variants and alternate builds as separate entries; it is not 160 unique capabilities. The separate PSP/Adrenaline catalogue contains 11 game-specific remaster entries, not general Vita system utilities. Dependencies such as ioPlus and kuio are represented as dependencies, not separate catalog entries. The README says commented-out or unlisted resource files are not advertised as supported entries.
+At the inspected repository revision, the Vita catalogue contains entries across kernel, shell/main and title-specific sections. The file contains commented-out records and multi-line Lua entries, so a simple text count can overcount or undercount; this audit deliberately does not present a fragile entry count as a stable metric. The separate PSP/Adrenaline catalogue contains 11 game-specific remaster entries, not general Vita system utilities. Dependencies such as ioPlus and kuio are represented as dependencies, not separate catalog entries. The README says commented-out or unlisted resource files are not advertised as supported entries.
 
 The catalog and code were inspected directly:
 - [AutoPlugin II README](https://github.com/ONElua/AutoPlugin2/blob/master/README.md)
@@ -33,7 +33,7 @@ This is an audit of the active catalog, not a claim that every upstream binary h
 
 ## 2. Functional inventory of the Vita catalog
 
-The following groups cover the 160 active Vita entries. Variant families are grouped together where the catalog lists multiple builds.
+The following functional groups cover the active Vita catalogue. Variant families are grouped together where the catalog lists multiple builds; a single plugin may appear in more than one functional group.
 
 ### A. Storage, mount and filesystem
 - YAMT-Vita, StorageMgr, usbmc and usbmc Mod;
@@ -355,6 +355,6 @@ The first page can be implemented with a small read-only set of native controls.
 
 ## 7. Evidence and limits
 
-The catalog count and grouping come from the active Vita catalog at the inspected AutoPlugin II repository revision. AutoPlugin's list changes over time. Some entries are variants, some are title-specific, some are experimental, and catalog presence does not prove compatibility with every firmware or device. The separate PSP list is a game-specific remaster catalogue, not a set of generic system plugins.
+The catalog grouping comes from the active Vita catalog at the inspected AutoPlugin II repository revision. Because the Lua source includes commented-out and multi-line records, no exact total is asserted. AutoPlugin's list changes over time. Some entries are variants, some are title-specific, some are experimental, and catalog presence does not prove compatibility with every firmware or device. The separate PSP list is a game-specific remaster catalogue, not a set of generic system plugins.
 
 This document is a source audit and product-selection plan. It does not claim that Rt Manager, plugin installation, the native Settings page, or a VPK has been implemented. No AutoPlugin II source or binaries have been copied into Rt.
