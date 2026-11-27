@@ -22,7 +22,7 @@ int main(void) {
     snprintf(renamed, sizeof(renamed), "%s/renamed.bin", root);
     snprintf(sub, sizeof(sub), "%s/sub", root);
 
-    fd = rtfs_open(file, RTFS_OPEN_WRITE | RTFS_OPEN_CREATE | RTFS_OPEN_EXCLUSIVE, 0600);
+    fd = rtfs_open(file, RTFS_OPEN_WRITE | RTFS_OPEN_CREATE | RTFS_OPEN_EXCLUSIVE | RTFS_OPEN_WRITE_LOCK | RTFS_OPEN_NOWAIT, 0600);
     assert(fd >= 0);
     assert(rtfs_write(fd, payload, sizeof(payload)) == (int64_t)sizeof(payload));
     assert(rtfs_sync(fd) == 0);
@@ -30,6 +30,9 @@ int main(void) {
 
     assert(rtfs_stat_path(file, &st) == 0);
     assert(st.type == RTFS_TYPE_FILE && st.size == sizeof(payload));
+    fd = rtfs_open(file, RTFS_OPEN_READ, 0);
+    assert(fd >= 0 && rtfs_stat_fd(fd, &st) == 0 && st.type == RTFS_TYPE_FILE && st.size == sizeof(payload));
+    assert(rtfs_close(fd) == 0);
     fd = rtfs_open(file, RTFS_OPEN_READ, 0);
     assert(fd >= 0);
     assert(rtfs_read(fd, readback, sizeof(readback)) == (int64_t)sizeof(readback));
