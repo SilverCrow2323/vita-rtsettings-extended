@@ -39,7 +39,7 @@ The next implementation step is to route the entire Tai Saver core through an in
 - [x] Dedicated host and Vita-native API mock sanitizer targets wired into CI.
 - [x] Host build and full regression suite passed on commit `775d82453811b651ad2ece604bce4b31c6127512` (workflow #545).
 - [x] VitaSDK cross-build and artifact upload passed on the same commit (workflow #545).
-- [ ] ASan/UBSan completion for workflow #545.
+- [x] ASan/UBSan passed in workflow #545 on commit `775d82453811b651ad2ece604bce4b31c6127512`.
 - [x] Tai Saver snapshot core migrated to the adapter; no direct POSIX/stdio filesystem calls remain in `tai_saver.c`.
 - [ ] Failure injection against the migrated Tai Saver core for short reads/writes, sync, close, directory read/close, rename, mkdir, remove and storage-query errors.
 - [ ] Physical validation on Vita 1000 / firmware 3.65 Ensō.
