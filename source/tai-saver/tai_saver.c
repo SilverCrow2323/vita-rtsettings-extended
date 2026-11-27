@@ -1059,6 +1059,7 @@ ts_result ts_classify_snapshot(const char *storage_root, const char *snapshot_id
     char automatic_dir[TS_PATH_MAX], target_dir[TS_PATH_MAX], source[TS_PATH_MAX], target[TS_PATH_MAX];
     ts_manifest manifest;
     ts_snapshot_info info;
+    rtfs_stat st;
     int lock_fd = -1;
     ts_result result = TS_ERR_IO;
     memset(&manifest, 0, sizeof(manifest));
@@ -1074,10 +1075,10 @@ ts_result ts_classify_snapshot(const char *storage_root, const char *snapshot_id
     if (result != TS_OK) goto done;
     if (info.archive_class != TS_ARCHIVE_AUTOMATIC) { result = TS_ERR_ARGUMENT; goto done; }
     if (mkdir_p(target_dir) != 0) { result = TS_ERR_IO; goto done; }
-    if (lstat(target, &(struct stat){0}) == 0) { result = TS_ERR_EXISTS; goto done; }
-    if (rename(source, target) != 0) { result = TS_ERR_IO; goto done; }
+    if (rtfs_stat_path(target, &st) == 0) { result = TS_ERR_EXISTS; goto done; }
+    if (rtfs_rename(source, target) != 0) { result = TS_ERR_IO; goto done; }
     if (manifest_set_class(target, &manifest, target_class) != 0) {
-        (void)rename(target, source);
+        (void)rtfs_rename(target, source);
         result = TS_ERR_IO;
         goto done;
     }
@@ -1131,7 +1132,7 @@ static ts_result restore_locked(const char *source_dir, const char *storage_root
     ts_manifest manifest;
     ts_snapshot_info info;
     ts_snapshot_result safety;
-    struct stat st;
+    rtfs_stat st;
     uint32_t i;
     ts_result result;
     memset(&manifest, 0, sizeof(manifest));
@@ -1152,7 +1153,7 @@ static ts_result restore_locked(const char *source_dir, const char *storage_root
         snprintf(old_source, sizeof(old_source), "%s.rtse-rollback-%s", source_dir, safety.snapshot_id) >= (int)sizeof(old_source)) {
         result = TS_ERR_ARGUMENT; goto done;
     }
-    if (lstat(stage, &st) == 0 || lstat(old_source, &st) == 0) { result = TS_ERR_EXISTS; goto done; }
+    if (rtfs_stat_path(stage, &st) == 0 || rtfs_stat_path(old_source, &st) == 0) { result = TS_ERR_EXISTS; goto done; }
     if (mkdir_p(stage) != 0) { result = TS_ERR_IO; goto done; }
     for (i = 0; i < manifest.file_count; ++i) {
         uint64_t copied_size = 0;
@@ -1168,13 +1169,13 @@ static ts_result restore_locked(const char *source_dir, const char *storage_root
             goto done;
         }
     }
-    if (rename(source_dir, old_source) != 0) {
+    if (rtfs_rename(source_dir, old_source) != 0) {
         (void)remove_tree(stage);
         result = TS_ERR_TRANSACTION;
         goto done;
     }
-    if (rename(stage, source_dir) != 0) {
-        if (rename(old_source, source_dir) != 0) {
+    if (rtfs_rename(stage, source_dir) != 0) {
+        if (rtfs_rename(old_source, source_dir) != 0) {
             (void)snprintf(safety_out->warning, sizeof(safety_out->warning),
                            "Restore rollback failed; original source remains at %.180s", old_source);
         }
