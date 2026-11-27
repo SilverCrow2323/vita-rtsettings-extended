@@ -29,7 +29,7 @@ int rtfs_open(const char *path, unsigned flags, unsigned mode) {
     if (flags & RTFS_OPEN_EXCLUSIVE) native_flags |= SCE_O_EXCL;
     if (flags & RTFS_OPEN_TRUNCATE) native_flags |= SCE_O_TRUNC;
     if (flags & RTFS_OPEN_WRITE_LOCK) native_flags |= SCE_O_WRLOCK;
-    if (flags & RTFS_OPEN_NOWAIT) native_flags |= SCE_O_NOWAIT;
+    if (flags & RTFS_OPEN_NOWAIT) native_flags |= SCE_O_NBLOCK;
     return sceIoOpen(path, native_flags, (SceMode)mode);
 }
 
