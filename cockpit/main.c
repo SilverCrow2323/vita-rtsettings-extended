@@ -2,6 +2,8 @@
 #include <string.h>
 #include <psp2/ctrl.h>
 #include <psp2/io/fcntl.h>
+#include <psp2/io/stat.h>
+#include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/processmgr.h>
 #include <vita2d.h>
 
@@ -36,6 +38,7 @@ static component_t components[] = {
 static int page = 0;
 static int selected = 0;
 static int show_help = 0;
+static vita2d_pgf *ui_font = NULL;
 
 static int path_exists(const char *path) {
     SceIoStat st;
@@ -55,7 +58,7 @@ static void scan_components(void) {
 }
 
 static void draw_text(float x, float y, unsigned int color, const char *s) {
-    vita2d_pgf_draw_text(vita2d_get_system_pgf(), x, y, color, 1.0f, s);
+    vita2d_pgf_draw_text(ui_font, (int)x, (int)y, color, 1.0f, s);
 }
 
 static void draw_shell(void) {
@@ -115,6 +118,8 @@ int main(void) {
     memset(&old, 0, sizeof(old));
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG);
     vita2d_init();
+    ui_font = vita2d_load_default_pgf();
+    if (!ui_font) { vita2d_fini(); sceKernelExitProcess(1); return 1; }
     vita2d_set_clear_color(DARK);
     scan_components();
 
@@ -142,6 +147,7 @@ int main(void) {
         sceKernelDelayThread(16000);
     }
 
+    vita2d_free_pgf(ui_font);
     vita2d_fini();
     sceKernelExitProcess(0);
     return 0;
