@@ -40,7 +40,9 @@ enum {
     RTFS_OPEN_WRITE = 1u << 1,
     RTFS_OPEN_CREATE = 1u << 2,
     RTFS_OPEN_EXCLUSIVE = 1u << 3,
-    RTFS_OPEN_TRUNCATE = 1u << 4
+    RTFS_OPEN_TRUNCATE = 1u << 4,
+    RTFS_OPEN_WRITE_LOCK = 1u << 5,
+    RTFS_OPEN_NOWAIT = 1u << 6
 };
 
 /* File descriptors and directory handles are owned by the caller. */
@@ -52,6 +54,7 @@ int rtfs_sync(int fd);
 int rtfs_close(int fd);
 
 int rtfs_stat_path(const char *path, rtfs_stat *out);
+int rtfs_stat_fd(int fd, rtfs_stat *out);
 int rtfs_mkdir(const char *path, unsigned mode);
 int rtfs_remove(const char *path);
 int rtfs_rmdir(const char *path);
