@@ -60,7 +60,7 @@ all: $(LIBRARY)
 build:
 	mkdir -p $@
 
-build/tai_saver.o: source/tai-saver/tai_saver.c include/tai_saver.h source/tai-saver/sha256.h | build
+build/tai_saver.o: source/tai-saver/tai_saver.c include/tai_saver.h include/rt_fs.h source/tai-saver/sha256.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 build/rt_fs.o: source/platform/rt_fs.c include/rt_fs.h | build
