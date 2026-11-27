@@ -35,6 +35,8 @@ I18N_TEST_BINARY := build/test_i18n
 VITA_ASSET_FS_TEST_BINARY := build/test_vita_asset_fs
 VITA_ASSET_FS_SANITIZER_BINARY := build/test_vita_asset_fs_san
 RT_FS_SANITIZER_BINARY := build/test_rt_fs_san
+VITA_RT_FS_TEST_BINARY := build/test_rt_fs_vita
+VITA_RT_FS_SANITIZER_BINARY := build/test_rt_fs_vita_san
 SANITIZER_BINARY := build/test_tai_saver_san
 PLUGIN_SANITIZER_BINARY := build/test_plugin_inventory_san
 PLUGIN_COMPATIBILITY_SANITIZER_BINARY := build/test_plugin_compatibility_san
@@ -209,10 +211,13 @@ $(I18N_TEST_BINARY): tests/test_i18n.c $(LIBRARY) include/i18n.h
 $(VITA_ASSET_FS_TEST_BINARY): source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h | build
 	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) $(CFLAGS) source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c -o $@ $(LDFLAGS)
 
+$(VITA_RT_FS_TEST_BINARY): source/platform/rt_fs.c tests/test_rt_fs_vita.c include/rt_fs.h tests/vita-stubs/psp2/types.h tests/vita-stubs/psp2common/kernel/iofilemgr.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h tests/vita-stubs/psp2/io/dirent.h tests/vita-stubs/psp2/io/devctl.h | build
+	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) $(CFLAGS) source/platform/rt_fs.c tests/test_rt_fs_vita.c -o $@ $(LDFLAGS)
+
 build/test_rt_fs: tests/test_rt_fs.c source/platform/rt_fs.c include/rt_fs.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_rt_fs.c source/platform/rt_fs.c -o $@ $(LDFLAGS)
 
-test: $(PLUGIN_HELP_TEST_BINARY) $(CUSTOM_WARNING_TEST_BINARY) $(BLUETOOTH_TEST_BINARY) $(REPATCH_TEST_BINARY) $(ADRENALINE_TEST_BINARY) $(I18N_TEST_BINARY) $(ASSET_TEST_BINARY) $(ASSET_MANIFEST_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY) $(VITA_ASSET_FS_TEST_BINARY) build/test_rt_fs
+test: $(PLUGIN_HELP_TEST_BINARY) $(CUSTOM_WARNING_TEST_BINARY) $(BLUETOOTH_TEST_BINARY) $(REPATCH_TEST_BINARY) $(ADRENALINE_TEST_BINARY) $(I18N_TEST_BINARY) $(ASSET_TEST_BINARY) $(ASSET_MANIFEST_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY) $(VITA_ASSET_FS_TEST_BINARY) build/test_rt_fs $(VITA_RT_FS_TEST_BINARY)
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
@@ -238,6 +243,7 @@ test: $(PLUGIN_HELP_TEST_BINARY) $(CUSTOM_WARNING_TEST_BINARY) $(BLUETOOTH_TEST_
 	./$(I18N_TEST_BINARY)
 	./$(VITA_ASSET_FS_TEST_BINARY)
 	./build/test_rt_fs
+	./$(VITA_RT_FS_TEST_BINARY)
 
 $(SANITIZER_BINARY): $(CORE_SOURCES) tests/test_tai_saver.c include/tai_saver.h source/tai-saver/sha256.h settings-ui/metadata/settings_metadata.h include/plugin_inventory.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) $(CORE_SOURCES) tests/test_tai_saver.c -o $@ $(LDFLAGS)
@@ -293,8 +299,12 @@ $(VITA_ASSET_FS_SANITIZER_BINARY): source/custom-assets/vita_asset_fs.c tests/te
 $(RT_FS_SANITIZER_BINARY): tests/test_rt_fs.c source/platform/rt_fs.c include/rt_fs.h | build
 	$(CC) $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) tests/test_rt_fs.c source/platform/rt_fs.c -o $@ $(LDFLAGS)
 
-sanitize: $(RT_FS_SANITIZER_BINARY) $(PLUGIN_HELP_SANITIZER_BINARY) $(CUSTOM_WARNING_SANITIZER_BINARY) $(BLUETOOTH_SANITIZER_BINARY) $(REPATCH_SANITIZER_BINARY) $(ADRENALINE_SANITIZER_BINARY) $(ASSET_SANITIZER_BINARY) $(ASSET_MANIFEST_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY) $(VITA_ASSET_FS_SANITIZER_BINARY)
+$(VITA_RT_FS_SANITIZER_BINARY): source/platform/rt_fs.c tests/test_rt_fs_vita.c include/rt_fs.h tests/vita-stubs/psp2/types.h tests/vita-stubs/psp2common/kernel/iofilemgr.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h tests/vita-stubs/psp2/io/dirent.h tests/vita-stubs/psp2/io/devctl.h | build
+	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) -std=c99 -O1 -g -Wall -Wextra -Wpedantic $(SANITIZER_FLAGS) source/platform/rt_fs.c tests/test_rt_fs_vita.c -o $@ $(LDFLAGS)
+
+sanitize: $(VITA_RT_FS_SANITIZER_BINARY) $(RT_FS_SANITIZER_BINARY) $(PLUGIN_HELP_SANITIZER_BINARY) $(CUSTOM_WARNING_SANITIZER_BINARY) $(BLUETOOTH_SANITIZER_BINARY) $(REPATCH_SANITIZER_BINARY) $(ADRENALINE_SANITIZER_BINARY) $(ASSET_SANITIZER_BINARY) $(ASSET_MANIFEST_SANITIZER_BINARY) $(STORAGE_SANITIZER_BINARY) $(PLUGIN_CENTRE_SANITIZER_BINARY) $(SANITIZER_BINARY) $(PLUGIN_SANITIZER_BINARY) $(PLUGIN_COMPATIBILITY_SANITIZER_BINARY) $(WIFI_TURBO_SANITIZER_BINARY) $(PROFILE_MANAGER_SANITIZER_BINARY) $(MODULE_CONTROLS_SANITIZER_BINARY) $(SERVICE_MANAGER_SANITIZER_BINARY) $(VITA_ASSET_FS_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(RT_FS_SANITIZER_BINARY)
+	ASAN_OPTIONS=detect_leaks=1 ./$(VITA_RT_FS_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_SANITIZER_BINARY)
 	ASAN_OPTIONS=detect_leaks=1 ./$(PLUGIN_COMPATIBILITY_SANITIZER_BINARY)
