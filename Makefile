@@ -205,10 +205,13 @@ $(ADRENALINE_TEST_BINARY): tests/test_adrenaline_config.c $(LIBRARY) settings-ui
 $(I18N_TEST_BINARY): tests/test_i18n.c $(LIBRARY) include/i18n.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBRARY) -o $@ $(LDFLAGS)
 
-$(VITA_ASSET_FS_TEST_BINARY) build/test_rt_fs: source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h | build
+$(VITA_ASSET_FS_TEST_BINARY): source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c include/vita_asset_fs.h include/custom_assets.h tests/vita-stubs/psp2/io/fcntl.h tests/vita-stubs/psp2/io/stat.h | build
 	$(CC) -DRTSE_PLATFORM_VITA -Itests/vita-stubs $(CPPFLAGS) $(CFLAGS) source/custom-assets/vita_asset_fs.c tests/test_vita_asset_fs.c -o $@ $(LDFLAGS)
 
-test: $(PLUGIN_HELP_TEST_BINARY) $(CUSTOM_WARNING_TEST_BINARY) $(BLUETOOTH_TEST_BINARY) $(REPATCH_TEST_BINARY) $(ADRENALINE_TEST_BINARY) $(I18N_TEST_BINARY) $(ASSET_TEST_BINARY) $(ASSET_MANIFEST_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY) $(VITA_ASSET_FS_TEST_BINARY)
+build/test_rt_fs: tests/test_rt_fs.c source/platform/rt_fs.c include/rt_fs.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_rt_fs.c source/platform/rt_fs.c -o $@ $(LDFLAGS)
+
+test: $(PLUGIN_HELP_TEST_BINARY) $(CUSTOM_WARNING_TEST_BINARY) $(BLUETOOTH_TEST_BINARY) $(REPATCH_TEST_BINARY) $(ADRENALINE_TEST_BINARY) $(I18N_TEST_BINARY) $(ASSET_TEST_BINARY) $(ASSET_MANIFEST_TEST_BINARY) $(STORAGE_TEST_BINARY) $(PLUGIN_CENTRE_TEST_BINARY) $(TEST_BINARY) $(BOOT_TEST_BINARY) $(PREFERENCES_TEST_BINARY) $(PROFILE_TEST_BINARY) $(UI_TEST_BINARY) $(METADATA_TEST_BINARY) $(PLUGIN_INVENTORY_TEST_BINARY) $(PLUGIN_COMPATIBILITY_TEST_BINARY) $(WIFI_TURBO_TEST_BINARY) $(SCREEN_TEST_BINARY) $(PROFILE_MANAGER_TEST_BINARY) $(MODULE_CONTROLS_TEST_BINARY) $(SERVICE_MANAGER_TEST_BINARY) $(VITA_ASSET_FS_TEST_BINARY) build/test_rt_fs
 	./$(TEST_BINARY)
 	./$(BOOT_TEST_BINARY)
 	./$(PREFERENCES_TEST_BINARY)
