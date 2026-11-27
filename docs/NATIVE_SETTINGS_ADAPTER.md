@@ -9,6 +9,7 @@ Reference implementations inspected:
 - [YAMT user plugin](https://github.com/SKGleba/yamt-vita/blob/2eb966b6b9af6f76879abd07732c83ce174dad8/plugin/user/user.c) — detects the load/unload of `system_settings_core.suprx`, installs the PAF XML loader hook, replaces the `peripherals_settings_plugin` layout and releases hooks when the Settings core unloads.
 - [YAMT peripherals layout](https://github.com/SKGleba/yamt-vita/blob/2eb966b6b9af6f76879abd07732c83ce174dad8/plugin/user/peripherals_settings.xml) — demonstrates native nested `setting_list`, `link`, `toggle_switch`, `list` and `button` controls.
 - [h-encore Settings adapter](https://github.com/TheOfficialFloW/h-encore/blob/6d43b4cd662d1012ca851a86d43f3696b2323200/plugin/user.c) and [root Settings XML](https://github.com/TheOfficialFloW/h-encore/blob/6d43b4cd662d1012ca851a86d43f3696b2323200/plugin/system_settings.xml) — demonstrates replacing the `system_settings_plugin` XML and intercepting its plugin callback table for custom button actions.
+- [SKGleba ineedsettings](https://github.com/SKGleba/ineedsettings) — its README says the supplied SUPRX is placed under `NPXS10015` and `NPXS10016` instead of `henkaku.suprx`, and that its build uses HENkaku's `system_settings.xml`. This is deployment-level evidence that the SUPRX and XML resource are a coordinated pair. The public README does not expose enough source to verify its hook implementation, callback table or cleanup; see [the separate audit](INEEDSETTINGS_REFERENCE.md).
 
 YAMT documents compatibility with Enso on firmware 3.60 and 3.65. This is relevant evidence for the project's 3.65 target, but does not replace testing our own adapter on the user's console.
 
@@ -39,6 +40,8 @@ The inspected YAMT implementation hooks these imports in `SceSettings`:
 
 The h-encore implementation additionally demonstrates the PAF Toplevel plugin-function hook (`ScePafToplevel`, function NID `0xF5354FEF`) and text lookup hook (`0x19CEFDA7`) for its own custom plugin. These callback-table details are plugin-specific evidence, not a blanket ABI guarantee. Rt must validate the exact plugin identity and callback slot before patching anything.
 
+The ineedsettings README's instruction to replace HENkaku's SUPRX is **not** an Rt deployment recommendation. Rt must coexist with existing HENkaku configuration and must never silently replace `henkaku.suprx`. Its mention of `NPXS10016` is not sufficient evidence to enable that title in Rt's initial target.
+
 ## Installer contract
 
 The eventual VPK is an installer/repair utility, not a second Settings launcher. It must:
@@ -59,6 +62,7 @@ No VPK may silently edit taiHEN configuration or install a partial plugin.
 - [x] Host regression suite and ASan/UBSan cover the tree and its navigation.
 - [x] VitaSDK cross-build produces the portable static framework library.
 - [x] Existing upstream implementations confirm the native Settings hook pattern and the target Settings title.
+- [x] SKGleba ineedsettings README inspected; its deployment instructions and source-availability limits are documented.
 - [ ] Rt `rtsettings.suprx` adapter source and embedded XML resource.
 - [ ] Safe in-memory insertion of the Rt root link without replacing Sony's existing entries.
 - [ ] Native event/callback bridge for Tai Saver operations.
@@ -95,7 +99,8 @@ This is the desired product hierarchy, not a claim that every listed page is alr
 - **HENkaku Settings** is a useful product-level reference for exposing plugin-owned options inside the system Settings application.
 - **YAMT** is a particularly useful implementation reference: its README explicitly documents a user-mode yamt.suprx under *NPXS10015, with its storage UI under Settings → Devices → Storage Devices. Its installer also configures the required kernel-side storage component separately. Rt must not inherit YAMT's kernel dependency; our first macro-section should remain user-mode unless a specific feature proves otherwise.
 - **h-encore** is a useful source-level reference for the root Settings XML and PAF callback interception.
-- **VitaTweaks** is not a uniform Settings integration pattern. The inspected collection includes standalone *main SUPRX tweaks such as NoLockScreen, Download Enabler, NoTrophyMsg and Custom Warning. These plugins alter system behavior but do not, by themselves, demonstrate a native Settings category. We must distinguish a plugin loaded by taiHEN from a plugin that actually registers a Settings page.
+- **ineedsettings** confirms the deployment relationship between a Settings SUPRX and the HENkaku-derived Settings XML, but its README's instruction to replace HENkaku is specific to that project and must not be copied into Rt's installer.
+- **VitaTweaks** is not a uniform Settings integration pattern. The inspected collection includes standalone `*main` SUPRX tweaks such as NoLockScreen, Download Enabler, NoTrophyMsg and Custom Warning. These plugins alter system behavior but do not, by themselves, demonstrate a native Settings category. We must distinguish a plugin loaded by taiHEN from a plugin that actually registers a Settings page.
 
 ### Root-entry insertion safety
 
