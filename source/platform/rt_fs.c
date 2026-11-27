@@ -54,7 +54,7 @@ int rtfs_stat_path(const char *path, rtfs_stat *out) {
     SceIoStat st;
     if (!path || !out) return -1;
     memset(&st, 0, sizeof(st));
-    if (sceIoGetstat(path, &st) < 0) return -1;
+    { int result = sceIoGetstat(path, &st); if (result < 0) return result; }
     out->type = (rtfs_type)vita_type(st.st_mode);
     out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
     out->mtime = 0; /* SceDateTime is not flattened into a guessed Unix timestamp. */
@@ -102,7 +102,8 @@ int rtfs_free_bytes(const char *device, uint64_t *bytes) {
     SceIoDevInfo info;
     if (!device || !*device || !bytes) return -1;
     memset(&info, 0, sizeof(info));
-    if (sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(info)) < 0 || info.free_size < 0) return -1;
+    { int result = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(info)); if (result < 0) return result; }
+    if (info.free_size < 0) return -1;
     *bytes = (uint64_t)info.free_size;
     return 0;
 }
