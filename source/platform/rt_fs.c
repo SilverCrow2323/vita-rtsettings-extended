@@ -2,6 +2,7 @@
 #include "rt_fs.h"
 
 #include <limits.h>
+#include <stdio.h>
 #include <string.h>
 
 #if defined(RTSE_PLATFORM_VITA)
@@ -71,6 +72,8 @@ int rtfs_dir_open(rtfs_dir *dir, const char *path) {
     if (fd < 0) return fd;
     dir->handle = fd;
     dir->opaque = NULL;
+    if (strlen(path) >= sizeof(dir->path)) { (void)sceIoDclose(fd); dir->handle = -1; return -1; }
+    memcpy(dir->path, path, strlen(path) + 1);
     return 0;
 }
 int rtfs_dir_read(rtfs_dir *dir, rtfs_dirent *out) {
@@ -170,6 +173,8 @@ int rtfs_dir_open(rtfs_dir *dir, const char *path) {
     if (!d) return neg_errno();
     dir->handle = -1;
     dir->opaque = d;
+    if (strlen(path) >= sizeof(dir->path)) { (void)closedir(d); dir->opaque = NULL; return -1; }
+    memcpy(dir->path, path, strlen(path) + 1);
     return 0;
 }
 int rtfs_dir_read(rtfs_dir *dir, rtfs_dirent *out) {
@@ -185,11 +190,13 @@ int rtfs_dir_read(rtfs_dir *dir, rtfs_dirent *out) {
     if (!n || n >= sizeof(out->name)) return -1;
     memset(out, 0, sizeof(*out));
     memcpy(out->name, entry->d_name, n + 1);
-    if (snprintf(path, sizeof(path), "%s/%s", ".", entry->d_name) < 0) return -1;
-    /* Entry type is obtained by the caller with rtfs_stat_path on its joined path. */
-    out->type = RTFS_TYPE_OTHER;
-    out->size = 0;
-    (void)st;
+    if (snprintf(path, sizeof(path), "%s/%s", dir->path, entry->d_name) < 0) return -1;
+    if (lstat(path, &st) == 0) {
+        out->type = host_type(st.st_mode);
+        out->size = st.st_size < 0 ? 0 : (uint64_t)st.st_size;
+    } else {
+        return neg_errno();
+    }
     return 1;
 }
 int rtfs_dir_close(rtfs_dir *dir) {
