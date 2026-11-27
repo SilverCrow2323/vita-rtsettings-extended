@@ -139,3 +139,51 @@ The macro-section remains open until the native page, real Tai Saver backend, in
 ## Source repository
 
 [PS-Vita-Ai-knowledge-Skills](https://github.com/Syscallh00k/PS-Vita-Ai-knowledge-Skills) — external reference, not a dependency or a source of copied implementation code. Re-check its history before future major upgrades.
+
+
+## Additional reference: sillysquiredev/vita-packages
+
+Repository inspected: [sillysquiredev/vita-packages](https://github.com/sillysquiredev/vita-packages), default branch `main`, tree `689b86875b79fe5f39dd0ddebd3964fd19b45363`. Repository metadata describes it as custom PS Vita build scripts; the inspected tree contains package recipes for taiHEN, kubridge, SceLibcPosix, SDL variants, audio libraries and graphics libraries. The repository has no README at its root and no declared licence in its GitHub metadata. Treat it as a technical reference, not as code we can automatically vendor or redistribute.
+
+### What is useful
+
+- **Pinned upstream inputs:** several recipes pin release tarballs with SHA-256 values or Git commits. This is a good pattern for reproducible dependency builds.
+- **VitaSDK toolchain integration:** the recipes consistently use `$VITASDK/share/vita.toolchain.cmake` or `--host=arm-vita-eabi`, and stage installation through `DESTDIR`. This is useful when we eventually build the SUPRX and installer as separate target artifacts.
+- **Dependency metadata:** recipes declare package dependencies (for example, libvorbis → libogg and opusfile → libogg + opus). The idea of an explicit dependency graph is worth adopting for Rt's own installer manifest.
+- **Target-specific patches:** the libxmp and mpg123 examples show how a Vita-specific temporary directory, CPU feature handling or signal behavior can be isolated in a patch rather than scattered through generic build flags.
+- **SDK compatibility checks:** the kubridge recipe checks for a header member before applying a compatibility patch. This is a useful pattern in principle: detect the actual SDK shape rather than assuming every VitaSDK installation has the same header revision.
+- **Separate build and package stages:** the recipes distinguish compiling from staging installed headers/libraries/modules. Rt should preserve the same separation between compilation, packaging and console installation.
+
+### Important limitations found during inspection
+
+- The repository's `build.sh` expects each package directory to contain a generated `PKGBUILD`, reads `pkgname=` and `depends=(...)` from it, and invokes `vita-makepkg`. The checked-in package descriptors are named `VITABUILD`; therefore the script is not a self-contained generic builder when run against the raw tree. It assumes the surrounding VitaSDK/VITABUILD packaging environment.
+- Some recipes use `sha256sums=('SKIP')`, unpinned Git sources or release assets without a recorded digest. Those inputs are not reproducible or integrity-checked to the same standard as the pinned recipes.
+- The dependency parser in `build.sh` is a small grep/sed parser for a narrow PKGBUILD shape, not a general package metadata parser. Rt should not reuse it as its installer dependency resolver.
+- The `kubridge` package is a kernel-side dependency and is unrelated to our first user-mode Settings/Tai Saver slice. Do not add it simply because the package collection builds it.
+- `SceLibcPosix` is a compatibility layer with a kubridge dependency. It is not a substitute for validating native Vita I/O semantics, and it would add an unnecessary dependency chain to Tai Saver.
+- The `flac` recipe hardcodes NEON compiler flags; the `opus` recipe sets both `OPUS_MAY_HAVE_NEON=OFF` and `OPUS_PRESUME_NEON=ON`. These are package-specific choices to verify against their exact upstream versions, not global Rt compiler settings.
+- The `pvr_psp2` recipe consumes prebuilt archives and SUPRX payloads as package inputs. This is a reminder that a package recipe can stage existing binaries; it does not prove that those binaries were built from the checked-out source in that run.
+- GitHub metadata reports no declared licence. Before copying any recipe, patch or script into Rt, obtain and review the upstream licensing terms and preserve attribution where required.
+
+### Decisions for Rt:Settings Extended
+
+1. **Do not import the package collection wholesale.** Rt currently needs its own SUPRX, installer executable, Vita filesystem adapter and VPK validation. It does not need SDL, audio codecs, graphics libraries, kubridge or SceLibcPosix for Macro-section 01.
+2. **Adopt reproducible-build conventions:** pin every external source to a release or commit, record SHA-256 for downloaded archives, fail closed when a required checksum is missing, and record the VitaSDK/container version used by CI.
+3. **Keep target build outputs explicit:** build the Settings plugin and installer separately, stage their payloads into a clean package root, then validate the final VPK independently. A successful library build is not a distributable.
+4. **Use dependency metadata only for actual runtime requirements.** The installer may resolve declared module dependencies, but it must not install optional kernel plugins or compatibility layers without a demonstrated feature requirement and explicit compatibility checks.
+5. **Use conditional SDK compatibility patches sparingly.** Prefer upstream-supported APIs; when a patch is unavoidable, pin its source and patch hashes, test both the expected and unsupported SDK cases, and document the header/version predicate.
+6. **Keep source builds separate from binary packaging.** Any prebuilt SUPRX or library staged into a package must be identified as a prebuilt input, with source, version and hash recorded.
+
+### Inspected files
+
+- [build.sh](https://github.com/sillysquiredev/vita-packages/blob/main/build.sh)
+- [bulk.sh](https://github.com/sillysquiredev/vita-packages/blob/main/bulk.sh)
+- [taiHEN package recipe](https://github.com/sillysquiredev/vita-packages/blob/main/taihen/VITABUILD)
+- [kubridge recipe and SDK compatibility patch](https://github.com/sillysquiredev/vita-packages/tree/main/kubridge)
+- [SceLibcPosix recipe](https://github.com/sillysquiredev/vita-packages/blob/main/SceLibcPosix/VITABUILD)
+- [libxmp recipe and Vita patch](https://github.com/sillysquiredev/vita-packages/tree/main/libxmp)
+- [mpg123 recipe and Vita patch](https://github.com/sillysquiredev/vita-packages/tree/main/mpg123)
+- [SDL2 VitaGL recipe](https://github.com/sillysquiredev/vita-packages/blob/main/sdl2_vitagl/VITABUILD)
+- [SDL3 PVR recipe](https://github.com/sillysquiredev/vita-packages/blob/main/sdl3_pvr_psp2/VITABUILD)
+
+**Rt conclusion:** this repository is valuable as a collection of Vita-targeted dependency build examples and reproducibility patterns. It does not supply a ready-made Settings plugin or VPK installer for Rt, and it does not change the Macro-section 01 gate: Tai Saver's native Vita I/O, the Settings SUPRX/page integration, and the installable VPK still need to be implemented and validated in this project.
