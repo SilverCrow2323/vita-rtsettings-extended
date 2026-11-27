@@ -40,7 +40,7 @@ int sceIoDevctl(const char *d,unsigned int cmd,void *in,int il,void *out,int ol)
 int main(void) {
     char buf[8]={0}; rtfs_stat st; rtfs_dir d; rtfs_dirent e; uint64_t free_bytes=0; int fd;
     fd=rtfs_open("ur0:data/test",RTFS_OPEN_READ|RTFS_OPEN_WRITE|RTFS_OPEN_CREATE|RTFS_OPEN_EXCLUSIVE|RTFS_OPEN_TRUNCATE|RTFS_OPEN_WRITE_LOCK|RTFS_OPEN_NOWAIT,0600);
-    assert(fd==7 && open_flags==(SCE_O_RDWR|SCE_O_CREAT|SCE_O_EXCL|SCE_O_TRUNC|SCE_O_WRLOCK|SCE_O_NOWAIT) && open_mode==0600);
+    assert(fd==7 && open_flags==(SCE_O_RDWR|SCE_O_CREAT|SCE_O_EXCL|SCE_O_TRUNC|SCE_O_WRLOCK|SCE_O_NBLOCK) && open_mode==0600);
     assert(rtfs_read(fd,buf,sizeof(buf))==3 && !memcmp(buf,"RRR",3));
     assert(rtfs_write(fd,"abcdef",6)==2);
     assert(rtfs_seek(fd,0,0)==seek_result);
