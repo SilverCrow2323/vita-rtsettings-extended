@@ -120,12 +120,10 @@ static int rollback_config(int old_moved,int plugin_added) {
 }
 
 rtns_install_result rt_settings_install_native(int enable_disabled,char *message,size_t message_capacity) {
-    size_t config_length=0,new_length=0,payload_length=0,verify_length=0;
-    size_t snapshot_length=0;
+    size_t config_length=0,new_length=0,payload_length=0;
     char backup_path[256];
     ts_snapshot_result snapshot;
     rttc_result config_plan;
-    rtns_install_result result=RTNS_INSTALL_IO_FAILED;
     int config_changed=0,plugin_exists=0,plugin_added=0,old_moved=0;
     int snapshot_created=0;
     if(!message||!message_capacity)return RTNS_INSTALL_ERROR;
@@ -259,6 +257,5 @@ rtns_install_result rt_settings_install_native(int enable_disabled,char *message
         return RTNS_INSTALL_BACKUP_FAILED;
     }
     snprintf(message,message_capacity,"Installed and verified. Pre-install backup: %s",snapshot.snapshot_id);
-    (void)snapshot_length;(void)verify_length;
     return RTNS_INSTALL_OK;
 }
