@@ -26,6 +26,7 @@ static SceUID g_settings_core_modid = -1;
 static int g_page_hooks_ready = 0;
 
 static char g_root_xml[RT_SETTINGS_XML_BUFFER_SIZE];
+static int (*g_system_settings_button)(const char *id, int a2, void *a3);
 static int text_equal(const char *a, const char *b) {
     size_t i = 0;
     if (!a || !b) return 0;
@@ -65,7 +66,6 @@ static int xml_layout_hook(void *out, void *buffer, int size, void *a4) {
     return TAI_CONTINUE(int, g_xml_ref, out, buffer, size, a4);
 }
 
-static int (*g_system_settings_button)(const char *id, int a2, void *a3);
 static int rt_settings_button(const char *id, int a2, void *a3) {
     if (text_equal(id, "rt_manager_about")) return 0;
     return g_system_settings_button ? g_system_settings_button(id, a2, a3) : 0;
