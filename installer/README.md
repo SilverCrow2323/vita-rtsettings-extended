@@ -65,4 +65,6 @@ Never overwrite or delete files not declared as owned by this package.
 
 The portable framework library and the first Cockpit read-only audit shell are separate deliverables. The initial Cockpit shell detects registry records and displays component details; it does not yet install modules or edit taiHEN.
 
-The complete transaction engine, trusted online update index, Rt SUPRX, embedded native page resources, write-capable first module and physical-console validation remain implementation gates. A VPK must be described by its actual capability: a Cockpit shell VPK is not yet the full Rt ecosystem installer.
+The Cockpit VPK now bundles the Tai Saver core and exposes a confirmed **create + verify Automatic snapshot** operation. It writes only the Rt-owned archive under `ur0:data/RtSettingsExtended/TaiSaver/`; the live `ur0:tai/` directory is read as input and its plugin configuration is not edited.
+
+This is the first functional utility integrated into Cockpit, not yet an independently selectable module installation. The complete Vita-native component transaction engine, trusted online update index, Rt SUPRX, embedded native Settings resources, archive browsing/compare/classify/restore UI and physical-console validation remain implementation gates. A VPK must be described by its actual capability: this build is Cockpit + Tai Saver backup/verification, not yet the full Rt ecosystem installer.
