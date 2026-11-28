@@ -12,14 +12,14 @@
 #define NID_PAF_INIT_PLUGIN_FUNCTIONS 0xF5354FEF
 #define NID_PAF_GET_TEXT 0x19CEFDA7
 
-static SceUID g_load_hook = -1;
+static SceUID g_load_hook[2] = {-1, -1};
 static SceUID g_stop_hook = -1;
-static SceUID g_xml_hook = -1;
+static SceUID g_xml_hook[2] = {-1, -1};
 static SceUID g_functions_hook = -1;
 static SceUID g_text_hook = -1;
-static tai_hook_ref_t g_load_ref;
+static tai_hook_ref_t g_load_ref[2];
 static tai_hook_ref_t g_stop_ref;
-static tai_hook_ref_t g_xml_ref;
+static tai_hook_ref_t g_xml_ref[2];
 static tai_hook_ref_t g_functions_ref;
 static tai_hook_ref_t g_text_ref;
 static SceUID g_settings_core_modid = -1;
@@ -45,25 +45,50 @@ static int contains_text(const char *text, const char *needle) {
     return 0;
 }
 
+static int is_last(SceUID uid, tai_hook_ref_t ref) {
+    return uid >= 0 && ((struct _tai_hook_user *)ref)->next == 0;
+}
+static int xml_hook_acts(int which) {
+    if (g_xml_hook[which] < 0) return 0;
+    if (g_xml_hook[which ^ 1] < 0) return 1;
+    {
+        struct _tai_hook_user *other = (struct _tai_hook_user *)g_xml_ref[which ^ 1];
+        struct _tai_hook_user *hook = (struct _tai_hook_user *)g_xml_ref[which];
+        int i;
+        for (i = 0; i < 64 && hook->next; ++i) {
+            hook = (struct _tai_hook_user *)hook->next;
+            if (hook == other) return 0;
+        }
+    }
+    return 1;
+}
 static void release_page_hooks(void) {
     g_page_hooks_ready = 0;
     g_system_settings_button = NULL;
-    if (g_xml_hook >= 0) { taiHookRelease(g_xml_hook, g_xml_ref); g_xml_hook = -1; }
+    if (g_xml_hook[1] >= 0) { taiHookRelease(g_xml_hook[1], g_xml_ref[1]); g_xml_hook[1] = -1; }
+    if (g_xml_hook[0] >= 0) { taiHookRelease(g_xml_hook[0], g_xml_ref[0]); g_xml_hook[0] = -1; }
     if (g_functions_hook >= 0) { taiHookRelease(g_functions_hook, g_functions_ref); g_functions_hook = -1; }
     if (g_text_hook >= 0) { taiHookRelease(g_text_hook, g_text_ref); g_text_hook = -1; }
 }
-
-static int xml_layout_hook(void *out, void *buffer, int size, void *a4) {
-    if (g_page_hooks_ready && buffer && size > 0 && size < RT_SETTINGS_XML_BUFFER_SIZE) {
+static void maybe_splice_root(void **buffer, int *size) {
+    if (g_page_hooks_ready && buffer && *buffer && size && *size > 0 &&
+        *size < RT_SETTINGS_XML_BUFFER_SIZE) {
         size_t output_length = 0;
         rt_settings_xml_result result = rt_settings_xml_splice_root(
-            (const char *)buffer, (size_t)size, g_root_xml, sizeof(g_root_xml), &output_length);
+            (const char *)*buffer, (size_t)*size, g_root_xml, sizeof(g_root_xml), &output_length);
         if (result == RT_SETTINGS_XML_INSERTED && output_length <= 0x7fffffffU) {
-            buffer = g_root_xml;
-            size = (int)output_length;
+            *buffer = g_root_xml;
+            *size = (int)output_length;
         }
     }
-    return TAI_CONTINUE(int, g_xml_ref, out, buffer, size, a4);
+}
+static int xml_layout_hook_a(void *out, void *buffer, int size, void *a4) {
+    if (xml_hook_acts(0)) maybe_splice_root(&buffer, &size);
+    return TAI_CONTINUE(int, g_xml_ref[0], out, buffer, size, a4);
+}
+static int xml_layout_hook_b(void *out, void *buffer, int size, void *a4) {
+    if (xml_hook_acts(1)) maybe_splice_root(&buffer, &size);
+    return TAI_CONTINUE(int, g_xml_ref[1], out, buffer, size, a4);
 }
 
 static int rt_settings_button(const char *id, int a2, void *a3) {
@@ -109,9 +134,12 @@ static int install_page_hooks(void) {
     g_functions_hook = taiHookFunctionImport(&g_functions_ref, "SceSettings",
         TAI_LIB_PAF_TOPLEVEL, NID_PAF_INIT_PLUGIN_FUNCTIONS, plugin_functions_hook);
     if (g_functions_hook < 0) goto fail;
-    g_xml_hook = taiHookFunctionImport(&g_xml_ref, "SceSettings",
-        TAI_LIB_PAF_MISC, NID_PAF_LOAD_XML, xml_layout_hook);
-    if (g_xml_hook < 0) goto fail;
+    g_xml_hook[0] = taiHookFunctionImport(&g_xml_ref[0], "SceSettings",
+        TAI_LIB_PAF_MISC, NID_PAF_LOAD_XML, xml_layout_hook_a);
+    if (g_xml_hook[0] < 0) goto fail;
+    g_xml_hook[1] = taiHookFunctionImport(&g_xml_ref[1], "SceSettings",
+        TAI_LIB_PAF_MISC, NID_PAF_LOAD_XML, xml_layout_hook_b);
+    if (g_xml_hook[1] < 0) goto fail;
     g_page_hooks_ready = 1;
     return 0;
 fail:
@@ -119,15 +147,23 @@ fail:
     return -1;
 }
 
-static SceUID load_start_module_hook(const char *path, SceSize args, void *argp,
-                                     int flags, SceKernelLMOption *option, int *status) {
-    SceUID result = TAI_CONTINUE(SceUID, g_load_ref, path, args, argp, flags, option, status);
-    if (result >= 0 && path && contains_text(path, "system_settings_core.suprx") &&
-        result != g_settings_core_modid) {
-        release_page_hooks();
-        g_settings_core_modid = result;
-        (void)install_page_hooks();
-    }
+static void settings_core_loaded(SceUID result, const char *path) {
+    if (result < 0 || !path || !contains_text(path, "system_settings_core.suprx") ||
+        result == g_settings_core_modid) return;
+    release_page_hooks();
+    g_settings_core_modid = result;
+    (void)install_page_hooks();
+}
+static SceUID load_start_module_hook_a(const char *path, SceSize args, void *argp,
+                                       int flags, SceKernelLMOption *option, int *status) {
+    SceUID result = TAI_CONTINUE(SceUID, g_load_ref[0], path, args, argp, flags, option, status);
+    settings_core_loaded(result, path);
+    return result;
+}
+static SceUID load_start_module_hook_b(const char *path, SceSize args, void *argp,
+                                       int flags, SceKernelLMOption *option, int *status) {
+    SceUID result = TAI_CONTINUE(SceUID, g_load_ref[1], path, args, argp, flags, option, status);
+    settings_core_loaded(result, path);
     return result;
 }
 
@@ -143,15 +179,19 @@ static int stop_unload_module_hook(SceUID modid, SceSize args, void *argp,
 
 int module_start(SceSize argc, const void *args) {
     (void)argc; (void)args;
-    g_load_hook = taiHookFunctionImport(&g_load_ref, "SceSettings",
-        TAI_LIB_KERNEL, NID_LOAD_START_MODULE, load_start_module_hook);
-    if (g_load_hook < 0) goto fail;
+    g_load_hook[0] = taiHookFunctionImport(&g_load_ref[0], "SceSettings",
+        TAI_LIB_KERNEL, NID_LOAD_START_MODULE, load_start_module_hook_a);
+    if (g_load_hook[0] < 0) goto fail;
+    g_load_hook[1] = taiHookFunctionImport(&g_load_ref[1], "SceSettings",
+        TAI_LIB_KERNEL, NID_LOAD_START_MODULE, load_start_module_hook_b);
+    if (g_load_hook[1] < 0) goto fail;
     g_stop_hook = taiHookFunctionImport(&g_stop_ref, "SceSettings",
         TAI_LIB_KERNEL, NID_STOP_UNLOAD_MODULE, stop_unload_module_hook);
     if (g_stop_hook < 0) goto fail;
     return SCE_KERNEL_START_SUCCESS;
 fail:
-    if (g_load_hook >= 0) { taiHookRelease(g_load_hook, g_load_ref); g_load_hook = -1; }
+    if (g_load_hook[1] >= 0) { taiHookRelease(g_load_hook[1], g_load_ref[1]); g_load_hook[1] = -1; }
+    if (g_load_hook[0] >= 0) { taiHookRelease(g_load_hook[0], g_load_ref[0]); g_load_hook[0] = -1; }
     if (g_stop_hook >= 0) { taiHookRelease(g_stop_hook, g_stop_ref); g_stop_hook = -1; }
     return SCE_KERNEL_START_FAILED;
 }
@@ -159,7 +199,8 @@ fail:
 int module_stop(SceSize argc, const void *args) {
     (void)argc; (void)args;
     release_page_hooks();
-    if (g_load_hook >= 0) { taiHookRelease(g_load_hook, g_load_ref); g_load_hook = -1; }
+    if (g_load_hook[1] >= 0) { taiHookRelease(g_load_hook[1], g_load_ref[1]); g_load_hook[1] = -1; }
+    if (g_load_hook[0] >= 0) { taiHookRelease(g_load_hook[0], g_load_ref[0]); g_load_hook[0] = -1; }
     if (g_stop_hook >= 0) { taiHookRelease(g_stop_hook, g_stop_ref); g_stop_hook = -1; }
     g_settings_core_modid = -1;
     return SCE_KERNEL_STOP_SUCCESS;
