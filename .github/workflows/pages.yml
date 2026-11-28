@@ -1,0 +1,60 @@
+name: GitHub Pages — PS Vita Settings Simulator
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "data/settings-simulator.json"
+      - "tests/test_settings_simulator_model.mjs"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "data/settings-simulator.json"
+      - "tests/test_settings_simulator_model.mjs"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate simulator JavaScript
+        run: node --check site/app.js
+      - name: Validate simulator model
+        run: node -e "JSON.parse(require('fs').readFileSync('data/settings-simulator.json','utf8'))"
+      - name: Run simulator contract tests
+        run: node tests/test_settings_simulator_model.mjs
+      - name: Validate required site assets
+        run: test -s site/index.html && test -s site/styles.css && test -s site/app.js
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
