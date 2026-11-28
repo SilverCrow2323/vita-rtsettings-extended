@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "profile": {
+    "model": "PCH-1000",
+    "display": "OLED",
+    "firmware": "3.65",
+    "hacks": "Ensō",
+    "note": "Illustrative profile; the browser does not detect hardware."
+  },
+  "navigation": {
+    "root": "sony",
+    "rtRoot": "rt",
+    "back": "stack-pop",
+    "selection": "index",
+    "input": [
+      "keyboard",
+      "pointer",
+      "touch"
+    ],
+    "viewport": {
+      "width": 960,
+      "height": 544,
+      "aspectRatio": "16:9"
+    }
+  },
+  "safety": {
+    "mode": "simulation-only",
+    "hardwareWrites": false,
+    "pluginActivation": false,
+    "storageWrites": false,
+    "unknownCompatibility": "review-required",
+    "externalPluginOwnership": "recognize-only"
+  },
+  "exclusiveGroups": [
+    {
+      "id": "storage-driver",
+      "members": [
+        "YAMT",
+        "StorageMgr"
+      ],
+      "policy": "block-simultaneous-activation"
+    },
+    {
+      "id": "overclock-manager",
+      "members": [
+        "PSVshell",
+        "LOLIcon",
+        "Oclock"
+      ],
+      "policy": "single-active-provider"
+    },
+    {
+      "id": "quick-menu",
+      "members": [
+        "QuickMenuReborn",
+        "Quick Menu Plus"
+      ],
+      "policy": "verify-version-before-selection"
+    }
+  ]
+}
