@@ -1,4 +1,5 @@
 #include <psp2/kernel/modulemgr.h>
+#include <stdint.h>
 #include <taihen.h>
 #include "rt_settings_xml.h"
 
