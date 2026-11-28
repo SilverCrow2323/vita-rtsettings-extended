@@ -1,0 +1,35 @@
+name: Rt Settings Extended CI
+on:
+  push:
+    branches:
+      - main
+      - feat/tai-saver-core
+      - feat/installer-manifest-planner
+      - feat/installer-transaction-engine
+      - feat/installer-transaction-engine-tests
+  pull_request:
+    paths:
+      - "include/**"
+      - "source/**"
+      - "tests/**"
+      - "installer/**"
+      - "tai-saver/**"
+      - "Makefile"
+      - "Makefile.vita"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host:
+    name: Host build, regression suite and sanitizers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run all host tests
+        run: |
+          make clean
+          make all
+          make test
+      - name: Run AddressSanitizer and UndefinedBehaviorSanitizer
+        run: make sanitize

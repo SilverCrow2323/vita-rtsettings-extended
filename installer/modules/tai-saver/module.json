@@ -1,0 +1,33 @@
+{
+  "manifest_version": 1,
+  "id": "tai-saver",
+  "name": "Tai Saver",
+  "description": "Automatic and manual taiHEN configuration snapshots, integrity checks, archive comparison and protected restore.",
+  "version": "0.1.0",
+  "category": "settings",
+  "minimum_framework": "0.1.0",
+  "maximum_framework": null,
+  "minimum_firmware": "3.65",
+  "dependencies": [
+    {
+      "id": "rtse-framework",
+      "minimum_version": "0.1.0"
+    }
+  ],
+  "conflicts": [],
+  "entry": "settings/tai-saver",
+  "payload_root": "payload",
+  "owned_paths": [
+    "tai-saver/",
+    "settings/tai-saver/"
+  ],
+  "settings_schema": "../../../tai-saver/SETTINGS.schema.json",
+  "data_paths": [
+    "ur0:data/RtSettingsExtended/TaiSaver/"
+  ],
+  "uninstall": {
+    "remove_owned_files": true,
+    "preserve_data_by_default": true,
+    "run_script": null
+  }
+}
