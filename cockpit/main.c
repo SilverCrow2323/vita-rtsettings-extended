@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <psp2/ctrl.h>
 #include <psp2/io/fcntl.h>
