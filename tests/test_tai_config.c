@@ -48,6 +48,11 @@ int main(void) {
         r=rttc_add_settings_plugin(no_newline,strlen(no_newline),PLUGIN,out,sizeof(out),&n);
         assert(r==RTTC_ADDED && strstr(out,"*NPXS10015\nur0:tai/rtsettings.suprx\n")!=NULL);
     }
+    {
+        const char *duplicate_sections="*NPXS10015\\nfirst.skprx\\n*main\\nsecond.skprx\\n*NPXS10015\\nthird.skprx\\n";
+        assert(rttc_add_settings_plugin(duplicate_sections,strlen(duplicate_sections),PLUGIN,out,sizeof(out),&n)==RTTC_AMBIGUOUS);
+        assert(rttc_enable_settings_plugin(duplicate_sections,strlen(duplicate_sections),PLUGIN,out,sizeof(out),&n)==RTTC_AMBIGUOUS);
+    }
     assert(rttc_add_settings_plugin(NULL,0,PLUGIN,out,sizeof(out),&n)==RTTC_ERROR);
     assert(rttc_add_settings_plugin("*NPXS10015\n",11,PLUGIN,out,4,&n)==RTTC_CAPACITY);
     puts("taiHEN config preservation tests passed.");
