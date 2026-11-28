@@ -6,6 +6,11 @@ on:
       - feat/tai-saver-core
     paths:
       - "cockpit/**"
+      - "include/plugin_inventory.h"
+      - "include/plugin_compatibility.h"
+      - "settings-ui/plugin_control_centre.*"
+      - "source/plugin-inventory/**"
+      - "source/plugin-compatibility/**"
       - "native-settings/**"
       - "include/tai_config.h"
       - "source/tai-config/**"
