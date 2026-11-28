@@ -1,6 +1,6 @@
 # Build and validation evidence
 
-**Evidence date:** 27 November 2026  
+**Evidence date:** 28 November 2026  
 **Branch:** `feat/tai-saver-core`  
 **Scope:** host regression build, sanitizers, VitaSDK static-library cross-build and Rt Vita Cockpit VPK packaging.
 
@@ -65,3 +65,60 @@ The VPK links the Tai Saver core into the Cockpit executable and adds a confirme
 The Tai Saver utility writes its archive under `ur0:data/RtSettingsExtended/TaiSaver/` and reads `ur0:tai/` as its source. It does not edit the live taiHEN configuration. This is a CI-built VPK, not a physical-device-tested package.
 
 The host regression suite completed successfully and the VitaSDK static-library cross-build completed successfully in the same validation cycle. The AddressSanitizer/UndefinedBehaviorSanitizer job in run `46115093542` subsequently completed successfully.
+
+
+## Native Rt Manager installer VPK — 28 November 2026
+
+### Final native Settings build — commit `18787ea76896642b8abfc2e9b2feb73256b5a4d1`
+
+- **Host build and regression suite:** passed.
+- **AddressSanitizer / UndefinedBehaviorSanitizer:** passed.
+- **VitaSDK cross-build:** passed, including the native Settings SUPRX.
+- **Cockpit VPK build:** passed using the official VitaSDK container.
+- **PR:** #1 remains Draft.
+
+CI runs:
+
+- Host, sanitizer and VitaSDK cross-build: https://github.com/SilverCrow2323/vita-rtsettings-extended/actions/runs/46138549229
+- Cockpit VPK build: https://github.com/SilverCrow2323/vita-rtsettings-extended/actions/runs/46138549187
+- VPK artifact ID: `15260657469`
+
+### Independently inspected package
+
+- VPK filename: `rt-vita-cockpit.vpk`
+- Title ID: `RTV000001`
+- VPK size: 115,846 bytes.
+- VPK SHA-256: `435d37ab85d5a786c68ea28ad16b068e9cdd221d70074a9f8596d922aef488da`
+- Embedded `rtsettings.suprx`: 15,141 bytes.
+- Embedded SUPRX SHA-256: `3733840765ebcea3d9d906f23ab72f069850f4c588ffe41e04f933322448096a`
+- Package entries inspected: `sce_sys/param.sfo`, `eboot.bin`, `rtsettings.suprx`.
+
+### What this VPK now does
+
+The VPK is the Rt Vita Cockpit installer. After explicit confirmation in Cockpit, it:
+
+1. Reads the embedded `app0:rtsettings.suprx` payload.
+2. Checks the existing `ur0:tai/config.txt` and the exact `*NPXS10015` section.
+3. Refuses duplicate/ambiguous Rt entries, duplicate title sections, stale transaction state, or a different existing `rtsettings.suprx`.
+4. Creates a verified permanent Tai Saver Pre-Restore snapshot of `ur0:tai`.
+5. Writes an additional config backup when the config will change.
+6. Stages and verifies the SUPRX and updated config, then commits the module and its single taiHEN line with synchronous rollback on errors.
+7. Enables an existing commented Rt line only after the user confirms Install/Enable.
+
+The native menu target is:
+
+```text
+Settings
+└── Rt:Settings Extended
+    └── Preferences & Settings Management
+        └── Rt Manager
+            └── Rt Manager Status
+```
+
+The root XML is modified in memory only. Existing Sony XML files and unrelated taiHEN entries are not rewritten.
+
+### Remaining release boundary
+
+This is the first native Settings integration milestone, not the complete Rt Settings suite. Only the Rt Manager Status action is exposed in Sony Settings. Plugin Control Centre, conflict/dependency controls, Tai Saver operations, other feature pages, update/uninstall and repair of a different existing SUPRX are not yet exposed.
+
+**No physical PS Vita test is claimed.** The VPK and SUPRX are CI-built and inspected, but the menu placement, nested navigation, callback behavior, coexistence with the user's active plugin chain, config installation on the real filesystem and reboot behavior still require a controlled test on the target PS Vita 1000 OLED running 3.65 Ensō.
