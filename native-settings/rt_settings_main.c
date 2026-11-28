@@ -73,7 +73,7 @@ static int rt_settings_button(const char *id, int a2, void *a3) {
 static int plugin_functions_hook(void *a1, int a2, uint32_t *functions) {
     int result = TAI_CONTINUE(int, g_functions_ref, a1, a2, functions);
     const char *plugin = a1 ? (const char *)((uint32_t *)a1)[1] : NULL;
-    if (plugin && functions && contains_text(plugin, "system_settings_plugin") &&
+    if (plugin && functions && text_equal(plugin, "system_settings_plugin") &&
         functions[6] != (uint32_t)rt_settings_button) {
         g_system_settings_button = (int (*)(const char *, int, void *))functions[6];
         if (g_system_settings_button) functions[6] = (uint32_t)rt_settings_button;
