@@ -63,10 +63,12 @@ No VPK may silently edit taiHEN configuration or install a partial plugin.
 - [x] VitaSDK cross-build produces the portable static framework library.
 - [x] Existing upstream implementations confirm the native Settings hook pattern and the target Settings title.
 - [x] SKGleba ineedsettings README inspected; its deployment instructions and source-availability limits are documented.
-- [ ] Rt `rtsettings.suprx` adapter source and embedded XML resource.
-- [ ] Safe in-memory insertion of the Rt root link without replacing Sony's existing entries.
-- [ ] Native event/callback bridge for Tai Saver operations.
-- [ ] VPK installer, update, repair and uninstall transaction.
+- [x] Rt `rtsettings.suprx` user-mode adapter source and embedded native XML entry.
+- [x] Bounded, idempotent in-memory insertion of the Rt root link while preserving Sony's existing root XML.
+- [x] Minimal native button callback and English status text hook for the Rt Manager installation-status action.
+- [x] Cockpit VPK installer for first installation, explicit enabling of an existing commented Rt line, verified Pre-Restore backup, config backup, staged writes, read-back verification and synchronous rollback on errors.
+- [ ] Native event/callback bridge for Tai Saver operations and operational feature pages.
+- [ ] Update/repair/uninstall transaction for an existing different Rt SUPRX version.
 - [ ] Physical-console verification on firmware 3.65 Ensō.
 
 Until the remaining gates pass, this project must describe the Settings Hub as a registered portable navigation model, not as an installed Sony Settings extension.
@@ -119,3 +121,33 @@ The first on-device proof is deliberately small: show one Rt root entry, open on
 ### Installer and user experience
 
 The VPK is an installer/maintenance tool, not the user-facing Settings experience. It installs the verified SUPRX/resources and proposes the exact taiHEN configuration change for explicit approval. Once installed, day-to-day use happens entirely from the Sony Settings application. Update, repair and uninstall must remove only Rt-owned files/configuration and preserve user backup archives.
+
+
+## Implementation status — 28 November 2026
+
+The first native adapter and installer now exist in source:
+
+- `native-settings/rt_settings_main.c` waits for `system_settings_core.suprx`, then hooks the Settings PAF XML loader, the root Settings plugin callback table and the Settings text lookup.
+- `native-settings/rt_settings_xml.c` adds a single nested Rt entry to the existing `system_settings_plugin` XML. It is bounded, idempotent and fails closed on malformed or oversized XML.
+- `cockpit/native_settings_installer.c` installs the SUPRX embedded in the Cockpit VPK. It refuses to overwrite a different existing `rtsettings.suprx`, detects duplicate/ambiguous `*NPXS10015` sections, preserves unrelated config bytes and comments, and creates a verified permanent `TS_ARCHIVE_PRE_RESTORE` snapshot before live changes.
+- The installer writes a separate config backup under `ur0:data/RtSettingsExtended/Installer/`, stages and verifies the SUPRX/config, replaces `config.txt` through a rollback slot and restores the original on synchronous failure. It also recovers the original config if power was lost after the old file was moved aside.
+- The VPK includes `rtsettings.suprx` as `app0:rtsettings.suprx`; installation is initiated from Cockpit and requires explicit confirmation. The Settings extension is not a separate LiveArea bubble.
+
+The initial native page is intentionally small:
+
+```text
+Settings
+└── Rt:Settings Extended
+    └── Preferences & Settings Management
+        └── Rt Manager
+            └── Rt Manager Status
+```
+
+The status button displays an installation message. Plugin Control Centre, Tai Saver controls, and other feature pages are not yet exposed as operational native controls. The Cockpit installer must not be mistaken for those controls.
+
+### Safety/validation limits
+
+- A verified backup and successful CI build do not prove the PAF hook chain is compatible with every plugin combination.
+- The VPK installer currently handles first install and enabling an existing commented Rt entry. It refuses a different existing module rather than overwriting it; update/uninstall flows are not implemented.
+- Synchronous write/rename errors trigger rollback. A power loss is recovered when the original config is in the rollback slot; other interrupted states are left untouched for manual recovery.
+- No physical PS Vita test is claimed. On-device verification of the root page, nested navigation, Settings close/reopen, plugin coexistence and 3.65 Ensō startup remains mandatory.
