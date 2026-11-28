@@ -7,6 +7,7 @@
 #include <psp2/kernel/processmgr.h>
 #include <vita2d.h>
 #include "tai_saver.h"
+#include "native_settings_installer.h"
 
 #define SCREEN_W 960
 #define SCREEN_H 544
@@ -40,13 +41,15 @@ static component_t components[] = {
     {"boot-visuals", "Boot Visuals", "Boot animation, splash and startup appearance adapters.", 0, 0}
 };
 #define COMPONENT_COUNT (sizeof(components) / sizeof(components[0]))
-#define MENU_COUNT (COMPONENT_COUNT + 1)
+#define MENU_COUNT (COMPONENT_COUNT + 2)
 
 static int page = 0; /* 0 dashboard, 1 component details, 2 Tai Saver, 3 confirm, 4 result */
 static int selected = 0;
 static int show_help = 0;
 static int tai_result = TS_ERR_ARGUMENT;
 static int tai_verified = 0;
+static int native_install_status = RTNS_INSTALL_ERROR;
+static char native_install_message[192];
 static ts_snapshot_result snapshot_result;
 static ts_snapshot_info snapshot_info;
 static vita2d_pgf *ui_font = NULL;
@@ -143,10 +146,14 @@ static void draw_shell(void) {
                 draw_text(690, y, components[i].bundled ? CYAN : (components[i].installed ? GREEN : AMBER),
                           components[i].bundled ? "BUILT INTO COCKPIT" :
                           (components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED"));
-            } else {
+            } else if (i == COMPONENT_COUNT) {
                 draw_text(48, y, CYAN, "Tai Saver  /  Backup & Recovery");
                 draw_text(690, y, path_exists(TAI_SOURCE) ? GREEN : RED,
                           path_exists(TAI_SOURCE) ? "SOURCE AVAILABLE" : "SOURCE MISSING");
+            } else {
+                draw_text(48, y, CYAN, "Native Sony Settings  /  Rt Manager Installer");
+                draw_text(690, y, path_exists("ur0:tai/rtsettings.suprx") ? GREEN : AMBER,
+                          path_exists("ur0:tai/rtsettings.suprx") ? "MODULE FILE PRESENT" : "NOT INSTALLED");
             }
         }
         draw_text(34, 520, MUTED, "UP/DOWN SELECT   CROSS OPEN   TRIANGLE HELP   CIRCLE RESCAN/BACK   START EXIT");
@@ -197,6 +204,36 @@ static void draw_shell(void) {
             if (snapshot_result.warning[0]) draw_text(48, 300, AMBER, snapshot_result.warning);
         }
         draw_text(48, 520, MUTED, "CROSS / CIRCLE BACK");
+    } else if (page == 5) {
+        draw_header("NATIVE SONY SETTINGS  /  INSTALLER");
+        draw_text(48, 125, CYAN, "RT:SETTINGS EXTENDED");
+        draw_text(48, 170, WHITE, "Settings > Rt:Settings Extended > Preferences & Settings Management > Rt Manager");
+        draw_text(48, 220, WHITE, "Module: app0:rtsettings.suprx");
+        draw_text(48, 250, WHITE, "Destination: ur0:tai/rtsettings.suprx");
+        draw_text(48, 280, WHITE, "taiHEN title section: *NPXS10015");
+        draw_text(48, 335, MUTED, "Installs a user-mode SUPRX and adds only its own config line.");
+        draw_text(48, 365, MUTED, "Creates a verified permanent Pre-Restore snapshot before changes.");
+        draw_text(48, 405, GREEN, "Sony XML and all unrelated taiHEN entries are preserved.");
+        draw_text(48, 520, MUTED, "CROSS INSTALL / ENABLE   CIRCLE BACK");
+    } else if (page == 6) {
+        draw_header("NATIVE SETTINGS  /  CONFIRM");
+        draw_text(48, 145, CYAN, "INSTALL RT:SETTINGS EXTENDED?");
+        draw_text(48, 195, WHITE, "The installer will verify the SUPRX payload and the existing taiHEN config.");
+        draw_text(48, 235, WHITE, "A verified Pre-Restore snapshot is created before any live change.");
+        draw_text(48, 275, WHITE, "Only *NPXS10015 receives ur0:tai/rtsettings.suprx.");
+        draw_text(48, 325, MUTED, "A different existing module is never overwritten.");
+        draw_text(48, 365, AMBER, "An existing disabled Rt line will be enabled because you confirmed.");
+        draw_text(48, 520, MUTED, "CROSS CONFIRM INSTALL   CIRCLE CANCEL");
+    } else if (page == 7) {
+        draw_header("NATIVE SETTINGS  /  RESULT");
+        if (native_install_status == RTNS_INSTALL_OK || native_install_status == RTNS_INSTALL_ALREADY) {
+            draw_text(48, 145, GREEN, native_install_status == RTNS_INSTALL_ALREADY ? "RT SETTINGS ALREADY INSTALLED" : "RT SETTINGS INSTALLED");
+        } else {
+            draw_text(48, 145, RED, "INSTALLATION NOT COMPLETED");
+        }
+        draw_text(48, 205, WHITE, native_install_message);
+        draw_text(48, 275, MUTED, "Restart the Vita before checking the new Sony Settings entry.");
+        draw_text(48, 520, MUTED, "CROSS / CIRCLE BACK");
     }
 
     if (show_help) {
@@ -235,6 +272,7 @@ int main(void) {
                 if ((pressed & SCE_CTRL_UP) && selected > 0) --selected;
                 if (pressed & SCE_CTRL_CROSS) {
                     if (selected == (int)COMPONENT_COUNT) page = 2;
+                    else if (selected == (int)COMPONENT_COUNT + 1) page = 5;
                     else page = 1;
                 }
                 if (pressed & SCE_CTRL_CIRCLE) scan_components();
@@ -248,6 +286,17 @@ int main(void) {
                 if (pressed & SCE_CTRL_CIRCLE) page = 2;
             } else if (page == 4) {
                 if (pressed & (SCE_CTRL_CROSS | SCE_CTRL_CIRCLE)) page = 2;
+            } else if (page == 5) {
+                if (pressed & SCE_CTRL_CROSS) page = 6;
+                if (pressed & SCE_CTRL_CIRCLE) page = 0;
+            } else if (page == 6) {
+                if (pressed & SCE_CTRL_CROSS) {
+                    native_install_status = rt_settings_install_native(1, native_install_message, sizeof(native_install_message));
+                    page = 7;
+                }
+                if (pressed & SCE_CTRL_CIRCLE) page = 5;
+            } else if (page == 7) {
+                if (pressed & (SCE_CTRL_CROSS | SCE_CTRL_CIRCLE)) page = 5;
             }
         }
 
