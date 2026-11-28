@@ -6,7 +6,7 @@ Rt:Settings Extended aims to turn the native Vita Settings application into a co
 
 This is not intended to be another standalone homebrew launcher or a small collection of unrelated tweaks. The goal is to make the Settings application the central place where users can inspect, configure and manage the capabilities installed on their Vita.
 
-> **Development status:** active development. Tai Saver's portable snapshot engine, Settings Hub navigation tree and boot journal are implemented and host-tested. The shared framework library now cross-builds with VitaSDK in CI. The Tai Saver snapshot core now routes filesystem operations through a Vita-native I/O boundary. The Boot Journal/startup adapter, native Sony Settings integration, installer VPK and physical-device validation remain under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
+> **Development status:** active development. Tai Saver's portable snapshot engine, Settings Hub navigation tree and boot journal are implemented and host-tested. The shared framework library cross-builds with VitaSDK. The first Cockpit VPK now bundles Tai Saver and provides a confirmed Automatic snapshot create + verify workflow. The native Sony Settings SUPRX, independent Vita-native component installer, archive browsing/restore UI and physical-device validation remain under development. The feature catalogue below describes the project target, not a claim that every feature is already available.
 
 ---
 
@@ -232,7 +232,7 @@ The first Storage & Devices core now converts platform-reported observations int
 
 A C99 filesystem boundary is now available in `include/rt_fs.h` with host and Vita implementations in `source/platform/rt_fs.c`. The Vita implementation uses documented user-mode `sceIo*` functions for file and directory I/O, metadata, device free-space queries and file synchronization. Short reads/writes are represented as byte counts; directory iteration distinguishes entry, end-of-directory and error. The host implementation has a dedicated regression test and sanitizer target.
 
-Important: the Tai Saver core has not yet been migrated to this boundary and still contains POSIX/stdio filesystem operations. This is the first platform-porting layer, not a completed live Vita backup backend. No atomic rename, no-clobber or durability guarantee is inferred from Vita's APIs. See [Tai Saver Vita filesystem porting layer](docs/TAI_SAVER_VITA_FS_PORT.md).
+The Tai Saver snapshot core now uses this boundary for file and directory operations, including Vita-native I/O, locking, metadata and free-space queries. The Cockpit VPK links this core and exposes a manual Automatic snapshot operation followed by full manifest/file verification. This does not imply atomic replacement or no-clobber guarantees beyond the documented Vita primitives. Physical-console backup/restore validation is still required. See [Tai Saver Vita filesystem porting layer](docs/TAI_SAVER_VITA_FS_PORT.md) and [Cockpit](docs/RT_VITA_COCKPIT.md).
 
 ## Vita filesystem bridge for Custom Assets
 
@@ -416,6 +416,7 @@ A dedicated Settings page for supported Quick Menu frameworks and add-ons. This 
 ### Framework & Modules
 
 - Shared framework installed once, with independently installable Settings sections.
+- The first Cockpit VPK bundles Tai Saver's C core and offers a confirmed create + verify Automatic snapshot workflow; independent component install/update/remove remains in development.
 - Install Selected / Install All, add later, update, repair, enable/disable and remove.
 - Dependency resolution, compatibility checks, free-space preflight and package integrity verification.
 - Transaction journal, staged writes, atomic config updates, rollback and recovery after interruption.
