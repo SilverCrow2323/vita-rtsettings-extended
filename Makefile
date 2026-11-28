@@ -1,7 +1,7 @@
 CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
-CPPFLAGS ?= -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isettings-ui -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters -Isource/custom-assets -Isource/i18n
+CPPFLAGS ?= -Inative-settings -Iinclude -Isource/tai-saver -Isource/boot-monitor -Isource/preferences -Isource/layout-profiles -Isettings-ui -Isettings-ui/metadata -Isettings-ui -Isource/plugin-inventory -Isource/plugin-compatibility -Isource/plugin-adapters -Isource/custom-assets -Isource/i18n
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 SANITIZER_FLAGS ?= -fsanitize=address,undefined -fno-omit-frame-pointer
