@@ -1,0 +1,10 @@
+#include "service_manager.h"
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+typedef struct {rtp_service_state ftp,usb;int ftp_auto,usb_auto,fail,starts,stops;} fake;
+static int query(void *ctx,const char *id,rtp_service_state *s,int *a){fake *f=ctx;if(f->fail)return -1;if(!strcmp(id,"ftp")){*s=f->ftp;*a=f->ftp_auto;}else{*s=f->usb;*a=f->usb_auto;}return 0;}
+static int start(void *ctx,const char *id){fake *f=ctx;if(f->fail)return -1;if(!strcmp(id,"ftp"))f->ftp=RTP_SERVICE_RUNNING;else f->usb=RTP_SERVICE_RUNNING;f->starts++;return 0;}
+static int stop(void *ctx,const char *id){fake *f=ctx;if(f->fail)return -1;if(!strcmp(id,"ftp"))f->ftp=RTP_SERVICE_STOPPED;else f->usb=RTP_SERVICE_STOPPED;f->stops++;return 0;}
+static int automatic(void *ctx,const char *id,int v){fake *f=ctx;if(f->fail)return -1;if(!strcmp(id,"ftp"))f->ftp_auto=v;else f->usb_auto=v;return 0;}
+int main(void){rtp_service_catalogue c;rtp_service_descriptor d={"ftp","FTP Server","File transfer service","usb-transport",RTP_SERVICE_CAN_START|RTP_SERVICE_CAN_STOP|RTP_SERVICE_CAN_AUTOSTART};rtp_service_backend b={query,start,stop,automatic};fake f={RTP_SERVICE_STOPPED,RTP_SERVICE_STOPPED,0,0,0,0,0};rtp_service_catalogue_init(&c);assert(rtp_service_register(&c,&d)==RTP_SERVICE_OK);d.id="usb-stream";d.title="USB Streaming";assert(rtp_service_register(&c,&d)==RTP_SERVICE_OK);assert(rtp_service_refresh(&c,&b,&f)==RTP_SERVICE_OK);assert(rtp_service_start(&c,"ftp",&b,&f)==RTP_SERVICE_OK&&f.starts==1);assert(rtp_service_start(&c,"usb-stream",&b,&f)==RTP_SERVICE_CONFLICT&&f.starts==1);assert(rtp_service_set_auto_start(&c,"ftp",1,&b,&f)==RTP_SERVICE_OK&&f.ftp_auto==1);assert(rtp_service_stop(&c,"ftp",&b,&f)==RTP_SERVICE_OK&&f.stops==1);assert(rtp_service_start(&c,"usb-stream",&b,&f)==RTP_SERVICE_OK);f.fail=1;assert(rtp_service_refresh(&c,&b,&f)==RTP_SERVICE_BACKEND_ERROR);assert(rtp_service_find(&c,"ftp")->state==RTP_SERVICE_ERROR);assert(rtp_service_start(&c,"ftp",&b,&f)==RTP_SERVICE_BACKEND_ERROR);puts("Service manager tests passed.");return 0;}

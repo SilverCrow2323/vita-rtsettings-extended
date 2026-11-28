@@ -1,0 +1,153 @@
+# Native Sony Settings integration — adapter design
+
+## Finding
+
+A native Settings extension is technically feasible on the target firmware family. Existing PS Vita projects load a user-mode taiHEN plugin into the Settings application (`NPXS10015`) and hook the PAF XML-layout loader. The hook can supply an embedded XML layout for a Settings page instead of launching a separate homebrew application.
+
+Reference implementations inspected:
+
+- [YAMT user plugin](https://github.com/SKGleba/yamt-vita/blob/2eb966b6b9af6f76879abd07732c83ce174dad8/plugin/user/user.c) — detects the load/unload of `system_settings_core.suprx`, installs the PAF XML loader hook, replaces the `peripherals_settings_plugin` layout and releases hooks when the Settings core unloads.
+- [YAMT peripherals layout](https://github.com/SKGleba/yamt-vita/blob/2eb966b6b9af6f76879abd07732c83ce174dad8/plugin/user/peripherals_settings.xml) — demonstrates native nested `setting_list`, `link`, `toggle_switch`, `list` and `button` controls.
+- [h-encore Settings adapter](https://github.com/TheOfficialFloW/h-encore/blob/6d43b4cd662d1012ca851a86d43f3696b2323200/plugin/user.c) and [root Settings XML](https://github.com/TheOfficialFloW/h-encore/blob/6d43b4cd662d1012ca851a86d43f3696b2323200/plugin/system_settings.xml) — demonstrates replacing the `system_settings_plugin` XML and intercepting its plugin callback table for custom button actions.
+- [SKGleba ineedsettings](https://github.com/SKGleba/ineedsettings) — its README says the supplied SUPRX is placed under `NPXS10015` and `NPXS10016` instead of `henkaku.suprx`, and that its build uses HENkaku's `system_settings.xml`. This is deployment-level evidence that the SUPRX and XML resource are a coordinated pair. The public README does not expose enough source to verify its hook implementation, callback table or cleanup; see [the separate audit](INEEDSETTINGS_REFERENCE.md).
+
+YAMT documents compatibility with Enso on firmware 3.60 and 3.65. This is relevant evidence for the project's 3.65 target, but does not replace testing our own adapter on the user's console.
+
+## Target architecture
+
+1. Build `rtsettings.suprx` as a user-mode taiHEN plugin. It is not a kernel plugin and does not need to patch kernel services.
+2. Load it in the Settings title section:
+   ```ini
+   *NPXS10015
+   ur0:tai/rtsettings.suprx
+   ```
+3. Hook `sceKernelLoadStartModule` / `sceKernelStopUnloadModule` in `SceSettings` to detect the lifetime of `system_settings_core.suprx`.
+4. While the Settings core is loaded, hook `scePafMiscLoadXmlLayout` and identify the `system_settings_plugin` XML by bounded content matching, not by assuming an unchecked fixed byte offset.
+5. Preserve the original Sony XML and insert one Rt link into its existing root `setting_list`. Do not replace the complete Sony root page with a reduced custom copy.
+6. Embed the Rt page XML in the SUPRX as a binary resource. When the PAF loader requests the Rt page, return that resource and its exact byte length.
+7. Add Tai Saver as a nested native `setting_list` with stable row IDs. Route operational buttons through a narrowly scoped PAF event adapter to the Tai Saver service. Do not treat an XML control as functional until its callback or Registry Manager binding is implemented and tested.
+8. Release every installed hook when `system_settings_core.suprx` unloads and again on plugin stop. Hook installation failures must leave Sony Settings untouched.
+
+## Relevant import evidence
+
+The inspected YAMT implementation hooks these imports in `SceSettings`:
+
+| Import | Library NID | Function NID | Purpose |
+|---|---:|---:|---|
+| `sceKernelLoadStartModule` | `0xCAE9ACE6` | `0x2DCC4AFA` | Detect Settings core load |
+| `sceKernelStopUnloadModule` | `0xCAE9ACE6` | `0x2415F8A4` | Detect Settings core unload |
+| `scePafMiscLoadXmlLayout` | `0x3D643CE8` | `0x19FE55A8` | Supply native XML layout |
+
+The h-encore implementation additionally demonstrates the PAF Toplevel plugin-function hook (`ScePafToplevel`, function NID `0xF5354FEF`) and text lookup hook (`0x19CEFDA7`) for its own custom plugin. These callback-table details are plugin-specific evidence, not a blanket ABI guarantee. Rt must validate the exact plugin identity and callback slot before patching anything.
+
+The ineedsettings README's instruction to replace HENkaku's SUPRX is **not** an Rt deployment recommendation. Rt must coexist with existing HENkaku configuration and must never silently replace `henkaku.suprx`. Its mention of `NPXS10016` is not sufficient evidence to enable that title in Rt's initial target.
+
+## Installer contract
+
+The eventual VPK is an installer/repair utility, not a second Settings launcher. It must:
+
+- inspect the existing `ur0:tai/config.txt` before proposing changes;
+- back up the original config and show the exact `*NPXS10015` line to be added;
+- preserve every unrelated plugin line, section, order and comment;
+- refuse duplicate or ambiguous edits and provide a rollback path;
+- install the SUPRX to an Rt-owned path and register it only after payload verification;
+- remove only its own config line and owned plugin files on uninstall;
+- preserve `ur0:data/RtSettingsExtended/TaiSaver/` by default.
+
+No VPK may silently edit taiHEN configuration or install a partial plugin.
+
+## Current implementation status
+
+- [x] Portable Settings registry contains the Tai Saver feature tree.
+- [x] Host regression suite and ASan/UBSan cover the tree and its navigation.
+- [x] VitaSDK cross-build produces the portable static framework library.
+- [x] Existing upstream implementations confirm the native Settings hook pattern and the target Settings title.
+- [x] SKGleba ineedsettings README inspected; its deployment instructions and source-availability limits are documented.
+- [x] Rt `rtsettings.suprx` user-mode adapter source and embedded native XML entry.
+- [x] Bounded, idempotent in-memory insertion of the Rt root link while preserving Sony's existing root XML.
+- [x] Minimal native button callback and English status text hook for the Rt Manager installation-status action.
+- [x] Cockpit VPK installer for first installation, explicit enabling of an existing commented Rt line, verified Pre-Restore backup, config backup, staged writes, read-back verification and synchronous rollback on errors.
+- [ ] Native event/callback bridge for Tai Saver operations and operational feature pages.
+- [ ] Update/repair/uninstall transaction for an existing different Rt SUPRX version.
+- [ ] Physical-console verification on firmware 3.65 Ensō.
+
+Until the remaining gates pass, this project must describe the Settings Hub as a registered portable navigation model, not as an installed Sony Settings extension.
+
+## Product requirement: first-class Rt root category
+
+The product target is a first-class **Rt:Settings Extended** entry in the top-level Sony Settings category list, alongside existing system extensions such as HENkaku Settings. It must not be delivered as a separate LiveArea bubble or as a launcher that imitates Settings.
+
+The root category opens an Rt-owned native page and then navigates into feature pages. The initial page hierarchy is:
+
+- **Rt:Settings Extended** (top-level Settings entry)
+  - Settings Hub / Overview
+  - Tai Saver
+    - Protection & Status
+    - Automatic Backup Policy
+    - Snapshot Archives
+    - Compare & Recovery
+  - Plugin Control Centre
+  - Plugin Compatibility
+  - Bluetooth & Controllers
+  - Storage & Devices
+  - Appearance & Customization
+  - System Diagnostics
+  - Preferences & Profiles
+
+This is the desired product hierarchy, not a claim that every listed page is already implemented. Each item must be registered only when its page and callbacks exist; unsupported actions must be visibly disabled or marked unavailable rather than rendered as working controls.
+
+### Integration patterns and distinctions
+
+- **HENkaku Settings** is a useful product-level reference for exposing plugin-owned options inside the system Settings application.
+- **YAMT** is a particularly useful implementation reference: its README explicitly documents a user-mode yamt.suprx under *NPXS10015, with its storage UI under Settings → Devices → Storage Devices. Its installer also configures the required kernel-side storage component separately. Rt must not inherit YAMT's kernel dependency; our first macro-section should remain user-mode unless a specific feature proves otherwise.
+- **h-encore** is a useful source-level reference for the root Settings XML and PAF callback interception.
+- **ineedsettings** confirms the deployment relationship between a Settings SUPRX and the HENkaku-derived Settings XML, but its README's instruction to replace HENkaku is specific to that project and must not be copied into Rt's installer.
+- **VitaTweaks** is not a uniform Settings integration pattern. The inspected collection includes standalone `*main` SUPRX tweaks such as NoLockScreen, Download Enabler, NoTrophyMsg and Custom Warning. These plugins alter system behavior but do not, by themselves, demonstrate a native Settings category. We must distinguish a plugin loaded by taiHEN from a plugin that actually registers a Settings page.
+
+### Root-entry insertion safety
+
+The root entry must be added to the existing Sony system_settings_plugin layout while preserving all stock categories and extension entries. Do not replace the root XML with a copied static template. The implementation must:
+
+1. identify the exact target layout and module instance;
+2. parse or safely locate the intended insertion point with bounded checks;
+3. preserve original XML bytes and all unrelated nodes;
+4. avoid duplicate Rt entries after Settings core reloads or repeated page openings;
+5. maintain valid PAF ownership/lifetime for injected XML and text resources;
+6. remove hooks and transient state when the Settings core unloads;
+7. fail closed and leave the stock Settings UI untouched if any required interface cannot be validated.
+
+The first on-device proof is deliberately small: show one Rt root entry, open one read-only Rt page, close/reopen Settings repeatedly, and verify clean unload/reload. Only after this is stable should the Tai Saver page and its event bridge be connected.
+
+### Installer and user experience
+
+The VPK is an installer/maintenance tool, not the user-facing Settings experience. It installs the verified SUPRX/resources and proposes the exact taiHEN configuration change for explicit approval. Once installed, day-to-day use happens entirely from the Sony Settings application. Update, repair and uninstall must remove only Rt-owned files/configuration and preserve user backup archives.
+
+
+## Implementation status — 28 November 2026
+
+The first native adapter and installer now exist in source:
+
+- `native-settings/rt_settings_main.c` waits for `system_settings_core.suprx`, then hooks the Settings PAF XML loader, the root Settings plugin callback table and the Settings text lookup.
+- `native-settings/rt_settings_xml.c` adds a single nested Rt entry to the existing `system_settings_plugin` XML. It is bounded, idempotent and fails closed on malformed or oversized XML.
+- `cockpit/native_settings_installer.c` installs the SUPRX embedded in the Cockpit VPK. It refuses to overwrite a different existing `rtsettings.suprx`, detects duplicate/ambiguous `*NPXS10015` sections, preserves unrelated config bytes and comments, and creates a verified permanent `TS_ARCHIVE_PRE_RESTORE` snapshot before live changes.
+- The installer writes a separate config backup under `ur0:data/RtSettingsExtended/Installer/`, stages and verifies the SUPRX/config, replaces `config.txt` through a rollback slot and restores the original on synchronous failure. It also recovers the original config if power was lost after the old file was moved aside.
+- The VPK includes `rtsettings.suprx` as `app0:rtsettings.suprx`; installation is initiated from Cockpit and requires explicit confirmation. The Settings extension is not a separate LiveArea bubble.
+
+The initial native page is intentionally small:
+
+```text
+Settings
+└── Rt:Settings Extended
+    └── Preferences & Settings Management
+        └── Rt Manager
+            └── Rt Manager Status
+```
+
+The status button displays an installation message. Plugin Control Centre, Tai Saver controls, and other feature pages are not yet exposed as operational native controls. The Cockpit installer must not be mistaken for those controls.
+
+### Safety/validation limits
+
+- A verified backup and successful CI build do not prove the PAF hook chain is compatible with every plugin combination.
+- The VPK installer currently handles first install and enabling an existing commented Rt entry. It refuses a different existing module rather than overwriting it; update/uninstall flows are not implemented.
+- Synchronous write/rename errors trigger rollback. A power loss is recovered when the original config is in the rollback slot; other interrupted states are left untouched for manual recovery.
+- No physical PS Vita test is claimed. On-device verification of the root page, nested navigation, Settings close/reopen, plugin coexistence and 3.65 Ensō startup remains mandatory.

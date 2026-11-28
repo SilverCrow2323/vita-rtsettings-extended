@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SilverCrow2323/vita-rtsettings-extended/blob/feat/tai-saver-core/schemas/plugin-catalogue.schema.json",
+  "title": "Rt:Settings Extended Plugin Catalogue",
+  "type": "object",
+  "required": [
+    "catalogue_version",
+    "snapshot_date",
+    "target_profile",
+    "status_definitions",
+    "records"
+  ],
+  "properties": {
+    "catalogue_version": {
+      "type": "string"
+    },
+    "snapshot_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "target_profile": {
+      "type": "object"
+    },
+    "status_definitions": {
+      "type": "object"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "author",
+          "category",
+          "kind",
+          "status",
+          "firmware",
+          "components",
+          "dependencies",
+          "conflicts",
+          "features",
+          "target_notes",
+          "source",
+          "release"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "recommended_candidate",
+              "conditional",
+              "optional",
+              "dependency",
+              "alternative",
+              "review"
+            ]
+          },
+          "firmware": {
+            "type": "object",
+            "required": [
+              "declared",
+              "tested",
+              "target_tested"
+            ],
+            "properties": {
+              "declared": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tested": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "offline_validated": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "reported": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "target_tested": {
+                "type": "boolean"
+              }
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "target_notes": {
+            "type": "string"
+          },
+          "adapter": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "format": "uri"
+          },
+          "release": {
+            "type": "string",
+            "format": "uri"
+          },
+          "release_date": {
+            "type": "string"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "sha256",
+                "url"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "optional": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object"
+    }
+  }
+}

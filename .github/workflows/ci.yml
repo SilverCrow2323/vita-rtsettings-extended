@@ -1,0 +1,60 @@
+name: Tai Saver Core CI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/tai-saver-core
+  pull_request:
+    paths:
+      - "include/**"
+      - "source/**"
+      - "settings-ui/**"
+      - "native-settings/**"
+      - "tests/**"
+      - "tai-saver/**"
+      - "docs/**"
+      - "Makefile"
+      - "Makefile.vita"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    name: Host build, regression suite and sanitizers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build static library and run regression tests
+        run: |
+          make clean
+          make all
+          make test
+      - name: Run AddressSanitizer and UndefinedBehaviorSanitizer
+        run: make sanitize
+
+  vita-cross-build:
+    name: VitaSDK cross-build (static framework library)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build with the official VitaSDK container
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/src" \
+            -w /src \
+            vitasdk/vitasdk:latest \
+            sh -lc "make -f Makefile.vita clean all && make -C native-settings clean all"
+      - name: Upload VitaSDK library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtsettings-vitasdk-static-library
+          path: |
+            build-vita/librtsettings.a
+            native-settings/rtsettings.suprx
+          if-no-files-found: error

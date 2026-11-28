@@ -1,0 +1,51 @@
+name: Rt Vita Cockpit VPK
+
+on:
+  push:
+    branches:
+      - feat/tai-saver-core
+    paths:
+      - "cockpit/**"
+      - "include/plugin_inventory.h"
+      - "include/plugin_compatibility.h"
+      - "settings-ui/plugin_control_centre.*"
+      - "source/plugin-inventory/**"
+      - "source/plugin-compatibility/**"
+      - "native-settings/**"
+      - "include/tai_config.h"
+      - "source/tai-config/**"
+      - "include/tai_saver.h"
+      - "include/rt_fs.h"
+      - "source/tai-saver/**"
+      - "source/platform/rt_fs.c"
+      - ".github/workflows/cockpit-vpk.yml"
+  pull_request:
+    paths:
+      - "cockpit/**"
+      - "include/tai_saver.h"
+      - "include/rt_fs.h"
+      - "source/tai-saver/**"
+      - "source/platform/rt_fs.c"
+      - ".github/workflows/cockpit-vpk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-vpk:
+    name: Build Rt Vita Cockpit + Tai Saver VPK
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build Cockpit with Tai Saver
+        run: make -C cockpit clean all
+      - name: Upload VPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rt-vita-cockpit-tai-saver-vpk
+          path: cockpit/rt-vita-cockpit.vpk
+          if-no-files-found: error
