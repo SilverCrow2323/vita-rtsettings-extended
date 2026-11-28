@@ -129,6 +129,37 @@ static void test_path_overlap_rejected(void) {
                               "must reject traversal path", &snapshot) == TS_ERR_ARGUMENT);
 }
 
+static void test_symlinked_roots_rejected(void) {
+    char temp[] = "/tmp/rtse-symlink-roots-XXXXXX";
+    char source[TS_PATH_MAX], source_link[TS_PATH_MAX];
+    char storage_target[TS_PATH_MAX], storage_link[TS_PATH_MAX];
+    char file[TS_PATH_MAX];
+    ts_snapshot_result snapshot;
+    char *base = mkdtemp(temp);
+    assert(base != NULL);
+
+    join_path(source, sizeof(source), base, "tai-source");
+    join_path(source_link, sizeof(source_link), base, "tai-source-link");
+    join_path(storage_target, sizeof(storage_target), base, "archive-target");
+    join_path(storage_link, sizeof(storage_link), base, "archive-link");
+    assert(mkdir(source, 0700) == 0);
+    assert(mkdir(storage_target, 0700) == 0);
+    join_path(file, sizeof(file), source, "config.txt");
+    write_text(file, "safe source fixture\n");
+
+    /* A directory symlink must not become an alternate source root. */
+    assert(symlink(source, source_link) == 0);
+    assert(ts_create_snapshot(source_link, storage_target, TS_ARCHIVE_AUTOMATIC, 2,
+                              "reject symlinked source root", &snapshot) == TS_ERR_NOT_FOUND);
+    unlink(source_link);
+
+    /* A storage-root symlink must not redirect the archive outside the selected path. */
+    assert(symlink(storage_target, storage_link) == 0);
+    assert(ts_create_snapshot(source, storage_link, TS_ARCHIVE_AUTOMATIC, 2,
+                              "reject symlinked storage root", &snapshot) == TS_ERR_TRANSACTION);
+    unlink(storage_link);
+}
+
 static void test_sha256(void) {
     ts_sha256_ctx ctx;
     uint8_t digest[32];
@@ -157,6 +188,7 @@ int main(void) {
 
     test_sha256();
     test_path_overlap_rejected();
+    test_symlinked_roots_rejected();
     join_path(path, sizeof(path), source, "config.txt");
     write_text(path, "# taiHEN configuration\n*main\nux0:tai/net_patch.skprx\n");
     join_path(path, sizeof(path), source, "profiles/user.txt");
