@@ -131,6 +131,10 @@ rtns_install_result rt_settings_install_native(int enable_disabled,char *message
         set_message(message,message_capacity,"Multiple Rt entries or duplicate *NPXS10015 sections detected. Manual review required.");
         return RTNS_INSTALL_CONFIG_AMBIGUOUS;
     }
+    if(config_plan==RTTC_ERROR || config_plan==RTTC_CAPACITY) {
+        set_message(message,message_capacity,"The taiHEN config could not be edited safely. Nothing was changed.");
+        return RTNS_INSTALL_IO_FAILED;
+    }
     if(config_plan==RTTC_DISABLED) {
         if(!enable_disabled) {
             set_message(message,message_capacity,"A disabled Rt entry already exists. Confirm Install/Enable to activate it.");
