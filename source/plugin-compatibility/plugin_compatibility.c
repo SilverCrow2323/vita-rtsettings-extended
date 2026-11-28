@@ -4,11 +4,21 @@ typedef struct { const char *plugin,*dependency; } dependency_rule;
 typedef struct { const char *left,*right; rt_pc_severity severity; } conflict_rule;
 static const dependency_rule dependencies[]={{"ftp-for-vita","quickmenureborn"},{"caffeine-for-vita","quickmenureborn"}};
 static const conflict_rule conflicts[]={
- {"yamt","storagemgr",RT_PC_SEVERITY_BLOCK},{"vitastream","udcd-uvc",RT_PC_SEVERITY_BLOCK},
- {"vitastream","vita-usb-stream",RT_PC_SEVERITY_BLOCK},{"ftp-for-vita","ftp-everywhere",RT_PC_SEVERITY_BLOCK},
- {"caffeine-for-vita","nosleep",RT_PC_SEVERITY_BLOCK},{"psvshell-plus","lolicon",RT_PC_SEVERITY_BLOCK},
- {"psvshell-plus","nopowerlimits",RT_PC_SEVERITY_BLOCK},{"revita-extended","revita-original",RT_PC_SEVERITY_BLOCK},
- {"vitabright-ex","brightness-lut-other",RT_PC_SEVERITY_REVIEW},{"bluetooth-turbo","bluetooth-audio-hook-other",RT_PC_SEVERITY_REVIEW}};
+ {"yamt","storagemgr",RT_PC_SEVERITY_BLOCK},
+ {"vitastream","udcd-uvc",RT_PC_SEVERITY_BLOCK},
+ {"vitastream","vita-usb-stream",RT_PC_SEVERITY_BLOCK},
+ {"ftp-for-vita","ftp-everywhere",RT_PC_SEVERITY_BLOCK},
+ {"caffeine-for-vita","nosleep",RT_PC_SEVERITY_BLOCK},
+ {"psvshell-plus","lolicon",RT_PC_SEVERITY_BLOCK},
+ {"psvshell-plus","nopowerlimits",RT_PC_SEVERITY_BLOCK},
+ {"revita-extended","revita-original",RT_PC_SEVERITY_BLOCK},
+ {"quickmenureborn","quick-menu-plus",RT_PC_SEVERITY_REVIEW},
+ {"psvshell","lolicon",RT_PC_SEVERITY_REVIEW},
+ {"psvshell","oclock-vita",RT_PC_SEVERITY_REVIEW},
+ {"lolicon","oclock-vita",RT_PC_SEVERITY_REVIEW},
+ {"vitabright-ex","brightness-lut-other",RT_PC_SEVERITY_REVIEW},
+ {"bluetooth-turbo","bluetooth-audio-hook-other",RT_PC_SEVERITY_REVIEW}
+};
 static int valid_id(const char *s){return s&&s[0]&&strlen(s)<=RT_PC_PLUGIN_ID_MAX;}
 static int has(const char *const *ids,size_t n,const char *id){size_t i;for(i=0;i<n;++i)if(!strcmp(ids[i],id))return 1;return 0;}
 void rt_pc_rule_registry_init(rt_pc_rule_registry *r){if(r)memset(r,0,sizeof(*r));}
