@@ -52,17 +52,28 @@ The record stores component ID, installed version, package version, file ownersh
 
 Update checks compare installed component manifests with a trusted release index. A version match alone is not proof of authenticity. Before installation, Cockpit verifies the manifest signature/provenance, payload digest, firmware range, dependencies and conflicts. Network failure leaves the existing installation untouched. No silent auto-update.
 
-## First installable milestone
+## First functional VPK addition — Tai Saver
 
-The initial Cockpit VPK is a read-only component-audit shell. It detects registry records and provides per-component details and help overlays. It does not edit taiHEN, install SUPRX files, alter boot configuration or claim that the full installer engine is ready.
+The Cockpit VPK now bundles the existing Tai Saver core as its first working utility. The Tai Saver page can:
 
-The first write-capable VPK milestone must add the transaction engine and a complete, independently installable first module. It must include preview, staging, digest verification, backups, rollback, registry commit and uninstall tests before it is called an installer.
+- inspect whether `ur0:tai/` is present;
+- create an Automatic snapshot under `ur0:data/RtSettingsExtended/TaiSaver/`;
+- retain the five newest Automatic snapshots according to the Tai Saver retention policy;
+- verify the newly created snapshot and report its ID, file count and byte size;
+- show an explicit confirmation screen before writing the archive.
+
+This first UI slice is deliberately limited to **create + verify**. It does not yet expose archive browsing, compare, classify, restore, scheduled boot backups or the full recovery interface. The live `ur0:tai/` source is read as snapshot input; Cockpit does not rewrite `config.txt`, change plugin entries, install plugins or add a SUPRX entry.
+
+Tai Saver is bundled into this Cockpit build, not yet deployed as an independently selectable component by a completed native transaction engine. The VPK is therefore a functional Cockpit + Tai Saver utility build, not a claim that the full component installer is complete.
+
+The separate installer transaction work remains gated on a Vita-native implementation: package preview, staging, digest verification, backups, rollback, registry commit and owned-path-only uninstall must all be connected and tested before independent component installation is advertised.
 
 ## Roadmap
 
 - **Milestone A — Cockpit shell:** VitaSDK application, branded startup screen, controller navigation, component audit, detail view and help overlay.
 - **Milestone B — component model:** manifest validation, registry reader/writer, selected-module resolver, dependency/conflict checks and firmware gate.
-- **Milestone C — first installable module:** native Settings bootstrap or a self-contained diagnostics module, including reversible install/update/disable/remove.
+- **Milestone C1 — bundled Tai Saver utility:** Cockpit page, explicit confirmation, verified Automatic snapshot creation and retention integration.
+- **Milestone C2 — native component installer:** Vita-native transaction backend, independently selectable module packages, update/disable/remove and rollback.
 - **Milestone D — update center:** signed release index, version comparison, download staging and payload verification.
 - **Milestone E — native Settings integration:** Rt root menu, nested pages and Rt Manager under Preferences & Settings Management.
 - **Milestone F — optional adapters:** Network, Storage, Controllers, Display/Audio, Boot & Appearance and optional VitaDeploy integration.
@@ -73,4 +84,4 @@ Cockpit may offer an optional **VitaDeploy compatibility entry** that exposes it
 
 ## Status boundaries
 
-The initial Cockpit shell is not the final installer. The component audit is read-only. Network update, component payload installation, taiHEN editing, SUPRX integration, actual boot animation switching and physical-console validation remain separate milestones.
+The Cockpit shell now contains one write-capable utility: Tai Saver creates and verifies a backup archive. The component audit remains informational, and independent module installation is not yet implemented. Network update, Vita-native component transactions, taiHEN editing, SUPRX integration, actual boot animation switching and physical-console validation remain separate milestones.
