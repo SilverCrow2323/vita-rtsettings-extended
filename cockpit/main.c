@@ -27,16 +27,17 @@ typedef struct {
     const char *name;
     const char *description;
     int installed;
+    int bundled;
 } component_t;
 
 static component_t components[] = {
-    {"settings-core", "Rt Settings Core", "Native Sony Settings integration and shared framework.", 0},
-    {"tai-saver", "Tai Saver", "Verified taiHEN configuration snapshots and protected recovery.", 0},
-    {"plugin-manager", "Plugin Control Centre", "Plugin inventory, dependency and conflict inspection.", 0},
-    {"storage", "Storage & Devices", "SD2Vita, memory card and mount diagnostics.", 0},
-    {"network", "Network & Streaming", "FTP, Wi-Fi and USB streaming integrations.", 0},
-    {"display", "Display & Audio", "Validated display, OLED/LCD and audio adapters.", 0},
-    {"boot-visuals", "Boot Visuals", "Boot animation, splash and startup appearance adapters.", 0}
+    {"settings-core", "Rt Settings Core", "Native Sony Settings integration and shared framework.", 0, 0},
+    {"tai-saver", "Tai Saver", "Verified taiHEN configuration snapshots and protected recovery.", 0, 1},
+    {"plugin-manager", "Plugin Control Centre", "Plugin inventory, dependency and conflict inspection.", 0, 0},
+    {"storage", "Storage & Devices", "SD2Vita, memory card and mount diagnostics.", 0, 0},
+    {"network", "Network & Streaming", "FTP, Wi-Fi and USB streaming integrations.", 0, 0},
+    {"display", "Display & Audio", "Validated display, OLED/LCD and audio adapters.", 0, 0},
+    {"boot-visuals", "Boot Visuals", "Boot animation, splash and startup appearance adapters.", 0, 0}
 };
 #define COMPONENT_COUNT (sizeof(components) / sizeof(components[0]))
 #define MENU_COUNT (COMPONENT_COUNT + 1)
@@ -60,6 +61,10 @@ static void scan_components(void) {
     unsigned int i;
     char path[256];
     for (i = 0; i < COMPONENT_COUNT; ++i) {
+        if (components[i].bundled) {
+            components[i].installed = 1;
+            continue;
+        }
         snprintf(path, sizeof(path),
                  "ur0:data/RtSettingsExtended/registry/modules/%s.json",
                  components[i].id);
@@ -135,8 +140,9 @@ static void draw_shell(void) {
             vita2d_draw_rectangle(30, y - 25, 900, 36, bg);
             if (i < COMPONENT_COUNT) {
                 draw_text(48, y, WHITE, components[i].name);
-                draw_text(690, y, components[i].installed ? GREEN : AMBER,
-                          components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED");
+                draw_text(690, y, components[i].bundled ? CYAN : (components[i].installed ? GREEN : AMBER),
+                          components[i].bundled ? "BUILT INTO COCKPIT" :
+                          (components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED"));
             } else {
                 draw_text(48, y, CYAN, "Tai Saver  /  Backup & Recovery");
                 draw_text(690, y, path_exists(TAI_SOURCE) ? GREEN : RED,
