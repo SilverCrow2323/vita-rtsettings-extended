@@ -64,4 +64,4 @@ The VPK links the Tai Saver core into the Cockpit executable and adds a confirme
 
 The Tai Saver utility writes its archive under `ur0:data/RtSettingsExtended/TaiSaver/` and reads `ur0:tai/` as its source. It does not edit the live taiHEN configuration. This is a CI-built VPK, not a physical-device-tested package.
 
-The host regression suite completed successfully and the VitaSDK static-library cross-build completed successfully in the same validation cycle. The AddressSanitizer/UndefinedBehaviorSanitizer job is tracked separately in run `46115093542`; its final conclusion must be checked before claiming sanitizer validation.
+The host regression suite completed successfully and the VitaSDK static-library cross-build completed successfully in the same validation cycle. The AddressSanitizer/UndefinedBehaviorSanitizer job in run `46115093542` subsequently completed successfully.
