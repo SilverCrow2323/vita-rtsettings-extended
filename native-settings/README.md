@@ -13,11 +13,13 @@ The module is user-mode. It does not replace HENkaku, does not install a kernel 
 
 ## Current native page
 
-The module waits for `system_settings_core.suprx`, then installs three narrowly scoped PAF hooks:
+The module waits for `system_settings_core.suprx` using a paired `sceKernelLoadStartModule` hook, then installs:
 
-- `scePafMiscLoadXmlLayout` in `SceSettings`: adds one Rt root category to the existing `system_settings_plugin` XML in memory.
+- A paired `scePafMiscLoadXmlLayout` hook in `SceSettings`. The later member of the pair performs the bounded insertion, so intervening plugin hooks (including HENkaku's root XML replacement) run before Rt edits the final XML.
 - `scePafToplevelInitPluginFunctions` in `SceSettings`: wraps the root Settings button callback and handles only the Rt status action.
 - `scePafToplevelGetText` in `SceSystemSettingsCore`: resolves the Rt status dialog and hint strings.
+
+The paired-hook ordering follows the established taiHEN Settings-plugin pattern: each pair is installed back-to-back and the active member is selected by inspecting the hook chain. The second load hook also ensures Rt observes the Settings-core load after intervening load hooks.
 
 The visible path is:
 
