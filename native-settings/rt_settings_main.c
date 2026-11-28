@@ -130,12 +130,12 @@ static SceUID load_start_module_hook(const char *path, SceSize args, void *argp,
 
 static int stop_unload_module_hook(SceUID modid, SceSize args, void *argp,
                                    int flags, SceKernelULMOption *option, int *status) {
-    int result = TAI_CONTINUE(int, g_stop_ref, modid, args, argp, flags, option, status);
-    if (result >= 0 && modid == g_settings_core_modid) {
+    /* Release imports from the Settings core before the original call unloads it. */
+    if (modid == g_settings_core_modid) {
         release_page_hooks();
         g_settings_core_modid = -1;
     }
-    return result;
+    return TAI_CONTINUE(int, g_stop_ref, modid, args, argp, flags, option, status);
 }
 
 int module_start(SceSize argc, const void *args) {
