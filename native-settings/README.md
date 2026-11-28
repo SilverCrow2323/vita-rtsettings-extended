@@ -17,7 +17,8 @@ The module waits for `system_settings_core.suprx` using a paired `sceKernelLoadS
 
 - A paired `scePafMiscLoadXmlLayout` hook in `SceSettings`. The later member of the pair performs the bounded insertion, so intervening plugin hooks (including HENkaku's root XML replacement) run before Rt edits the final XML.
 - `scePafToplevelInitPluginFunctions` in `SceSettings`: wraps the root Settings button callback and handles only the Rt status action.
-- `scePafToplevelGetText` in `SceSystemSettingsCore`: resolves the Rt status dialog and hint strings.
+- `scePafToplevelGetText` in `SceSystemSettingsCore`: resolves the Rt status dialog and hint strings, including a bounded dynamic status message.
+- `rt_settings_runtime.c`: portable read-only config-state evaluator, shared with host regression and sanitizer tests.
 
 The paired-hook ordering follows the established taiHEN Settings-plugin pattern: each pair is installed back-to-back and the active member is selected by inspecting the hook chain. The second load hook also ensures Rt observes the Settings-core load after intervening load hooks.
 
@@ -31,7 +32,7 @@ Settings
             └── Rt Manager Status
 ```
 
-The status action confirms that the extension is installed. It does not claim that plugin-management, Tai Saver or other feature backends are already connected to the native page. Those controls must be added only with their operational callbacks and validated backends.
+The status action now performs a read-only live inspection of `ur0:tai/config.txt` and `ur0:tai/rtsettings.suprx`. It distinguishes an active entry, a disabled entry, a missing section/entry, duplicate sections/entries, an unreadable/oversized config and a missing module file. It reports `READY` only when exactly one active entry and the module file are both present. It never repairs or writes the config. Plugin-management, Tai Saver and other feature backends are not yet connected to this native page.
 
 ## Safety behavior
 
