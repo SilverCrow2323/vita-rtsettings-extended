@@ -47,3 +47,21 @@ The current branch has reproducible host compilation, regression/sanitizer cover
 7. Record firmware, device, storage layout, test procedure and observed results before preparing a stable release.
 
 A green CI run is necessary but not sufficient for release readiness.
+
+
+## First Tai Saver utility VPK — 28 November 2026
+
+### Rt Vita Cockpit VPK — run 46115093537
+
+- **Build:** passed with the official `vitasdk/vitasdk:latest` container.
+- **Package:** `rt-vita-cockpit-tai-saver.vpk` extracted from the uploaded workflow artifact.
+- **Artifact:** [GitHub Actions run #46115093537](https://github.com/SilverCrow2323/vita-rtsettings-extended/actions/runs/46115093537)
+- **Artifact ID:** `15250479092`
+- **VPK size:** 105,108 bytes.
+- **SHA-256:** `339fd5e497c5c99287acfac51f468146b227348ffbdccb48ae362f154594942f`
+
+The VPK links the Tai Saver core into the Cockpit executable and adds a confirmed create + verify Automatic snapshot flow. It contains `sce_sys/param.sfo` and `eboot.bin`. The archive was downloaded, extracted and inspected in the build workspace.
+
+The Tai Saver utility writes its archive under `ur0:data/RtSettingsExtended/TaiSaver/` and reads `ur0:tai/` as its source. It does not edit the live taiHEN configuration. This is a CI-built VPK, not a physical-device-tested package.
+
+The host regression suite and VitaSDK static-library cross-build completed successfully in the same validation cycle. The host AddressSanitizer/UndefinedBehaviorSanitizer step was still running at the time of this record; do not treat that sanitizer job as passed until its workflow result is complete.
