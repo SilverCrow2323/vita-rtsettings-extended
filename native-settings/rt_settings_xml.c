@@ -62,8 +62,8 @@ rt_settings_xml_result rt_settings_xml_splice_root(
     prefix_length = (size_t)(insert_at - source);
     suffix_length = source_length - prefix_length;
     entry_length = sizeof(RT_ENTRY) - 1;
-    if (prefix_length > destination_capacity ||
-        entry_length > destination_capacity - prefix_length ||
+    if (prefix_length >= destination_capacity ||
+        entry_length >= destination_capacity - prefix_length ||
         suffix_length > destination_capacity - prefix_length - entry_length - 1)
         return RT_SETTINGS_XML_ERROR;
     result_length = prefix_length + entry_length + suffix_length;
