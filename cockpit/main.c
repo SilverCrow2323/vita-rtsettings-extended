@@ -43,7 +43,7 @@ static component_t components[] = {
 #define COMPONENT_COUNT (sizeof(components) / sizeof(components[0]))
 #define MENU_COUNT (COMPONENT_COUNT + 2)
 
-static int page = 0; /* 0 dashboard, 1 component details, 2 Tai Saver, 3 confirm, 4 result */
+static int page = 0; /* 0 dashboard, 1 component, 2 Tai Saver, 3 backup confirm, 4 backup result, 5-7 native Settings install flow */
 static int selected = 0;
 static int show_help = 0;
 static int tai_result = TS_ERR_ARGUMENT;
@@ -207,22 +207,23 @@ static void draw_shell(void) {
     } else if (page == 5) {
         draw_header("NATIVE SONY SETTINGS  /  INSTALLER");
         draw_text(48, 125, CYAN, "RT:SETTINGS EXTENDED");
-        draw_text(48, 170, WHITE, "Settings > Rt:Settings Extended > Preferences & Settings Management > Rt Manager");
-        draw_text(48, 220, WHITE, "Module: app0:rtsettings.suprx");
-        draw_text(48, 250, WHITE, "Destination: ur0:tai/rtsettings.suprx");
-        draw_text(48, 280, WHITE, "taiHEN title section: *NPXS10015");
-        draw_text(48, 335, MUTED, "Installs a user-mode SUPRX and adds only its own config line.");
-        draw_text(48, 365, MUTED, "Creates a verified permanent Pre-Restore snapshot before changes.");
-        draw_text(48, 405, GREEN, "Sony XML and all unrelated taiHEN entries are preserved.");
+        draw_text(48, 170, WHITE, "Settings > Rt:Settings Extended");
+        draw_text(48, 200, WHITE, "> Preferences & Settings Management > Rt Manager");
+        draw_text(48, 245, WHITE, "Module: app0:rtsettings.suprx");
+        draw_text(48, 275, WHITE, "Destination: ur0:tai/rtsettings.suprx");
+        draw_text(48, 305, WHITE, "taiHEN title section: *NPXS10015");
+        draw_text(48, 360, MUTED, "Installs one user-mode SUPRX and adds only its own config line.");
+        draw_text(48, 390, MUTED, "Creates a verified permanent Pre-Restore snapshot first.");
+        draw_text(48, 430, GREEN, "Sony XML and unrelated taiHEN entries are preserved.");
         draw_text(48, 520, MUTED, "CROSS INSTALL / ENABLE   CIRCLE BACK");
     } else if (page == 6) {
         draw_header("NATIVE SETTINGS  /  CONFIRM");
         draw_text(48, 145, CYAN, "INSTALL RT:SETTINGS EXTENDED?");
-        draw_text(48, 195, WHITE, "The installer will verify the SUPRX payload and the existing taiHEN config.");
-        draw_text(48, 235, WHITE, "A verified Pre-Restore snapshot is created before any live change.");
-        draw_text(48, 275, WHITE, "Only *NPXS10015 receives ur0:tai/rtsettings.suprx.");
-        draw_text(48, 325, MUTED, "A different existing module is never overwritten.");
-        draw_text(48, 365, AMBER, "An existing disabled Rt line will be enabled because you confirmed.");
+        draw_text(48, 195, WHITE, "Verifies the SUPRX payload and current taiHEN config.");
+        draw_text(48, 235, WHITE, "Creates a permanent Pre-Restore snapshot before changes.");
+        draw_text(48, 275, WHITE, "Adds ur0:tai/rtsettings.suprx under *NPXS10015 only.");
+        draw_text(48, 325, MUTED, "A different existing SUPRX is never overwritten.");
+        draw_text(48, 365, AMBER, "A commented Rt entry is enabled only after this confirmation.");
         draw_text(48, 520, MUTED, "CROSS CONFIRM INSTALL   CIRCLE CANCEL");
     } else if (page == 7) {
         draw_header("NATIVE SETTINGS  /  RESULT");
