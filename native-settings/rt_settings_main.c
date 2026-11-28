@@ -121,14 +121,14 @@ static void refresh_runtime_status(void) {
         status_to_wide("taiHEN config: UNREADABLE | SUPRX: checked separately");
         return;
     }
-    while (total < sizeof(g_config)) {
-        int n = sceIoRead(fd, g_config + total, (SceSize)(sizeof(g_config) - total));
+    while (total < (size_t)st.st_size) {
+        int n = sceIoRead(fd, g_config + total, (SceSize)((size_t)st.st_size - total));
         if (n < 0) { total = sizeof(g_config) + 1; break; }
         if (n == 0) break;
         total += (size_t)n;
     }
     sceIoClose(fd);
-    if (total > sizeof(g_config)) {
+    if (total != (size_t)st.st_size) {
         status_to_wide("taiHEN config: TOO LARGE / READ ERROR");
         return;
     }
