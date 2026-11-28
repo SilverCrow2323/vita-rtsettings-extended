@@ -280,10 +280,10 @@ static void draw_shell(void) {
             draw_text(48, 175, RED, "Cannot read ur0:tai/config.txt or the file exceeds the safe scan limit.");
             draw_text(48, 225, MUTED, "No changes were made. Check storage access and rescan from Cockpit.");
         } else {
-            snprintf(line, sizeof(line), "Entries: %u   Unknown: %u   Disabled: %u   Blocked: %u   Review: %u",
+            snprintf(line, sizeof(line), "Entries: %u   Unknown: %u   Disabled: %u   Blocked: %u   Review: %u   Malformed: %u",
                      (unsigned)plugin_snapshot.count, (unsigned)plugin_snapshot.unknown_count,
                      (unsigned)plugin_snapshot.disabled_count, (unsigned)plugin_snapshot.blocked_count,
-                     (unsigned)plugin_snapshot.review_count);
+                     (unsigned)plugin_snapshot.review_count, (unsigned)plugin_inventory.malformed_lines);
             draw_text(48, 145, WHITE, line);
             for (i = plugin_scroll; i < plugin_snapshot.count && visible < 7; ++i, ++visible) {
                 const rtp_plugin_centre_row *r = &plugin_snapshot.rows[i];
@@ -302,8 +302,8 @@ static void draw_shell(void) {
                     (r->state == RTP_PC_ROW_DISABLED ? MUTED : WHITE));
                 draw_text(48, y, color, display_path);
                 draw_text(760, y, color, rtp_plugin_centre_state_name(r->state));
-                snprintf(line, sizeof(line), "%s  |  line %u  |  occurrence %u",
-                         r->section, r->line_number, r->occurrence);
+                snprintf(line, sizeof(line), "%s  |  %s  |  line %u  |  occurrence %u",
+                         r->section, r->enabled ? "ACTIVE" : "COMMENTED OUT", r->line_number, r->occurrence);
                 draw_text(72, y + 17, MUTED, line);
             }
             if (!plugin_snapshot.count) draw_text(48, 205, MUTED, "No plugin entries were found in taiHEN config.");
