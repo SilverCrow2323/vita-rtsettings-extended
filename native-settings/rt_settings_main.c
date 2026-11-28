@@ -1,7 +1,12 @@
 #include <psp2/kernel/modulemgr.h>
+#include <psp2/io/fcntl.h>
+#include <psp2/io/stat.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <taihen.h>
 #include "rt_settings_xml.h"
+#include "rt_settings_runtime.h"
 
 #define TAI_LIB_KERNEL 0xCAE9ACE6
 #define TAI_LIB_PAF_MISC 0x3D643CE8
@@ -11,6 +16,9 @@
 #define NID_PAF_LOAD_XML 0x19FE55A8
 #define NID_PAF_INIT_PLUGIN_FUNCTIONS 0xF5354FEF
 #define NID_PAF_GET_TEXT 0x19CEFDA7
+#define RT_CONFIG_PATH "ur0:tai/config.txt"
+#define RT_MODULE_PATH "ur0:tai/rtsettings.suprx"
+#define RT_CONFIG_CAPACITY 65536
 
 static SceUID g_load_hook[2] = {-1, -1};
 static SceUID g_stop_hook = -1;
@@ -24,9 +32,11 @@ static tai_hook_ref_t g_functions_ref;
 static tai_hook_ref_t g_text_ref;
 static SceUID g_settings_core_modid = -1;
 static int g_page_hooks_ready = 0;
-
 static char g_root_xml[RT_SETTINGS_XML_BUFFER_SIZE];
+static char g_config[RT_CONFIG_CAPACITY];
+static unsigned short g_status_text[192];
 static int (*g_system_settings_button)(const char *id, int a2, void *a3);
+
 static int text_equal(const char *a, const char *b) {
     size_t i = 0;
     if (!a || !b) return 0;
@@ -44,7 +54,6 @@ static int contains_text(const char *text, const char *needle) {
     }
     return 0;
 }
-
 static int xml_hook_acts(int which) {
     if (g_xml_hook[which] < 0) return 0;
     if (g_xml_hook[which ^ 1] < 0) return 1;
@@ -87,12 +96,68 @@ static int xml_layout_hook_b(void *out, void *buffer, int size, void *a4) {
     if (xml_hook_acts(1)) maybe_splice_root(&buffer, &size);
     return TAI_CONTINUE(int, g_xml_ref[1], out, buffer, size, a4);
 }
-
+static void status_to_wide(const char *ascii) {
+    size_t i = 0;
+    while (ascii[i] && i + 1 < sizeof(g_status_text)/sizeof(g_status_text[0])) {
+        g_status_text[i] = (unsigned short)(unsigned char)ascii[i];
+        ++i;
+    }
+    g_status_text[i] = 0;
+}
+static void refresh_runtime_status(void) {
+    SceIoStat st;
+    SceUID fd;
+    size_t total = 0;
+    int module_present = sceIoGetstat(RT_MODULE_PATH, &st) >= 0;
+    char message[192];
+    rt_settings_runtime_snapshot snapshot;
+    fd = sceIoOpen(RT_CONFIG_PATH, SCE_O_RDONLY, 0);
+    if (fd < 0) {
+        status_to_wide("taiHEN config: UNREADABLE | SUPRX: checked separately");
+        return;
+    }
+    while (total < sizeof(g_config)) {
+        int n = sceIoRead(fd, g_config + total, (SceSize)(sizeof(g_config) - total));
+        if (n < 0) { total = sizeof(g_config) + 1; break; }
+        if (n == 0) break;
+        total += (size_t)n;
+    }
+    sceIoClose(fd);
+    if (total > sizeof(g_config)) {
+        status_to_wide("taiHEN config: TOO LARGE / READ ERROR");
+        return;
+    }
+    if (rt_settings_runtime_inspect(g_config, total, module_present, &snapshot) < 0) {
+        status_to_wide("taiHEN config: INSPECTION ERROR");
+        return;
+    }
+    if (snapshot.config_state == RT_SETTINGS_CONFIG_ACTIVE && module_present)
+        snprintf(message, sizeof(message), "READY | taiHEN entry ACTIVE | SUPRX PRESENT");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_DISABLED)
+        snprintf(message, sizeof(message), "ACTION NEEDED | taiHEN entry DISABLED");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_DUPLICATE_SECTION)
+        snprintf(message, sizeof(message), "REVIEW REQUIRED | duplicate *NPXS10015 sections");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_DUPLICATE_ENTRY)
+        snprintf(message, sizeof(message), "REVIEW REQUIRED | duplicate Rt plugin entries");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_SECTION_MISSING)
+        snprintf(message, sizeof(message), "NOT CONFIGURED | *NPXS10015 section missing");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_ENTRY_MISSING)
+        snprintf(message, sizeof(message), "NOT CONFIGURED | Rt plugin entry missing");
+    else
+        snprintf(message, sizeof(message), "CONFIG %s | SUPRX %s",
+                 rt_settings_config_state_name(snapshot.config_state),
+                 module_present ? "PRESENT" : "MISSING");
+    if (snapshot.config_state == RT_SETTINGS_CONFIG_ACTIVE && !module_present)
+        snprintf(message, sizeof(message), "ACTION NEEDED | taiHEN entry ACTIVE | SUPRX MISSING");
+    status_to_wide(message);
+}
 static int rt_settings_button(const char *id, int a2, void *a3) {
-    if (text_equal(id, "rt_manager_about")) return 0;
+    if (text_equal(id, "rt_manager_about")) {
+        refresh_runtime_status();
+        return 0;
+    }
     return g_system_settings_button ? g_system_settings_button(id, a2, a3) : 0;
 }
-
 static int plugin_functions_hook(void *a1, int a2, uint32_t *functions) {
     int result = TAI_CONTINUE(int, g_functions_ref, a1, a2, functions);
     const char *plugin = a1 ? (const char *)((uint32_t *)a1)[1] : NULL;
@@ -103,28 +168,18 @@ static int plugin_functions_hook(void *a1, int a2, uint32_t *functions) {
     }
     return result;
 }
-
-static const unsigned short RT_INSTALLED_TEXT[] =
-    {'R','t',' ','M','a','n','a','g','e','r',' ','i','s',' ','i','n','s','t','a','l','l','e','d','.',
-     ' ','O','n','l','y',' ','c','o','m','p','a','t','i','b','l','e',' ','R','t',' ','c','o','m','p','o','n','e','n','t','s',' ',
-     'a','n','d',' ','t','h','e','i','r',' ','v','e','r','i','f','i','e','d',' ','b','a','c','k','e','n','d','s',' ','w','i','l','l',' ',
-     'a','p','p','e','a','r',' ','a','s',' ','a','c','t','i','v','e',' ','c','o','n','t','r','o','l','s','.',0};
 static const unsigned short RT_STATUS_HINT[] =
-    {'S','h','o','w','s',' ','t','h','e',' ','i','n','s','t','a','l','l','a','t','i','o','n',' ','s','t','a','t','u','s',' ',
-     'o','f',' ','t','h','e',' ','R','t',' ','S','e','t','t','i','n','g','s',' ','e','x','t','e','n','s','i','o','n','.',0};
-
+    {'C','h','e','c','k','s',' ','t','h','e',' ','l','i','v','e',' ','t','a','i','H','E','N',' ','e','n','t','r','y',' ',
+     'a','n','d',' ','R','t',' ','S','U','P','R','X',' ','f','i','l','e','.',' ', 'R','e','a','d','-','o','n','l','y','.',0};
 static void *settings_text_hook(void *arg, char **message) {
     if (message && *message) {
-        if (text_equal(*message, "rt_manager_installed")) return (void *)RT_INSTALLED_TEXT;
+        if (text_equal(*message, "rt_manager_installed")) return (void *)g_status_text;
         if (text_equal(*message, "rt_manager_status_hint")) return (void *)RT_STATUS_HINT;
     }
     return TAI_CONTINUE(void *, g_text_ref, arg, message);
 }
-
 static int install_page_hooks(void) {
     if (g_page_hooks_ready) return 0;
-    /* Install the text and callback hooks first. The XML splice is the final
-       gate: no Rt entry is exposed unless all three interfaces are available. */
     g_text_hook = taiHookFunctionImport(&g_text_ref, "SceSystemSettingsCore",
         TAI_LIB_PAF_TOPLEVEL, NID_PAF_GET_TEXT, settings_text_hook);
     if (g_text_hook < 0) goto fail;
@@ -143,7 +198,6 @@ fail:
     release_page_hooks();
     return -1;
 }
-
 static void settings_core_loaded(SceUID result, const char *path) {
     if (result < 0 || !path || !contains_text(path, "system_settings_core.suprx") ||
         result == g_settings_core_modid) return;
@@ -163,19 +217,17 @@ static SceUID load_start_module_hook_b(const char *path, SceSize args, void *arg
     settings_core_loaded(result, path);
     return result;
 }
-
 static int stop_unload_module_hook(SceUID modid, SceSize args, void *argp,
                                    int flags, SceKernelULMOption *option, int *status) {
-    /* Release imports from the Settings core before the original call unloads it. */
     if (modid == g_settings_core_modid) {
         release_page_hooks();
         g_settings_core_modid = -1;
     }
     return TAI_CONTINUE(int, g_stop_ref, modid, args, argp, flags, option, status);
 }
-
 int module_start(SceSize argc, const void *args) {
     (void)argc; (void)args;
+    status_to_wide("Rt Manager status has not been refreshed yet.");
     g_load_hook[0] = taiHookFunctionImport(&g_load_ref[0], "SceSettings",
         TAI_LIB_KERNEL, NID_LOAD_START_MODULE, load_start_module_hook_a);
     if (g_load_hook[0] < 0) goto fail;
@@ -192,7 +244,6 @@ fail:
     if (g_stop_hook >= 0) { taiHookRelease(g_stop_hook, g_stop_ref); g_stop_hook = -1; }
     return SCE_KERNEL_START_FAILED;
 }
-
 int module_stop(SceSize argc, const void *args) {
     (void)argc; (void)args;
     release_page_hooks();
