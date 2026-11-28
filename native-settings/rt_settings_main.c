@@ -45,9 +45,6 @@ static int contains_text(const char *text, const char *needle) {
     return 0;
 }
 
-static int is_last(SceUID uid, tai_hook_ref_t ref) {
-    return uid >= 0 && ((struct _tai_hook_user *)ref)->next == 0;
-}
 static int xml_hook_acts(int which) {
     if (g_xml_hook[which] < 0) return 0;
     if (g_xml_hook[which ^ 1] < 0) return 1;
