@@ -34,7 +34,7 @@ int main(void){
  e=rtp_metadata_find(&c,"tai-saver-known-good");assert(e&&strstr(e->description,"Never auto-rotated")!=NULL);
  assert(rtp_preferences_find(&p,"tai-saver-recovery")->kind==RTP_ENTRY_CATEGORY);
  assert(rtp_preferences_find(&p,"tai-saver-restore")->kind==RTP_ENTRY_ACTION);
- assert(rtp_preferences_find(&p,"tai-saver")->parent_id[0]=='\\0');
+ assert(rtp_preferences_find(&p,"tai-saver")->parent_id[0]=='\0');
  rtp_preferences_ui_init(&ui);
  assert(rtp_settings_screen_build(&ui,&p,&c,&page)==RTP_SCREEN_OK);
  assert(page.row_count==1&&strcmp(page.rows[0].id,"tai-saver")==0);
@@ -53,7 +53,7 @@ int main(void){
  assert(rtp_metadata_validate(&c,&p)==RTP_META_OK);
  e=rtp_metadata_find(&c,"rt-manager");assert(e&&strcmp(e->title,"Rt Manager")==0);
  assert(strcmp(e->category_id,"preferences-settings-management")==0);
- assert(rtp_preferences_find(&p,"rt-settings-extended")->parent_id[0]=='\\0');
+ assert(rtp_preferences_find(&p,"rt-settings-extended")->parent_id[0]=='\0');
  assert(strcmp(rtp_preferences_find(&p,"rt-manager")->parent_id,"preferences-settings-management")==0);
  assert(rtp_preferences_find(&p,"rt-manager")->kind==RTP_ENTRY_CATEGORY);
  assert(rtp_preferences_find(&p,"plugin-conflict-prevention")->kind==RTP_ENTRY_SETTING);
