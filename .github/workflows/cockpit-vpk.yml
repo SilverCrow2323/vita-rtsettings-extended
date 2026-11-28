@@ -6,6 +6,9 @@ on:
       - feat/tai-saver-core
     paths:
       - "cockpit/**"
+      - "native-settings/**"
+      - "include/tai_config.h"
+      - "source/tai-config/**"
       - "include/tai_saver.h"
       - "include/rt_fs.h"
       - "source/tai-saver/**"
