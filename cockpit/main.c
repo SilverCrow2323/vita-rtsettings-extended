@@ -8,6 +8,7 @@
 #include <vita2d.h>
 #include "tai_saver.h"
 #include "native_settings_installer.h"
+#include "plugin_control_centre.h"
 
 #define SCREEN_W 960
 #define SCREEN_H 544
@@ -53,6 +54,12 @@ static char native_install_message[192];
 static ts_snapshot_result snapshot_result;
 static ts_snapshot_info snapshot_info;
 static vita2d_pgf *ui_font = NULL;
+static char plugin_config[65536];
+static rt_pi_inventory plugin_inventory;
+static rt_pi_adapter_registry plugin_adapters;
+static rtp_plugin_centre_snapshot plugin_snapshot;
+static int plugin_scan_status = -1;
+static unsigned int plugin_scroll = 0;
 
 static int path_exists(const char *path) {
     SceIoStat st;
@@ -64,6 +71,10 @@ static void scan_components(void) {
     unsigned int i;
     char path[256];
     for (i = 0; i < COMPONENT_COUNT; ++i) {
+        if (strcmp(components[i].id, "plugin-manager") == 0) {
+            components[i].installed = path_exists("ur0:tai/config.txt");
+            continue;
+        }
         if (components[i].bundled) {
             components[i].installed = 1;
             continue;
@@ -73,6 +84,36 @@ static void scan_components(void) {
                  components[i].id);
         components[i].installed = path_exists(path);
     }
+}
+
+static int scan_plugin_inventory(void) {
+    SceIoStat st;
+    SceUID fd;
+    size_t total = 0;
+    int n;
+    if (sceIoGetstat("ur0:tai/config.txt", &st) < 0 || st.st_size < 0 ||
+        (uint64_t)st.st_size > sizeof(plugin_config)) {
+        plugin_scan_status = -1;
+        return plugin_scan_status;
+    }
+    fd = sceIoOpen("ur0:tai/config.txt", SCE_O_RDONLY, 0);
+    if (fd < 0) { plugin_scan_status = -1; return plugin_scan_status; }
+    while (total < (size_t)st.st_size) {
+        n = sceIoRead(fd, plugin_config + total, (SceSize)((size_t)st.st_size - total));
+        if (n <= 0) { sceIoClose(fd); plugin_scan_status = -1; return plugin_scan_status; }
+        total += (size_t)n;
+    }
+    if (sceIoClose(fd) < 0) { plugin_scan_status = -1; return plugin_scan_status; }
+    rt_pi_inventory_init(&plugin_inventory);
+    rt_pi_adapter_registry_init(&plugin_adapters);
+    if (rt_pi_parse(plugin_config, total, &plugin_inventory) != RT_PI_OK ||
+        rtp_plugin_centre_build(&plugin_inventory, &plugin_adapters, &plugin_snapshot) != RTP_PC_OK) {
+        plugin_scan_status = -1;
+        return plugin_scan_status;
+    }
+    plugin_scroll = 0;
+    plugin_scan_status = 0;
+    return 0;
 }
 
 static void draw_text(float x, float y, unsigned int color, const char *s) {
@@ -146,6 +187,8 @@ static void draw_shell(void) {
                 draw_text(690, y, components[i].bundled ? CYAN : (components[i].installed ? GREEN : AMBER),
                           components[i].bundled ? "BUILT INTO COCKPIT" :
                           (components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED"));
+                if (i == 2) draw_text(690, y, components[i].installed ? GREEN : AMBER,
+                                      components[i].installed ? "TAIHEN CONFIG FOUND" : "CONFIG MISSING");
             } else if (i == COMPONENT_COUNT) {
                 draw_text(48, y, CYAN, "Tai Saver  /  Backup & Recovery");
                 draw_text(690, y, path_exists(TAI_SOURCE) ? GREEN : RED,
@@ -225,6 +268,37 @@ static void draw_shell(void) {
         draw_text(48, 325, MUTED, "A different existing SUPRX is never overwritten.");
         draw_text(48, 365, AMBER, "A commented Rt entry is enabled only after this confirmation.");
         draw_text(48, 520, MUTED, "CROSS CONFIRM INSTALL   CIRCLE CANCEL");
+    } else if (page == 8) {
+        unsigned int i, visible = 0;
+        draw_header("PLUGIN CONTROL CENTRE  /  READ ONLY");
+        draw_text(48, 112, CYAN, "LIVE TAIHEN CONFIG INVENTORY");
+        if (plugin_scan_status < 0) {
+            draw_text(48, 175, RED, "Cannot read ur0:tai/config.txt or the file exceeds the safe scan limit.");
+            draw_text(48, 225, MUTED, "No changes were made. Check storage access and rescan from Cockpit.");
+        } else {
+            snprintf(line, sizeof(line), "Entries: %u   Unknown: %u   Disabled: %u   Blocked: %u   Review: %u",
+                     (unsigned)plugin_snapshot.count, (unsigned)plugin_snapshot.unknown_count,
+                     (unsigned)plugin_snapshot.disabled_count, (unsigned)plugin_snapshot.blocked_count,
+                     (unsigned)plugin_snapshot.review_count);
+            draw_text(48, 145, WHITE, line);
+            for (i = plugin_scroll; i < plugin_snapshot.count && visible < 7; ++i, ++visible) {
+                const rtp_plugin_centre_row *r = &plugin_snapshot.rows[i];
+                float y = 198.0f + (float)visible * 43.0f;
+                unsigned int color = r->state == RTP_PC_ROW_BLOCKED ? RED :
+                    (r->state == RTP_PC_ROW_REVIEW ? AMBER :
+                    (r->state == RTP_PC_ROW_DISABLED ? MUTED : WHITE));
+                draw_text(48, y, color, r->path);
+                draw_text(760, y, color, rtp_plugin_centre_state_name(r->state));
+                snprintf(line, sizeof(line), "%s  |  line %u  |  occurrence %u",
+                         r->section, r->line_number, r->occurrence);
+                draw_text(72, y + 17, MUTED, line);
+            }
+            if (!plugin_snapshot.count) draw_text(48, 205, MUTED, "No plugin entries were found in taiHEN config.");
+            snprintf(line, sizeof(line), "Compatibility findings: %u blocking / %u review",
+                     (unsigned)plugin_snapshot.blocking_findings, (unsigned)plugin_snapshot.review_findings);
+            draw_text(48, 505, AMBER, line);
+        }
+        draw_text(48, 530, MUTED, "UP/DOWN SCROLL   CIRCLE BACK   READ ONLY — NO PLUGIN IS ENABLED OR DISABLED HERE");
     } else if (page == 7) {
         draw_header("NATIVE SETTINGS  /  RESULT");
         if (native_install_status == RTNS_INSTALL_OK || native_install_status == RTNS_INSTALL_ALREADY) {
@@ -272,11 +346,19 @@ int main(void) {
                 if ((pressed & SCE_CTRL_DOWN) && selected < (int)MENU_COUNT - 1) ++selected;
                 if ((pressed & SCE_CTRL_UP) && selected > 0) --selected;
                 if (pressed & SCE_CTRL_CROSS) {
-                    if (selected == (int)COMPONENT_COUNT) page = 2;
+                    if (selected == 2) { scan_plugin_inventory(); page = 8; }
+                    else if (selected == (int)COMPONENT_COUNT) page = 2;
                     else if (selected == (int)COMPONENT_COUNT + 1) page = 5;
                     else page = 1;
                 }
                 if (pressed & SCE_CTRL_CIRCLE) scan_components();
+            } else if (page == 8) {
+                if (pressed & SCE_CTRL_UP) { if (plugin_scroll > 0) --plugin_scroll; }
+                if (pressed & SCE_CTRL_DOWN) {
+                    unsigned int max_scroll = plugin_snapshot.count > 7 ? (unsigned int)plugin_snapshot.count - 7 : 0;
+                    if (plugin_scroll < max_scroll) ++plugin_scroll;
+                }
+                if (pressed & SCE_CTRL_CIRCLE) page = 0;
             } else if (page == 1) {
                 if (pressed & (SCE_CTRL_CROSS | SCE_CTRL_CIRCLE)) page = 0;
             } else if (page == 2) {
