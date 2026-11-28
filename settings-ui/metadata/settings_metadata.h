@@ -20,10 +20,10 @@ void rtp_metadata_init(rtp_metadata_catalogue *catalogue);
 int rtp_metadata_register(rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences,const rtp_metadata_descriptor *descriptor);
 const rtp_metadata_entry *rtp_metadata_find(const rtp_metadata_catalogue *catalogue,const char *entry_id);
 int rtp_metadata_validate(const rtp_metadata_catalogue *catalogue,const rtp_preferences *preferences);
-/* Registers the Appearance & Customization and Quick Menu Settings entries. */
 int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
-/* Registers the first complete Settings Hub feature tree for Tai Saver. */
 int rtp_metadata_register_tai_saver(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
+/* Registers the Rt root and the permanent Settings > Rt > Preferences & Settings Management > Rt Manager hierarchy. */
+int rtp_metadata_register_rt_manager(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences);
 #ifdef __cplusplus
 }
 #endif
