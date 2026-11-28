@@ -21,21 +21,18 @@ int rtp_metadata_register(rtp_metadata_catalogue *c,const rtp_preferences *p,con
 int rtp_metadata_validate(const rtp_metadata_catalogue *c,const rtp_preferences *p){
  size_t i,j;if(!c||!p||c->count>RTP_META_MAX_ENTRIES)return RTP_META_INVALID_ARGUMENT;
  for(i=0;i<c->count;++i){const rtp_metadata_entry *e=&c->entries[i];const rtp_menu_entry *m=rtp_preferences_find(p,e->entry_id);
-  if(!m||!valid_key(e->entry_id,1)||!valid_key(e->module_id,1)||!e->title[0]||!memchr(e->title,'\0',sizeof(e->title))||!memchr(e->description,'\0',sizeof(e->description))||!memchr(e->category_id,'\0',sizeof(e->category_id))||!memchr(e->icon_key,'\0',sizeof(e->icon_key)))return RTP_META_INVALID_TEXT;
+  if(!m||!valid_key(e->entry_id,1)||!valid_key(e->module_id,1)||!e->title[0]||!memchr(e->title,'\\0',sizeof(e->title))||!memchr(e->description,'\\0',sizeof(e->description))||!memchr(e->category_id,'\\0',sizeof(e->category_id))||!memchr(e->icon_key,'\\0',sizeof(e->icon_key)))return RTP_META_INVALID_TEXT;
   if(e->category_id[0]){const rtp_menu_entry *cat=rtp_preferences_find(p,e->category_id);if(!cat||cat->kind!=RTP_ENTRY_CATEGORY)return RTP_META_INVALID_CATEGORY;}
   for(j=i+1;j<c->count;++j)if(strcmp(e->entry_id,c->entries[j].entry_id)==0)return RTP_META_DUPLICATE_ID;
  }return RTP_META_OK;
 }
 typedef struct { const char *id,*title,*description,*category,*icon,*module; unsigned int flags; rtp_entry_kind kind; unsigned int order; } default_entry;
 static int register_defaults(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences,const default_entry *entries,size_t count){
- size_t i;
- for(i=0;i<count;++i){
-  rtp_metadata_descriptor d;
+ size_t i;for(i=0;i<count;++i){rtp_metadata_descriptor d;
   if(rtp_preferences_register(preferences,entries[i].id,entries[i].category,entries[i].kind,1,entries[i].order)!=RTP_PREFS_OK)return RTP_META_INVALID_ARGUMENT;
   memset(&d,0,sizeof(d));d.entry_id=entries[i].id;d.title=entries[i].title;d.description=entries[i].description;d.category_id=entries[i].category;d.icon_key=entries[i].icon;d.module_id=entries[i].module;d.flags=entries[i].flags;
   if(rtp_metadata_register(catalogue,preferences,&d)!=RTP_META_OK)return RTP_META_INVALID_ARGUMENT;
- }
- return RTP_META_OK;
+ }return RTP_META_OK;
 }
 int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences){
  static const default_entry entries[]={
@@ -49,9 +46,7 @@ int rtp_metadata_register_appearance(rtp_metadata_catalogue *catalogue,rtp_prefe
   {"quick-menu","Quick Menu","Review the installed Quick Menu framework and supported extensions.","appearance-customization","layout-dashboard","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_CATEGORY,27},
   {"quick-menu-widgets","Quick Menu Widgets","Manage compatible widgets and their supported options.","quick-menu","grid-2x2","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_SETTING,28},
   {"quick-menu-shortcuts","Quick Menu Shortcuts","Configure supported Quick Menu shortcuts and launch actions.","quick-menu","keyboard","quick-menu",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_SETTING,29}
- };
- if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;
- return register_defaults(catalogue,preferences,entries,sizeof(entries)/sizeof(entries[0]));
+ };if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;return register_defaults(catalogue,preferences,entries,sizeof(entries)/sizeof(entries[0]));
 }
 int rtp_metadata_register_tai_saver(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences){
  static const default_entry entries[]={
@@ -71,7 +66,17 @@ int rtp_metadata_register_tai_saver(rtp_metadata_catalogue *catalogue,rtp_prefer
   {"tai-saver-compare","Compare Snapshots","Compare file paths and SHA-256 hashes between two verified snapshots.","tai-saver-recovery","git-compare","tai-saver",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_ACTION,10},
   {"tai-saver-verify","Verify Snapshot","Verify the manifest, exact file set, file sizes and SHA-256 hashes.","tai-saver-recovery","file-check","tai-saver",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_ACTION,20},
   {"tai-saver-restore","Restore Snapshot","Restore a verified snapshot after creating a Pre-Restore safety snapshot.","tai-saver-recovery","history","tai-saver",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_ACTION,30}
- };
- if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;
- return register_defaults(catalogue,preferences,entries,sizeof(entries)/sizeof(entries[0]));
+ };if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;return register_defaults(catalogue,preferences,entries,sizeof(entries)/sizeof(entries[0]));
+}
+int rtp_metadata_register_rt_manager(rtp_metadata_catalogue *catalogue,rtp_preferences *preferences){
+ static const default_entry entries[]={
+  {"rt-settings-extended","Rt:Settings Extended","System extensions and settings installed by Rt Components.","","settings","rt-framework",RTP_META_FLAG_NONE,RTP_ENTRY_CATEGORY,90},
+  {"preferences-settings-management","Preferences & Settings Management","Manage Rt settings layout, profiles and installed extension controls.","rt-settings-extended","sliders-horizontal","rt-framework",RTP_META_FLAG_NONE,RTP_ENTRY_CATEGORY,10},
+  {"rt-manager","Rt Manager","Inspect and manage installed Rt components, their settings and recovery status.","preferences-settings-management","settings-2","rt-framework",RTP_META_FLAG_NONE,RTP_ENTRY_CATEGORY,10},
+  {"plugin-control-centre","Plugin Control Centre","Inspect installed plugins, providers, status and supported controls.","rt-manager","puzzle","plugin-control-centre",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_CATEGORY,10},
+  {"plugin-conflict-prevention","Plugin Conflict Prevention","Review blocking conflicts, missing dependencies and unverified combinations before activation.","plugin-control-centre","shield-alert","plugin-control-centre",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_SETTING,10},
+  {"tai-saver-entry","Tai Saver","Create, inspect and recover verified taiHEN configuration snapshots.","rt-manager","shield-check","tai-saver",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_CATEGORY,20},
+  {"settings-layout","Settings Layout","Reorder or hide Rt-owned Settings entries and restore the default layout.","rt-manager","list-filter","preferences",RTP_META_FLAG_REQUIRES_BACKEND,RTP_ENTRY_SETTING,30},
+  {"component-status","Component Status","View installed, disabled, incompatible and update-required Rt components.","rt-manager","blocks","rt-framework",RTP_META_FLAG_REQUIRES_BACKEND|RTP_META_FLAG_READ_ONLY,RTP_ENTRY_SETTING,40}
+ };if(!catalogue||!preferences)return RTP_META_INVALID_ARGUMENT;return register_defaults(catalogue,preferences,entries,sizeof(entries)/sizeof(entries[0]));
 }
