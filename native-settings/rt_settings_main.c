@@ -2,7 +2,6 @@
 #include <psp2/io/fcntl.h>
 #include <psp2/io/stat.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <taihen.h>
 #include "rt_settings_xml.h"
@@ -109,7 +108,6 @@ static void refresh_runtime_status(void) {
     SceUID fd;
     size_t total = 0;
     int module_present = sceIoGetstat(RT_MODULE_PATH, &st) >= 0;
-    char message[192];
     rt_settings_runtime_snapshot snapshot;
     if (sceIoGetstat(RT_CONFIG_PATH, &st) < 0 || st.st_size < 0 ||
         (uint64_t)st.st_size > sizeof(g_config)) {
@@ -137,24 +135,21 @@ static void refresh_runtime_status(void) {
         return;
     }
     if (snapshot.config_state == RT_SETTINGS_CONFIG_ACTIVE && module_present)
-        snprintf(message, sizeof(message), "READY | taiHEN entry ACTIVE | SUPRX PRESENT");
+        status_to_wide("READY | taiHEN entry ACTIVE | SUPRX PRESENT");
+    else if (snapshot.config_state == RT_SETTINGS_CONFIG_ACTIVE)
+        status_to_wide("ACTION NEEDED | taiHEN entry ACTIVE | SUPRX MISSING");
     else if (snapshot.config_state == RT_SETTINGS_CONFIG_DISABLED)
-        snprintf(message, sizeof(message), "ACTION NEEDED | taiHEN entry DISABLED");
+        status_to_wide("ACTION NEEDED | taiHEN entry DISABLED");
     else if (snapshot.config_state == RT_SETTINGS_CONFIG_DUPLICATE_SECTION)
-        snprintf(message, sizeof(message), "REVIEW REQUIRED | duplicate *NPXS10015 sections");
+        status_to_wide("REVIEW REQUIRED | duplicate *NPXS10015 sections");
     else if (snapshot.config_state == RT_SETTINGS_CONFIG_DUPLICATE_ENTRY)
-        snprintf(message, sizeof(message), "REVIEW REQUIRED | duplicate Rt plugin entries");
+        status_to_wide("REVIEW REQUIRED | duplicate Rt plugin entries");
     else if (snapshot.config_state == RT_SETTINGS_CONFIG_SECTION_MISSING)
-        snprintf(message, sizeof(message), "NOT CONFIGURED | *NPXS10015 section missing");
+        status_to_wide("NOT CONFIGURED | *NPXS10015 section missing");
     else if (snapshot.config_state == RT_SETTINGS_CONFIG_ENTRY_MISSING)
-        snprintf(message, sizeof(message), "NOT CONFIGURED | Rt plugin entry missing");
+        status_to_wide("NOT CONFIGURED | Rt plugin entry missing");
     else
-        snprintf(message, sizeof(message), "CONFIG %s | SUPRX %s",
-                 rt_settings_config_state_name(snapshot.config_state),
-                 module_present ? "PRESENT" : "MISSING");
-    if (snapshot.config_state == RT_SETTINGS_CONFIG_ACTIVE && !module_present)
-        snprintf(message, sizeof(message), "ACTION NEEDED | taiHEN entry ACTIVE | SUPRX MISSING");
-    status_to_wide(message);
+        status_to_wide("CONFIG INSPECTION INVALID");
 }
 static int rt_settings_button(const char *id, int a2, void *a3) {
     if (text_equal(id, "rt_manager_about")) {
