@@ -54,7 +54,8 @@ rt_settings_xml_result rt_settings_xml_splice_root(
     root_plugin = find_bytes(source, source_length, ROOT_PLUGIN, sizeof(ROOT_PLUGIN) - 1);
     root_id = find_bytes(source, source_length, ROOT_ID, sizeof(ROOT_ID) - 1);
     root_close = find_bytes(source, source_length, ROOT_CLOSE, sizeof(ROOT_CLOSE) - 1);
-    if (!root_plugin || !root_id || !root_close) return RT_SETTINGS_XML_UNCHANGED;
+    if (!root_plugin || !root_id) return RT_SETTINGS_XML_UNCHANGED;
+    if (!root_close) return RT_SETTINGS_XML_ERROR;
     if (find_bytes(source, source_length, RT_ID, sizeof(RT_ID) - 1))
         return RT_SETTINGS_XML_UNCHANGED;
     insert_at = find_last_bytes(source, source_length, LIST_CLOSE, sizeof(LIST_CLOSE) - 1);
