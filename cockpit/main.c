@@ -185,11 +185,14 @@ static void draw_shell(void) {
             vita2d_draw_rectangle(30, y - 25, 900, 36, bg);
             if (i < COMPONENT_COUNT) {
                 draw_text(48, y, WHITE, components[i].name);
-                draw_text(690, y, components[i].bundled ? CYAN : (components[i].installed ? GREEN : AMBER),
-                          components[i].bundled ? "BUILT INTO COCKPIT" :
-                          (components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED"));
-                if (i == 2) draw_text(690, y, components[i].installed ? GREEN : AMBER,
-                                      components[i].installed ? "TAIHEN CONFIG FOUND" : "CONFIG MISSING");
+                if (i == 2) {
+                    draw_text(690, y, components[i].installed ? GREEN : AMBER,
+                              components[i].installed ? "TAIHEN CONFIG FOUND" : "CONFIG MISSING");
+                } else {
+                    draw_text(690, y, components[i].bundled ? CYAN : (components[i].installed ? GREEN : AMBER),
+                              components[i].bundled ? "BUILT INTO COCKPIT" :
+                              (components[i].installed ? "REGISTRY DETECTED" : "NOT DETECTED"));
+                }
             } else if (i == COMPONENT_COUNT) {
                 draw_text(48, y, CYAN, "Tai Saver  /  Backup & Recovery");
                 draw_text(690, y, path_exists(TAI_SOURCE) ? GREEN : RED,
