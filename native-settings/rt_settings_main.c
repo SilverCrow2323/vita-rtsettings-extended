@@ -111,6 +111,11 @@ static void refresh_runtime_status(void) {
     int module_present = sceIoGetstat(RT_MODULE_PATH, &st) >= 0;
     char message[192];
     rt_settings_runtime_snapshot snapshot;
+    if (sceIoGetstat(RT_CONFIG_PATH, &st) < 0 || st.st_size < 0 ||
+        (uint64_t)st.st_size > sizeof(g_config)) {
+        status_to_wide("taiHEN config: MISSING OR TOO LARGE");
+        return;
+    }
     fd = sceIoOpen(RT_CONFIG_PATH, SCE_O_RDONLY, 0);
     if (fd < 0) {
         status_to_wide("taiHEN config: UNREADABLE | SUPRX: checked separately");
