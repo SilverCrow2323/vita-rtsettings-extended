@@ -284,11 +284,20 @@ static void draw_shell(void) {
             draw_text(48, 145, WHITE, line);
             for (i = plugin_scroll; i < plugin_snapshot.count && visible < 7; ++i, ++visible) {
                 const rtp_plugin_centre_row *r = &plugin_snapshot.rows[i];
+                char display_path[80];
+                size_t path_len = strlen(r->path);
                 float y = 198.0f + (float)visible * 43.0f;
+                if (path_len >= sizeof(display_path)) {
+                    memcpy(display_path, "...", 3);
+                    memcpy(display_path + 3, r->path + path_len - (sizeof(display_path) - 4), sizeof(display_path) - 4);
+                    display_path[sizeof(display_path) - 1] = '\0';
+                } else {
+                    memcpy(display_path, r->path, path_len + 1);
+                }
                 unsigned int color = r->state == RTP_PC_ROW_BLOCKED ? RED :
                     (r->state == RTP_PC_ROW_REVIEW ? AMBER :
                     (r->state == RTP_PC_ROW_DISABLED ? MUTED : WHITE));
-                draw_text(48, y, color, r->path);
+                draw_text(48, y, color, display_path);
                 draw_text(760, y, color, rtp_plugin_centre_state_name(r->state));
                 snprintf(line, sizeof(line), "%s  |  line %u  |  occurrence %u",
                          r->section, r->line_number, r->occurrence);
