@@ -49,7 +49,7 @@ int main(void) {
         assert(r==RTTC_ADDED && strstr(out,"*NPXS10015\nur0:tai/rtsettings.suprx\n")!=NULL);
     }
     {
-        const char *duplicate_sections="*NPXS10015\\nfirst.skprx\\n*main\\nsecond.skprx\\n*NPXS10015\\nthird.skprx\\n";
+        const char *duplicate_sections="*NPXS10015\nfirst.skprx\n*main\nsecond.skprx\n*NPXS10015\nthird.skprx\n";
         assert(rttc_add_settings_plugin(duplicate_sections,strlen(duplicate_sections),PLUGIN,out,sizeof(out),&n)==RTTC_AMBIGUOUS);
         assert(rttc_enable_settings_plugin(duplicate_sections,strlen(duplicate_sections),PLUGIN,out,sizeof(out),&n)==RTTC_AMBIGUOUS);
     }
