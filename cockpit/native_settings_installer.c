@@ -94,6 +94,19 @@ static int write_config_backup(const char *path,const char *data,size_t length) 
     if(write_new_file(path,data,length)<0)return -1;
     return verify_file(path,data,length,g_config_verify,sizeof(g_config_verify));
 }
+static int recover_interrupted_config(void) {
+    /* Restore the original if power failed after it was moved aside. */
+    if(path_exists(RT_CONFIG_OLD) && !path_exists(RT_CONFIG_PATH)) {
+        if(sceIoRename(RT_CONFIG_OLD,RT_CONFIG_PATH)<0)return -1;
+    }
+    /* These exact staging names are Rt-owned and safe to discard once the
+       original config is back in place. */
+    if(path_exists(RT_CONFIG_PATH)) {
+        if(path_exists(RT_CONFIG_TEMP) && sceIoRemove(RT_CONFIG_TEMP)<0)return -1;
+        if(path_exists(RT_PLUGIN_TEMP) && sceIoRemove(RT_PLUGIN_TEMP)<0)return -1;
+    }
+    return 0;
+}
 static int rollback_config(int old_moved,int plugin_added) {
     int ok=1;
     if(old_moved) {
@@ -117,6 +130,10 @@ rtns_install_result rt_settings_install_native(int enable_disabled,char *message
     int snapshot_created=0;
     if(!message||!message_capacity)return RTNS_INSTALL_ERROR;
     message[0]='\0';
+    if(recover_interrupted_config()<0) {
+        set_message(message,message_capacity,"An interrupted install was detected. Automatic recovery could not safely complete; preserve the rollback files.");
+        return RTNS_INSTALL_CONFLICT;
+    }
     if(read_payload(&payload_length)<0) {
         set_message(message,message_capacity,"Installer payload missing or invalid in VPK.");
         return RTNS_INSTALL_IO_FAILED;
