@@ -46,6 +46,7 @@ static int contains_text(const char *text, const char *needle) {
 
 static void release_page_hooks(void) {
     g_page_hooks_ready = 0;
+    g_system_settings_button = NULL;
     if (g_xml_hook >= 0) { taiHookRelease(g_xml_hook, g_xml_ref); g_xml_hook = -1; }
     if (g_functions_hook >= 0) { taiHookRelease(g_functions_hook, g_functions_ref); g_functions_hook = -1; }
     if (g_text_hook >= 0) { taiHookRelease(g_text_hook, g_text_ref); g_text_hook = -1; }
@@ -99,6 +100,7 @@ static void *settings_text_hook(void *arg, char **message) {
 }
 
 static int install_page_hooks(void) {
+    if (g_page_hooks_ready) return 0;
     /* Install the text and callback hooks first. The XML splice is the final
        gate: no Rt entry is exposed unless all three interfaces are available. */
     g_text_hook = taiHookFunctionImport(&g_text_ref, "SceSystemSettingsCore",
@@ -122,6 +124,7 @@ static SceUID load_start_module_hook(const char *path, SceSize args, void *argp,
     SceUID result = TAI_CONTINUE(SceUID, g_load_ref, path, args, argp, flags, option, status);
     if (result >= 0 && path && contains_text(path, "system_settings_core.suprx") &&
         result != g_settings_core_modid) {
+        release_page_hooks();
         g_settings_core_modid = result;
         (void)install_page_hooks();
     }
